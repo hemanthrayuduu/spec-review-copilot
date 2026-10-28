@@ -27,7 +27,7 @@ sources:
     role: dev
     kind: landing_page
     url: https://legacy.wbdg.org/node/12034
-    notes: Public domain federal guide specs. Download the Division 46 ZIP from this page.
+    notes: Public domain federal guide specs. Download the Division 46 ZIP from this page (direct link https://legacy.wbdg.org/FFC/DOD/UFGS/UFGS%20DIVISION%2046.zip) and unzip it into its folder.
 
   manor_wwtp_phase2:
     role: test
@@ -98,12 +98,14 @@ sources:
   ovivo_cf100_band_screen:
     role: knowledge
     kind: file
-    url: https://ovivo.getbynder.com/m/156b5204fdb7b4dd/original/CF100-Band-Screen.pdf
+    url: https://web.archive.org/web/20260814092022id_/https://ovivo.getbynder.com/m/156b5204fdb7b4dd/original/CF100-Band-Screen.pdf
+    notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_reactor_clarifier:
     role: knowledge
     kind: file
-    url: https://ovivo.getbynder.com/m/4c5bd7cb07a22211/original/Reactor-Clarifier-Solids-Contact-Clarifiers.pdf
+    url: https://web.archive.org/web/20260814084014id_/https://ovivo.getbynder.com/m/4c5bd7cb07a22211/original/Reactor-Clarifier-Solids-Contact-Clarifiers.pdf
+    notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_gravity_clarifier:
     role: knowledge
@@ -113,29 +115,32 @@ sources:
   ovivo_ringstrip:
     role: knowledge
     kind: file
-    url: https://ovivo.getbynder.com/m/7b1e442522964f80/original/RingStrip-Systems.pdf
+    url: https://web.archive.org/web/20260814085406id_/https://ovivo.getbynder.com/m/7b1e442522964f80/original/RingStrip-Systems.pdf
+    notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_ifas:
     role: knowledge
     kind: file
-    url: https://ovivo.getbynder.com/m/323a08695a1c77f7/original/Ovivo-IFAS_04-2022.pdf
+    url: https://web.archive.org/web/20260814101837id_/https://ovivo.getbynder.com/m/323a08695a1c77f7/original/Ovivo-IFAS_04-2022.pdf
+    notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_carrousel_brochure:
     role: knowledge
     kind: file
-    url: https://ovivo.getbynder.com/m/56d907ea2c275950/original/Carrousel-Brochure-0219-WEB.pdf
+    url: https://web.archive.org/web/20220624215644id_/https://ovivo.getbynder.com/m/56d907ea2c275950/original/Carrousel-Brochure-0219-WEB.pdf
+    notes: Internet Archive copy (June 2022; the April 2024 capture is cut off at 1 MiB). The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_carrousel_retrofits:
     role: knowledge
     kind: file
-    url: https://ovivo.getbynder.com/m/66ee637c5cbb79af/original/Carrousel-Retrofits.pdf
-    notes: Claims TP below 0.2 mg/L at many plants. Basis for the Lakeview phosphorus trap.
+    url: https://web.archive.org/web/20260814085553id_/https://ovivo.getbynder.com/m/66ee637c5cbb79af/original/Carrousel-Retrofits.pdf
+    notes: Claims TP below 0.2 mg/L at many plants. Basis for the Lakeview phosphorus trap. Internet Archive copy; the original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_sic_mbr_brochure:
     role: knowledge
     kind: file
-    url: https://chathamcountync.gov/home/showpublisheddocument/56841/637641221802170000
-    notes: SiC MBR brochure found in a county public document
+    url: https://web.archive.org/web/20260405193905id_/https://www.chathamcountync.gov/home/showpublisheddocument/56841/637641221802170000
+    notes: SiC MBR brochure found in a county public document. Internet Archive copy; the county site returns 403 to non-browser clients.
 
   ovivo_sic_case_southern_jackson:
     role: knowledge

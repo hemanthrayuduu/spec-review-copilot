@@ -52,6 +52,8 @@ Only run `uv run specreview eval test` when the project owner asks for it in Pha
 
 * Specs usually follow CSI MasterFormat: Division 00 (bidding and contract), Division 01 (general requirements, like 01 33 00 submittals), Division 46 (water and wastewater equipment).
 * Older packages use other numbering, like 11 30 00 or 13226A. The splitter must handle both.
+* Some engineers write CSI numbers with underscores, like SECTION 01_00_03 or 46_51_42.01, with page labels like 01_00_03-1 (Mountain Regional, by Carollo). Treat these as CSI.
+* Section prefixes vary by engineer. Mountain Regional puts membrane filtration under 46_51_42, which the starter product map assigns to aeration, so check prefixes against each package.
 * Paragraph paths look like 2.03.B.4. Part 1 is General, Part 2 is Products, Part 3 is Execution.
 * "shall", "must", and "is required" mean mandatory. "should" and "may" mean preferred.
 * Addenda supersede earlier text. The newest version wins, and the change is logged.

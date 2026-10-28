@@ -1,6 +1,8 @@
 # Starter map from product lines to spec sections.
 # Section prefixes are starting points. Verify them against real packages and extend.
 # Keywords catch legacy numbering and unusual formats.
+# Known conflict: Mountain Regional (dev) puts membrane filtration under 46_51_42 (aeration here)
+# and self-cleaning strainers under 46_61_74 (membranes here). Prefixes alone mislabel it.
 
 product_lines:
 
