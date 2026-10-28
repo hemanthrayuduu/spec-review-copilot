@@ -1,0 +1,7 @@
+data/raw/
+runs/
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store

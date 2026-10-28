@@ -1,0 +1,154 @@
+# Public data sources for the prototype.
+# role: dev, test, stretch, context, knowledge, reference
+# kind: file (direct download) or landing_page (download attachments by hand)
+# Raw files are never committed. Respect each owner's terms; use for testing only.
+
+sources:
+
+  mountain_regional_specs:
+    role: dev
+    kind: file
+    url: https://www.mtnregionalwaterutah.gov/files/7ec6b0ee1/WTP_Optimization-MembraneProcurement_Specifications_FINAL.pdf
+    notes: Membrane procurement specs, Divisions 00 and technical sections (Carollo, July 2025)
+
+  mountain_regional_contract_specs:
+    role: dev
+    kind: file
+    url: https://www.mtnregionalwaterutah.gov/files/58581c9fa/8.c.i.2.+Contact+Technical+Specifications+%28for+reference%29.pdf
+    notes: Contract and technical specifications, reference copy
+
+  mountain_regional_memo:
+    role: dev
+    kind: file
+    url: https://www.mtnregionalwaterutah.gov/files/8ad3da0c5/8.c.i.1.+Membrane+Filtration+System+Procurement+Memo.pdf
+    notes: Board memo with scoring criteria and award
+
+  ufgs_division_46:
+    role: dev
+    kind: landing_page
+    url: https://legacy.wbdg.org/node/12034
+    notes: Public domain federal guide specs. Download the Division 46 ZIP from this page.
+
+  manor_wwtp_phase2:
+    role: test
+    kind: file
+    url: https://www.manortx.gov/DocumentCenter/View/2830/16474_Final_Specs---3-6-2026
+    notes: Full wastewater plant spec book, Manor TX (March 2026). Needle in a haystack test.
+
+  sandy_membrane_rfp:
+    role: test
+    kind: landing_page
+    url: https://www.ci.sandy.or.us/publicworks/page/membrane-equipment-upgraded-water-tx-plant
+    notes: Download the RFP, all addenda, and the notice of intent to award from this page. Addenda merge test.
+
+  avila_beach_mbr_rfp:
+    role: test
+    kind: file
+    url: https://www.avilabeachcsd.org/files/fa6aff98f/Request+for+Proposals+Membrane+Bioreactor+System.pdf
+    notes: MBR preselection RFP with scoring table and technical data forms
+
+  port_byron_qa:
+    role: stretch
+    kind: file
+    url: https://content3.thruway.ny.gov/netdata/contractors/documents/d215118_tas26-28a_questions-and-answers-10-16-2026.pdf
+    notes: Real bidder questions and approved equal requests (Oct 2026). Reference for clarification questions.
+
+  fargo_ro_rfp:
+    role: stretch
+    kind: file
+    url: https://download.fargond.gov/0/rfp_fargo_mwtp_ro_element_replacement.pdf
+    notes: RO membrane replacement RFP with preselection form
+
+  ronan_mf_procurement:
+    role: stretch
+    kind: file
+    url: https://cityofronan.org/wp-content/uploads/2016/10/Ronan.Filtration.Equip_.Proc_.100116.pdf
+    notes: Microfiltration equipment procurement, older format
+
+  wheeling_bid_book:
+    role: stretch
+    kind: file
+    url: https://bids.verdantas.com/bid_documents/0000034141/Bid%20Book%20-%200000034141.pdf
+    notes: Water plant solids handling bid set with Division 46 sections (Oct 2026)
+
+  lake_champlain_study:
+    role: context
+    kind: file
+    url: https://www.epa.gov/sites/default/files/2015-09/documents/lc-wastewater-treatment-facilities-feasibility-study.pdf
+    notes: Phosphorus upgrade study for 90 plants with target TP limits. Seeds Lakeview numbers.
+
+  vt_shelburne_permit:
+    role: context
+    kind: file
+    url: https://19january2021snapshot.epa.gov/sites/static/files/2017-07/documents/draftvt0100331permit.pdf
+    notes: Draft discharge permit to Lake Champlain with phosphorus limits
+
+  vt_milton_permit:
+    role: context
+    kind: file
+    url: https://19january2021snapshot.epa.gov/sites/static/files/2018-04/documents/draftvt0100684permit.pdf
+    notes: Draft discharge permit, Lake Champlain watershed
+
+  epa_echo_downloads:
+    role: context
+    kind: landing_page
+    url: https://echo.epa.gov/node/113
+    notes: Optional. National permit limit dataset (very large ZIP). Use to check the permit extractor.
+
+  ovivo_cf100_band_screen:
+    role: knowledge
+    kind: file
+    url: https://ovivo.getbynder.com/m/156b5204fdb7b4dd/original/CF100-Band-Screen.pdf
+
+  ovivo_reactor_clarifier:
+    role: knowledge
+    kind: file
+    url: https://ovivo.getbynder.com/m/4c5bd7cb07a22211/original/Reactor-Clarifier-Solids-Contact-Clarifiers.pdf
+
+  ovivo_gravity_clarifier:
+    role: knowledge
+    kind: file
+    url: https://industrial.ovivowater.com/wp-content/uploads/2024/01/Technology-Highlight-Ovivo-industrial-GRAVITY-CLARIFIER-web.pdf
+
+  ovivo_ringstrip:
+    role: knowledge
+    kind: file
+    url: https://ovivo.getbynder.com/m/7b1e442522964f80/original/RingStrip-Systems.pdf
+
+  ovivo_ifas:
+    role: knowledge
+    kind: file
+    url: https://ovivo.getbynder.com/m/323a08695a1c77f7/original/Ovivo-IFAS_04-2022.pdf
+
+  ovivo_carrousel_brochure:
+    role: knowledge
+    kind: file
+    url: https://ovivo.getbynder.com/m/56d907ea2c275950/original/Carrousel-Brochure-0219-WEB.pdf
+
+  ovivo_carrousel_retrofits:
+    role: knowledge
+    kind: file
+    url: https://ovivo.getbynder.com/m/66ee637c5cbb79af/original/Carrousel-Retrofits.pdf
+    notes: Claims TP below 0.2 mg/L at many plants. Basis for the Lakeview phosphorus trap.
+
+  ovivo_sic_mbr_brochure:
+    role: knowledge
+    kind: file
+    url: https://chathamcountync.gov/home/showpublisheddocument/56841/637641221802170000
+    notes: SiC MBR brochure found in a county public document
+
+  ovivo_sic_case_southern_jackson:
+    role: knowledge
+    kind: file
+    url: https://www.ovivowater.com/app/uploads/2026/09/SiC-Southern-Jackson.pdf
+
+  ovivo_pfas_highlight:
+    role: knowledge
+    kind: file
+    url: https://industrial.ovivowater.com/wp-content/uploads/2024/01/Technology-Highlight-Ovivo-industrial-PFAS.pdf
+
+  ten_states_wastewater_2014:
+    role: reference
+    kind: file
+    url: https://www.health.mn.gov/communities/environment/water/docs/tenstates/tenstatestan2014.pdf
+    notes: Design standards for sanity checks. Copyrighted; reference only, do not redistribute.

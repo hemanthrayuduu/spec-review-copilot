@@ -1,0 +1,36 @@
+# Starter map from product lines to spec sections.
+# Section prefixes are starting points. Verify them against real packages and extend.
+# Keywords catch legacy numbering and unusual formats.
+
+product_lines:
+
+  screens:
+    section_prefixes: ["46 21"]
+    keywords: ["band screen", "drum screen", "bar screen", "fine screen", "screenings"]
+
+  clarifiers:
+    section_prefixes: ["46 43"]
+    keywords: ["clarifier", "sludge collector", "scraper mechanism", "thickener mechanism", "solids contact"]
+
+  aeration:
+    section_prefixes: ["46 51"]
+    keywords: ["diffuser", "diffused aeration", "aerator", "oxidation ditch"]
+
+  biological:
+    section_prefixes: []
+    keywords: ["IFAS", "MBBR", "fixed bed bioreactor", "biological nutrient removal", "Carrousel"]
+
+  membranes:
+    section_prefixes: ["46 61", "46 63"]
+    keywords: ["membrane", "ultrafiltration", "microfiltration", "membrane bioreactor", "MBR", "silicon carbide"]
+
+  pfas:
+    section_prefixes: []
+    keywords: ["PFAS", "foam fractionation", "electro oxidation"]
+
+# Sections every supplier must read, whatever the product line.
+always_include:
+  section_prefixes: ["00 21", "00 41", "01 33", "01 78"]
+  # instructions to bidders, bid form, submittal procedures, closeout and warranties (verify per package)
+  keywords: ["approved equal", "or equal", "substitution", "warranty", "Buy America", "BABA",
+             "liquidated damages", "performance bond", "pilot", "installation list", "references"]
