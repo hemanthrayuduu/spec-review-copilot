@@ -64,10 +64,9 @@ Plan first. Report the dev scorecard and every Lakeview item with a wrong status
 Build spec sections 8.15 and 8.16.
 
 1. Streamlit app with pages: Brief, Checklist (filters by status, category, section), Source viewer (rendered page with the requirement highlighted), Addenda changes.
-2. Approve or edit each status. Save ReviewDecision records to SQLite, with Postgres optional through config. Accepted deviations append to data/knowledge/review_exceptions.csv, never to past_exceptions.csv.
+2. Approve or edit each status. Save ReviewDecision records to SQLite. Accepted deviations append to data/knowledge/review_exceptions.csv, never to past_exceptions.csv.
 3. Outputs: Excel compliance matrix, marked up PDF with C, D, or R margin notes, exceptions and clarifications letter (Word), clarification questions list, addendum diff report.
-4. FastAPI service in spec_review/api/main.py that runs a package as a background job and serves results to the app.
-5. A labeling helper page where I create golden labels by hand: show a page, let me add requirement rows. It must never prefill labels from the model.
+4. A labeling helper page where I create golden labels by hand: show a page, let me add requirement rows. It must never prefill labels from the model.
 
 Plan first. Demo the full flow on Lakeview, including its addendum, and tell me anything that felt slow or confusing.
 ```
@@ -78,8 +77,8 @@ Plan first. Demo the full flow on Lakeview, including its addendum, and tell me 
 I have hand labeled Manor, Sandy, and Avila Beach in data/golden/test/.
 
 1. Freeze prompts, rules, and thresholds. Run specreview eval test once, with the same provider, model, and prompts as the final dev scorecard, and save the scorecard. Do not change anything based on the test results in this phase. List suggested fixes instead.
-2. Implement the remaining Azure providers (Document Intelligence layout model, Azure OpenAI embeddings, Azure AI Search) behind the existing interfaces, switched by .env.
-3. Dockerfile and docker compose for the API and the app.
+2. Implement the remaining Azure providers (Document Intelligence layout model, Azure OpenAI embeddings) behind the existing interfaces, switched by .env. Add Azure AI Search only if time allows.
+3. Dockerfile for the Streamlit app.
 4. README: the problem, architecture (mermaid), how to run locally and on Azure, dev and test scorecards with honest commentary, limitations, and what production would need.
 5. scripts/demo.sh that runs Lakeview end to end in mock mode.
 

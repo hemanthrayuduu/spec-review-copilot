@@ -25,7 +25,9 @@ Pains, in order of business impact:
 
 In scope: ingest, segmentation, addenda merge, cross references, relevance filtering, requirement extraction with verification, permit limit extraction, triage brief, compliance matching, engineer review app, outputs, evaluation.
 
-Out of scope: equipment sizing calculations, pricing, final bid decisions, integration with real company systems, user authentication.
+Out of scope: equipment sizing calculations, pricing, final bid decisions, integration with real company systems, user authentication, a separate API service (the Streamlit app calls the pipeline directly), Postgres (SQLite only), and the EPA ECHO dataset. Azure AI Search and the stretch packages are optional.
+
+The prototype is an interview demo: it should show the problem is understood and solved, and that it runs on Azure. Skip anything complex that adds little to that demo.
 
 ## 4. Data
 
@@ -105,15 +107,14 @@ flowchart TD
 
 Layers:
 
-1. Interface: Streamlit review app and the specreview CLI.
-2. API: FastAPI service that runs packages as background jobs and serves results.
-3. Pipeline: the stages above.
-4. Services and storage: OCR provider, LLM provider, SQLite (Postgres optional), vector index, file store.
+1. Interface: Streamlit review app and the specreview CLI, both calling the pipeline directly.
+2. Pipeline: the stages above.
+3. Services and storage: OCR provider, LLM provider, SQLite, vector index, file store.
 
 Providers are pluggable through config:
 
 * Local: PyMuPDF and pdfplumber, ChromaDB, mock LLM.
-* Azure: AI Document Intelligence (layout model), Azure OpenAI (chat and embeddings), Azure AI Search.
+* Azure: AI Document Intelligence (layout model), Azure OpenAI (chat and embeddings), and optionally Azure AI Search.
 
 Mock is for tests and CI only. Accuracy numbers always come from a real chat model, so the Azure OpenAI chat provider lands in Phase 1 and every dev scorecard is measured with it. Never build mock fixtures from golden labels, and never report mock-mode metrics as accuracy.
 
@@ -133,7 +134,6 @@ spec_review/
   match/          rules.py, evidence.py, judge.py, gate.py, prompts/
   outputs/        matrix_xlsx.py, markup_pdf.py, letter_docx.py, questions.py, addendum_diff.py
   eval/           golden.py, metrics.py, scorecard.py
-  api/            main.py
   cli.py
 app/              streamlit_app.py
 scripts/          download_sources.py, make_lakeview.py, demo.sh
@@ -282,8 +282,8 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 **Phase 4: Test and polish (week 4)**
 
 * The test scorecard is saved and reported as is.
-* The remaining Azure providers (Document Intelligence, embeddings, AI Search) work on at least one package.
-* Docker runs the API and app.
+* The remaining Azure providers (Document Intelligence and embeddings) work on at least one package. Azure AI Search is optional.
+* Docker runs the app.
 * README is complete, with honest results and limitations.
 
 ## 11. Config

@@ -5,7 +5,7 @@ import pytest
 import pytest_socket
 
 STAGE_PACKAGES = ["llm", "ingest", "segment", "filter", "extract", "brief",
-                  "knowledge", "match", "outputs", "eval", "api"]
+                  "knowledge", "match", "outputs", "eval"]
 
 
 @pytest.mark.parametrize("name", STAGE_PACKAGES)
