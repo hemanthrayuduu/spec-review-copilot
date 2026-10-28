@@ -62,12 +62,17 @@ def test_call_logged_with_tokens_latency_and_cost(tmp_path: Path) -> None:
 
 
 def test_schema_invalid_response_raises_and_is_logged(tmp_path: Path) -> None:
-    write_fixture(tmp_path, "smoke", "default.json", {"wrong": 1})
-    client = LLMClient(MockProvider(tmp_path))
+    write_fixture(tmp_path / "fx", "smoke", "default.json", {"wrong": 1})
+    log = tmp_path / "run" / "llm_calls.jsonl"
+    client = LLMClient(MockProvider(tmp_path / "fx"), price_input_per_mtok=2.0,
+                       price_output_per_mtok=8.0, log_path=log)
     with pytest.raises(LLMResponseError) as err:
         client.complete("smoke", "ping", Answer)
     assert "smoke" in str(err.value)
-    assert len(client.calls) == 1 and client.calls[0].ok is False
+    assert len(client.calls) == 1
+    call = client.calls[0]
+    assert call.ok is False and call.input_tokens == estimate_tokens("ping") and call.cost_usd > 0
+    assert [LLMCall.model_validate_json(line) for line in log.read_text().splitlines()] == [call]
 
 
 def test_get_client_defaults_to_mock() -> None:
