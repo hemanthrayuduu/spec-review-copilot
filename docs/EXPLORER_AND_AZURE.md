@@ -24,14 +24,31 @@ From **November 6, 2026 at 9 a.m.**, Explorer only accepts SSH with keys that RC
 
 ### Steps, done once by you
 
-1. **Download your RC key pair.**
-   - Sign in at https://ood.explorer.northeastern.edu and open the **File Browser**.
-   - Go to your home folder, then `.ssh`. Turn on "show hidden files" if you don't see it.
-   - Download both files: `<user>-<timestamp>` (the private key) and `<user>-<timestamp>.pub`.
+RC generates your key pair in your Explorer home folder: `/home/<user>/.ssh/<user>-<timestamp>` is the private key, and the same name with `.pub` is the public key. Get both onto your Mac by either route below.
 
-2. **Put them in `~/.ssh` on your Mac and lock down the permissions.** Claude Code can't read your Downloads folder, so move the files yourself.
+1. **Option A, from your Mac's Terminal (recommended).** This copies the keys straight into `~/.ssh`. It works until November 6, while passwords are still accepted.
    ```bash
-   mv ~/Downloads/<key> ~/Downloads/<key>.pub ~/.ssh/
+   # Check the keys exist. Asks for your password and Duo; type "yes" if asked to trust the host key.
+   ssh <user>@login.explorer.northeastern.edu 'ls -la ~/.ssh'
+
+   # Copy both key files into ~/.ssh on your Mac
+   scp '<user>@login.explorer.northeastern.edu:~/.ssh/<user>-*' ~/.ssh/
+   ```
+
+   **Option B, through the Open OnDemand File Browser.**
+   - Sign in at https://ood.explorer.northeastern.edu and open **Files**, then **Home Directory**.
+   - `.ssh` is a hidden folder. Tick **Show Dotfiles**, then click **Refresh**. A line like "Showing 4 of 19 rows" means hidden items are still not displayed.
+   - If it still doesn't appear, click **Change directory**, type `/home/<user>/.ssh`, and press Enter.
+   - Tick both `<user>-<timestamp>` files and click **Download**.
+   - Move them from Downloads into `~/.ssh` yourself, because Claude Code can't read your Downloads folder:
+     ```bash
+     mv ~/Downloads/<key> ~/Downloads/<key>.pub ~/.ssh/
+     ```
+
+   **If there are no `<user>-*` files** in `~/.ssh` on Explorer, RC hasn't generated your keys yet. Email rchelp@northeastern.edu and ask for your Explorer SSH keys, mentioning the November 6 key requirement.
+
+2. **Lock down the permissions:**
+   ```bash
    chmod 600 ~/.ssh/<key>
    chmod 644 ~/.ssh/<key>.pub
    ```
