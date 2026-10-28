@@ -21,7 +21,8 @@ Role = Literal["dev", "test", "stretch", "context", "knowledge", "reference"]
 
 USER_AGENT = "spec-review-copilot/0.1 (public-data research prototype)"
 PDF_MAGIC = b"%PDF-"
-PDF_HEADER_WINDOW = 1024  # PDF readers accept the header anywhere in the first KB
+PDF_EOF = b"%%EOF"
+PDF_WINDOW = 1024  # PDF readers accept the header in the first KB and %%EOF in the last KB
 
 
 class Source(BaseModel):
@@ -92,10 +93,15 @@ def download_file(client: httpx.Client, source: Source, raw_root: Path, *, force
                 for chunk in response.iter_bytes():
                     f.write(chunk)
         with part.open("rb") as f:
-            head = f.read(PDF_HEADER_WINDOW)
+            head = f.read(PDF_WINDOW)
+            f.seek(max(0, part.stat().st_size - PDF_WINDOW))
+            tail = f.read()
         if PDF_MAGIC not in head:
             return DownloadResult(source_id=source.id, outcome="failed",
                                   detail=f"not a PDF (content-type {content_type})")
+        # Without a Content-Length, httpx cannot tell a body that stopped early from a complete one.
+        if PDF_EOF not in tail:
+            return DownloadResult(source_id=source.id, outcome="failed", detail="truncated PDF (no %%EOF)")
         part.replace(final)
     except httpx.HTTPError as exc:
         return DownloadResult(source_id=source.id, outcome="failed", detail=f"{type(exc).__name__}: {exc}")

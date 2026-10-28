@@ -19,7 +19,7 @@ from scripts.download_sources import (
 )
 
 REPO = Path(__file__).parents[1]
-PDF = b"%PDF-1.7\n%test\n"
+PDF = b"%PDF-1.7\n%test\n%%EOF\n"
 SRC = Source(id="mr_specs", role="dev", kind="file", url="https://example.org/specs.pdf")
 LANDING = Source(id="sandy", role="test", kind="landing_page", url="https://example.org/sandy")
 
@@ -86,6 +86,17 @@ def test_interrupted_download_leaves_no_file(tmp_path: Path) -> None:
 
     result = download_file(client_for(lambda request: httpx.Response(200, stream=Broken())), SRC, tmp_path)
     assert result.outcome == "failed"
+    assert not any(tmp_path.rglob("*.pdf*"))
+
+
+def test_truncated_pdf_without_length_is_not_saved(tmp_path: Path) -> None:
+    class CutShort(httpx.SyncByteStream):
+        # No Content-Length, so httpx cannot tell the server stopped early.
+        def __iter__(self) -> Iterator[bytes]:
+            yield b"%PDF-1.7\n1 0 obj\n<< /Type /Catalog"
+
+    result = download_file(client_for(lambda request: httpx.Response(200, stream=CutShort())), SRC, tmp_path)
+    assert result.outcome == "failed" and "truncated" in result.detail
     assert not any(tmp_path.rglob("*.pdf*"))
 
 
