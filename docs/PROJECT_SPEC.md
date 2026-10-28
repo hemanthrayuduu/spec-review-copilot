@@ -25,9 +25,9 @@ Pains, in order of business impact:
 
 In scope: ingest, segmentation, addenda merge, cross references, relevance filtering, requirement extraction with verification, permit limit extraction, triage brief, compliance matching, engineer review app, outputs, evaluation.
 
-Out of scope: equipment sizing calculations, pricing, final bid decisions, integration with real company systems, user authentication, a separate API service (the Streamlit app calls the pipeline directly), Postgres (SQLite only), and the EPA ECHO dataset. Azure AI Search and the stretch packages are optional.
+Out of scope: equipment sizing calculations, pricing, final bid decisions, integration with real company systems, user authentication, Postgres (SQLite only), and the EPA ECHO dataset. The stretch packages are optional.
 
-The prototype is an interview demo: it should show the problem is understood and solved, and that it runs on Azure. Skip anything complex that adds little to that demo.
+The prototype is an interview demo, built in one week: an end-to-end product that really solves the problem, from uploading a package to an approved compliance matrix. It runs on open-source tools. Azure providers come later, behind the same interfaces, once Azure access is available. Cut only what is complex and invisible in the demo.
 
 ## 4. Data
 
@@ -107,16 +107,18 @@ flowchart TD
 
 Layers:
 
-1. Interface: Streamlit review app and the specreview CLI, both calling the pipeline directly.
-2. Pipeline: the stages above.
-3. Services and storage: OCR provider, LLM provider, SQLite, vector index, file store.
+1. Interface: Streamlit review app and the specreview CLI.
+2. API: FastAPI service that runs packages as background jobs, with progress, and serves results to the app. A real package takes minutes on a local model, so the app must not block on it.
+3. Pipeline: the stages above.
+4. Services and storage: OCR provider, LLM provider, SQLite, vector index, file store.
 
 Providers are pluggable through config:
 
-* Local: PyMuPDF and pdfplumber, ChromaDB, mock LLM.
-* Azure: AI Document Intelligence (layout model), Azure OpenAI (chat and embeddings), and optionally Azure AI Search.
+* Mock: deterministic fixtures, for tests and CI only.
+* Local (open source, the demo default): PyMuPDF and pdfplumber, Tesseract OCR for scanned pages, an open-weight chat model and an embedding model served by Ollama, ChromaDB. The development machine is an Apple M2 with 8 GB, so the chat model must fit in roughly 3 to 8B parameters.
+* Azure (later, once access is available): AI Document Intelligence (layout model), Azure OpenAI (chat and embeddings), optionally Azure AI Search.
 
-Mock is for tests and CI only. Accuracy numbers always come from a real chat model, so the Azure OpenAI chat provider lands in Phase 1 and every dev scorecard is measured with it. Never build mock fixtures from golden labels, and never report mock-mode metrics as accuracy.
+Accuracy numbers always come from a real chat model, so the local Ollama chat provider lands in Phase 1 and every dev scorecard is measured with it. Never build mock fixtures from golden labels, and never report mock-mode metrics as accuracy.
 
 ## 6. Repo layout
 
@@ -124,8 +126,8 @@ Mock is for tests and CI only. Accuracy numbers always come from a real chat mod
 spec_review/
   config.py
   models.py
-  llm/            client.py, mock.py, azure.py
-  ingest/         pdf_local.py, azure_docintel.py, normalize.py, tables.py
+  llm/            client.py, mock.py, ollama.py, azure.py
+  ingest/         pdf_local.py, ocr_tesseract.py, azure_docintel.py, normalize.py, tables.py
   segment/        sections.py, addenda.py, xrefs.py
   filter/         product_map.yaml, relevance.py
   extract/        candidates.py, requirements.py, permits.py, verify.py, prompts/
@@ -134,6 +136,7 @@ spec_review/
   match/          rules.py, evidence.py, judge.py, gate.py, prompts/
   outputs/        matrix_xlsx.py, markup_pdf.py, letter_docx.py, questions.py, addendum_diff.py
   eval/           golden.py, metrics.py, scorecard.py
+  api/            main.py
   cli.py
 app/              streamlit_app.py
 scripts/          download_sources.py, make_lakeview.py, demo.sh
@@ -172,7 +175,7 @@ Categories: performance, effluent_limit, design_basis, material, certification, 
 
 ## 8. Pipeline details
 
-**8.1 Ingest.** Extract text with block coordinates using PyMuPDF. Extract tables with pdfplumber and convert each row into a labeled line, like "Peak flow: 4.2 MGD". If a page has very little text, mark it as scanned. In Azure mode, send scanned pages to Document Intelligence. In local mode, record them as needs_ocr.
+**8.1 Ingest.** Extract text with block coordinates using PyMuPDF. Extract tables with pdfplumber and convert each row into a labeled line, like "Peak flow: 4.2 MGD". If a page has very little text, mark it as scanned. In local mode, OCR scanned pages with Tesseract; in Azure mode, send them to Document Intelligence. A page with no text and no images is blank, not scanned. A page that still has no text after OCR is recorded as needs_ocr and counted in the coverage report.
 
 **8.2 Segment.** Detect section headers in CSI format ("SECTION 46 21 00"), legacy formats ("SECTION 11300", "Section 13226A"), and front end documents (Division 00 and 01). Build paragraph paths (1.01, A, 1, a) and track Part 1, 2, and 3.
 
@@ -256,34 +259,35 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 * The mock LLM returns deterministic fixtures.
 * CI runs tests on every push.
 
-**Phase 1: Read (week 1)**
+**Phase 1: Read (days 1 to 3)**
 
 * Lakeview: section filter recall of 100% and zero silent coverage drops.
 * Quote and number checks run on every record, with pass rates reported.
-* Azure OpenAI chat works behind spec_review/llm/client.py, and the Phase 1 dev metrics come from a real-model run.
+* The local Ollama chat provider works behind spec_review/llm/client.py, and the Phase 1 dev metrics come from a real-model run.
+* Scanned pages are OCRed with Tesseract, and blank pages are reported as blank.
 * The brief lists every planted deadline, required form, and red flag with its page.
 * Requirement recall on Lakeview is reported.
 * Mountain Regional runs end to end and produces brief.md and requirements.xlsx.
 
-**Phase 2: Judge (week 2)**
+**Phase 2: Judge (day 4)**
 
 * Every match result has a method, reason, and confidence.
 * Every comply has at least one supporting evidence id.
 * The phosphorus trap comes out as needs_engineer.
 * Status accuracy on Lakeview is reported, with every wrong item listed.
 
-**Phase 3: Review and outputs (week 3)**
+**Phase 3: Review and outputs (days 5 and 6)**
 
 * The full review flow works on Lakeview, including its addendum.
 * All five outputs generate correctly.
 * Review decisions persist across restarts.
 * The labeling helper works with no model prefill.
 
-**Phase 4: Test and polish (week 4)**
+**Phase 4: Test and polish (day 7)**
 
 * The test scorecard is saved and reported as is.
-* The remaining Azure providers (Document Intelligence and embeddings) work on at least one package. Azure AI Search is optional.
-* Docker runs the app.
+* Docker compose runs the API and the app, with Ollama, on one machine.
+* Azure providers are added behind the same interfaces only if Azure access is available; the demo does not depend on them.
 * README is complete, with honest results and limitations.
 
 ## 11. Config
@@ -291,8 +295,11 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 .env keys:
 
 ```
-PROVIDER_OCR=local            # local or azure
-PROVIDER_LLM=mock             # mock or azure
+PROVIDER_OCR=local            # local (Tesseract) or azure
+PROVIDER_LLM=mock             # mock, ollama, or azure
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_CHAT_MODEL=
+OLLAMA_EMBED_MODEL=
 AZURE_DOCINTEL_ENDPOINT=
 AZURE_DOCINTEL_KEY=
 AZURE_OPENAI_ENDPOINT=

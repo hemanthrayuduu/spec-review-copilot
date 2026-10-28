@@ -1,4 +1,4 @@
-"""Azure OpenAI chat provider. A stub until Phase 1 (spec section 10)."""
+"""Azure OpenAI chat provider. A stub until Azure access is available (spec sections 5 and 10)."""
 
 from typing import Any
 
@@ -13,4 +13,4 @@ class AzureOpenAIProvider:
         self.settings = settings
 
     def complete(self, prompt_id: str, prompt: str, json_schema: dict[str, Any]) -> ProviderResponse:
-        raise NotImplementedError("Azure OpenAI chat lands in Phase 1 (spec section 10).")
+        raise NotImplementedError("Azure OpenAI is added once Azure access is available; use PROVIDER_LLM=mock for now.")

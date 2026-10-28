@@ -8,7 +8,7 @@
 4. Run /clear before the next phase so each phase starts with a clean context.
 5. Run /eval after any change to the pipeline.
 
-Your own job alongside Claude Code: build data/knowledge/capabilities.csv from the public product literature, and hand label Manor, Sandy, and Avila Beach in data/golden/test/ during weeks 2 and 3, following the labeling protocol in spec section 9. Until the Phase 3 labeling helper exists, write the JSON by hand.
+Your own job alongside Claude Code: build data/knowledge/capabilities.csv from the public product literature, and hand label Manor, Sandy, and Avila Beach in data/golden/test/ during days 1 to 6, following the labeling protocol in spec section 9. Until the Phase 3 labeling helper exists, write the JSON by hand.
 
 ## Phase 0: Setup (1 to 2 days)
 
@@ -24,7 +24,7 @@ Read CLAUDE.md and docs/PROJECT_SPEC.md fully. Then, in plan mode, propose:
 Do not write code until I approve the plan. When done, run uv run pytest and report against the Phase 0 acceptance criteria in spec section 10.
 ```
 
-## Phase 1: Read (week 1)
+## Phase 1: Read (days 1 to 3)
 
 ```
 Build the reading pipeline from spec sections 8.1 to 8.10, in this order: ingest, segment, addenda, cross references, relevance filter, candidates, extraction, verification, permit extractor, brief.
@@ -37,12 +37,12 @@ Requirements:
 3. Unit tests for the section splitter (CSI and legacy numbering), addenda application, cross reference linking, and each verification check. Use small fixtures plus a few UFGS Division 46 sections.
 4. specreview run <package_dir> runs every stage and writes brief.md and requirements.xlsx.
 5. specreview eval dev computes the spec section 9 metrics for Lakeview.
-6. Implement the Azure OpenAI chat provider in spec_review/llm/azure.py behind the existing client. Report dev metrics from a real-model run, never from mock mode.
+6. Implement the local Ollama chat provider in spec_review/llm/ollama.py behind the existing client, and Tesseract OCR for scanned pages. Pick an open-weight model that fits an 8 GB M2 by a quick benchmark on Lakeview. Report dev metrics from a real-model run, never from mock mode.
 
 Plan first. Stop when the Phase 1 acceptance criteria pass. Report the dev scorecard, the coverage check results, and the three weakest areas you see.
 ```
 
-## Phase 2: Judge (week 2)
+## Phase 2: Judge (day 4)
 
 ```
 Build matching from spec sections 8.11 to 8.14.
@@ -50,7 +50,7 @@ Build matching from spec sections 8.11 to 8.14.
 1. I will provide data/knowledge/capabilities.csv built from public product literature. Until then, create a small example with the same columns, clearly labeled fictional.
 2. Create data/knowledge/past_exceptions.csv with 20 past exceptions and clarifications, clearly labeled fictional.
 3. Rule checks first, with pint for units. Skip the LLM only when a rule is decisive against a guaranteed capability, and record method = rule.
-4. Hybrid evidence search (rank_bm25 plus ChromaDB) over capabilities, product docs, and past exceptions.
+4. Hybrid evidence search (rank_bm25 plus ChromaDB, with a local Ollama embedding model) over capabilities, product docs, and past exceptions. Tests use a fake embedder, never a model download.
 5. Use Appendix B as spec_review/match/prompts/judge_v1.md. Enforce in code that comply without a supporting evidence id becomes needs_engineer.
 6. Confidence gate driven by config.
 7. Extend specreview eval dev with status accuracy on Lakeview, and confirm the phosphorus trap comes out as needs_engineer.
@@ -58,7 +58,7 @@ Build matching from spec sections 8.11 to 8.14.
 Plan first. Report the dev scorecard and every Lakeview item with a wrong status, with the run files that explain why.
 ```
 
-## Phase 3: Review and outputs (week 3)
+## Phase 3: Review and outputs (days 5 and 6)
 
 ```
 Build spec sections 8.15 and 8.16.
@@ -66,20 +66,21 @@ Build spec sections 8.15 and 8.16.
 1. Streamlit app with pages: Brief, Checklist (filters by status, category, section), Source viewer (rendered page with the requirement highlighted), Addenda changes.
 2. Approve or edit each status. Save ReviewDecision records to SQLite. Accepted deviations append to data/knowledge/review_exceptions.csv, never to past_exceptions.csv.
 3. Outputs: Excel compliance matrix, marked up PDF with C, D, or R margin notes, exceptions and clarifications letter (Word), clarification questions list, addendum diff report.
-4. A labeling helper page where I create golden labels by hand: show a page, let me add requirement rows. It must never prefill labels from the model.
+4. FastAPI service in spec_review/api/main.py that runs an uploaded package as a background job, reports progress, and serves results to the app.
+5. A labeling helper page where I create golden labels by hand: show a page, let me add requirement rows. It must never prefill labels from the model.
 
 Plan first. Demo the full flow on Lakeview, including its addendum, and tell me anything that felt slow or confusing.
 ```
 
-## Phase 4: Test and polish (week 4)
+## Phase 4: Test and polish (day 7)
 
 ```
 I have hand labeled Manor, Sandy, and Avila Beach in data/golden/test/.
 
 1. Freeze prompts, rules, and thresholds. Run specreview eval test once, with the same provider, model, and prompts as the final dev scorecard, and save the scorecard. Do not change anything based on the test results in this phase. List suggested fixes instead.
-2. Implement the remaining Azure providers (Document Intelligence layout model, Azure OpenAI embeddings) behind the existing interfaces, switched by .env. Add Azure AI Search only if time allows.
-3. Dockerfile for the Streamlit app.
-4. README: the problem, architecture (mermaid), how to run locally and on Azure, dev and test scorecards with honest commentary, limitations, and what production would need.
+2. Only if Azure access is available: implement the Azure providers (Document Intelligence layout model, Azure OpenAI chat and embeddings) behind the existing interfaces, switched by .env. Otherwise skip this item.
+3. Dockerfile and docker compose for the API, the app, and Ollama.
+4. README: the problem, architecture (mermaid), how to run locally (and on Azure, if implemented), dev and test scorecards with honest commentary, limitations, and what production would need.
 5. scripts/demo.sh that runs Lakeview end to end in mock mode.
 
 Report the final test scorecard exactly as it came out.
