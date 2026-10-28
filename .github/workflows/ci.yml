@@ -1,0 +1,19 @@
+name: tests
+on:
+  push:
+  pull_request:
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    env:
+      PROVIDER_LLM: mock
+      PROVIDER_OCR: local
+    steps:
+      - uses: actions/checkout@v7
+      # setup-uv publishes exact version tags only (no floating major tag).
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          python-version: "3.11"
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run pytest
