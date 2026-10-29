@@ -1290,8 +1290,20 @@ ADDENDUM: list[str | P] = [
     "Question: Will the Owner accept a pilot unit that uses one full scale membrane module instead of a full "
     "cassette?",
     "Answer: Yes, provided the module is the same model proposed for the full scale system.",
+    "ATTACHMENT A - PRE-PROPOSAL MEETING SIGN-IN SHEET, OCTOBER 20, 2026",
+    "The following firms attended the pre-proposal meeting at the plant. Attendance was not mandatory.",
     "END OF ADDENDUM NO. 1",
 ]
+_FIRMS = ("Northfield Pump", "Cedar Ridge Process", "Granite State Controls", "Bayline Mechanical", "Kestrel Water",
+          "Ashford Environmental", "Millbrook Equipment", "Stonegate Contractors", "Harbor Valve", "Lakeshore Electric",
+          "Summit Filtration", "Ridgeway Builders", "Copperfield Instruments", "Oakmont Fabricators",
+          "Pinecrest Engineering")
+_ROLES = ("Equipment representative", "Applications engineer", "Estimator", "Project manager", "Sales engineer")
+ADDENDUM_ATTENDEES = Table(
+    ("Firm", "Attendee role", "Contact"),
+    tuple((f"{firm} {kind}", _ROLES[(i + j) % len(_ROLES)], f"bids{i}{j}@{firm.split()[0].lower()}.example.com")
+          for i, firm in enumerate(_FIRMS) for j, kind in enumerate(("Inc.", "LLC", "Co."))),
+)
 ADDENDUM_DEADLINE = "Proposal due date revised to December 15, 2026 at 2:00 PM"
 ADDENDUM_LABELS = {
     8: ("46 61 00", "2.04.B", TRAP7_NEW,

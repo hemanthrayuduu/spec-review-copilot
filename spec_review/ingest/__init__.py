@@ -7,9 +7,10 @@ from pathlib import Path
 
 import pymupdf
 
+from spec_review.ingest.normalize import build_blocks
 from spec_review.ingest.pdf_local import RawLine, UnreadablePdf, read_pdf
 from spec_review.ingest.tables import TableExtraction, extract_tables, has_ruled_lines
-from spec_review.models import BBox, Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
+from spec_review.models import Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
 
 INGEST_VERSION = "1a-2"  # bump when ingest output changes, so cached results are not reused
 
@@ -38,17 +39,11 @@ def ingest_package(package_dir: Path, *, tessdata: Path | None,
             result.skipped.append(SkippedFile(path=rel.as_posix(), reason=str(e)))
             continue
         result.documents.append(DocumentInfo(doc_id=doc_id, path=rel.as_posix(), page_count=len(doc.pages)))
-        result.pages.extend(doc.pages)
-        lines = [x for x in doc.lines if not _in_table(x.bbox, doc.tables.regions.get(x.page, []))]
-        blocks = [Block(doc_id=x.doc_id, page=x.page, bbox=x.bbox, text=x.text, kind="paragraph", origin=x.origin)
-                  for x in lines]
-        result.blocks.extend(_merge_rows(blocks, doc.tables.rows))
+        norm = build_blocks(doc.lines, doc.sizes, doc.tables.regions)
+        result.pages.extend(p.model_copy(update={"label": norm.labels.get(p.page)}) for p in doc.pages)
+        result.removed_lines += norm.removed_lines
+        result.blocks.extend(_merge_rows(norm.blocks, doc.tables.rows))
     return result
-
-
-def _in_table(bbox: BBox, regions: list[BBox]) -> bool:
-    cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
-    return any(r[0] <= cx <= r[2] and r[1] <= cy <= r[3] for r in regions)
 
 
 def _merge_rows(blocks: list[Block], rows: list[Block]) -> list[Block]:

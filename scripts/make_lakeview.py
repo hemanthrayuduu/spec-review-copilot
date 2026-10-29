@@ -210,6 +210,8 @@ def addendum_html() -> str:
             out.append(f'<p class="head">{esc(item)}</p>')
         else:
             out.append(f"<p>{esc(item)}</p>")
+            if item.startswith("The following firms attended"):
+                out.append(table_html(src.ADDENDUM_ATTENDEES))
     return "".join(out)
 
 
