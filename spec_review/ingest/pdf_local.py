@@ -1,5 +1,6 @@
 """Read PDF pages with PyMuPDF: text lines, blank and scanned pages, and Tesseract OCR (spec 8.1)."""
 
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,9 +11,12 @@ import pymupdf
 from spec_review.models import BBox, BlockOrigin, PageInfo, PageStatus
 
 MIN_TEXT_CHARS = 50  # fewer characters than this on a page with images means "scanned"
+SCAN_COVERAGE = 0.8  # an image covering this share of the page is a scan, even with a typed stamp on it
+STAMP_CHARS = 300  # most text a stamped scan carries (headers, received stamps)
 OCR_DPI = 300
 # Expand ligatures ("ﬂ" → "fl") so text matches what people type and what the quote check compares.
 TEXT_FLAGS = pymupdf.TEXTFLAGS_DICT & ~pymupdf.TEXT_PRESERVE_LIGATURES & ~pymupdf.TEXT_PRESERVE_IMAGES
+logger = logging.getLogger("spec_review.ingest")
 TESSDATA_PATHS = (
     "/opt/homebrew/share/tessdata",
     "/opt/homebrew/opt/tesseract/share/tessdata",
@@ -60,6 +64,12 @@ def _lines(text_dict: dict[str, Any], doc_id: str, page: int, origin: BlockOrigi
     return out
 
 
+def _image_coverage(page: pymupdf.Page) -> float:
+    area = page.rect.width * page.rect.height
+    covered = sum(abs(pymupdf.Rect(i["bbox"]) & page.rect) for i in page.get_image_info())
+    return min(1.0, covered / area) if area else 0.0
+
+
 def _open(path: Path) -> pymupdf.Document:
     try:
         doc = pymupdf.open(path, filetype="pdf")
@@ -90,12 +100,17 @@ def read_pdf(path: Path, doc_id: str, *, tessdata: Path | None
             status: PageStatus = "text"
             if chars == 0 and not has_images:
                 status = "blank"
-            elif chars < MIN_TEXT_CHARS and has_images:
-                status = "needs_ocr"
+            elif has_images and (chars < MIN_TEXT_CHARS
+                                 or (chars < STAMP_CHARS and _image_coverage(pg) >= SCAN_COVERAGE)):
+                status = "needs_ocr"  # typed text on the page (a stamp) is kept until OCR does better
                 if tessdata is not None:
-                    tp = pg.get_textpage_ocr(tessdata=str(tessdata), dpi=OCR_DPI, full=True)
-                    ocr = _lines(pg.get_text("dict", textpage=tp, flags=TEXT_FLAGS), doc_id, n, "ocr")
-                    if ocr:
+                    try:
+                        tp = pg.get_textpage_ocr(tessdata=str(tessdata), dpi=OCR_DPI, full=True)
+                        ocr = _lines(pg.get_text("dict", textpage=tp, flags=TEXT_FLAGS), doc_id, n, "ocr")
+                    except Exception as e:  # a failed OCR leaves the page needs_ocr, counted in coverage
+                        logger.warning("OCR failed on %s page %d: %s", doc_id, n, e)
+                        ocr = []
+                    if sum(len(x.text) for x in ocr) > chars:
                         found, status = ocr, "ocr"
                         chars = sum(len(x.text) for x in ocr)
             pages.append(PageInfo(doc_id=doc_id, page=n, status=status, char_count=chars))

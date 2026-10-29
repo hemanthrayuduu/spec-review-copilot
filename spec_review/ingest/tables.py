@@ -97,6 +97,16 @@ def _missing_edges(page: pdfplumber.page.Page) -> list[float]:
     return out
 
 
+def _is_header(rows: list[list[str | None]]) -> bool:
+    """Row 0 is a header only when another row follows and it reads like labels: every cell filled, no digits.
+
+    A key/value table such as "Peak hour flow | 4.2 MGD" has no header row, and the only row of a
+    one-row table is always data.
+    """
+    first = [(c or "").strip() for c in rows[0]]
+    return len(rows) >= 2 and all(first) and not any(ch.isdigit() for c in first for ch in c)
+
+
 def extract_tables(path: Path, doc_id: str, pages: set[int]) -> TableExtraction:
     """Rows of every ruled table on the given pages (1-based)."""
     out = TableExtraction()
@@ -118,9 +128,12 @@ def extract_tables(path: Path, doc_id: str, pages: set[int]) -> TableExtraction:
                     headers = prev
                     if [" ".join((c or "").split()) for c in rows[0]] == prev:
                         body = body[1:]  # the header row was repeated on this page
-                elif all((c or "").strip() for c in rows[0]):
+                elif _is_header(rows):
                     headers = [" ".join((c or "").split()) for c in rows[0]]
                     body = body[1:]
+                    # The header row's words stay in the text as a block of their own.
+                    out.rows.append(Block(doc_id=doc_id, page=n, bbox=tuple(round(v, 2) for v in table.rows[0].bbox),  # type: ignore[arg-type]
+                                          text=" | ".join(headers), kind="heading", origin="table"))
                 for row, cells in body:
                     text = row_to_line(headers, cells)
                     if text:

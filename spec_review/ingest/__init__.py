@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -10,9 +12,12 @@ import pymupdf
 from spec_review.ingest.normalize import build_blocks
 from spec_review.ingest.pdf_local import RawLine, UnreadablePdf, read_pdf
 from spec_review.ingest.tables import TableExtraction, extract_tables, has_ruled_lines
-from spec_review.models import Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
+from spec_review.models import BBox, Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
 
-INGEST_VERSION = "1a-2"  # bump when ingest output changes, so cached results are not reused
+INGEST_VERSION = "1a-3"  # bump when ingest output changes, so cached results are not reused
+TABLE_TEXT_COVERAGE = 0.95  # table rows must carry this share of the words found inside the table's area
+
+logger = logging.getLogger("spec_review.ingest")
 
 
 @dataclass
@@ -38,12 +43,42 @@ def ingest_package(package_dir: Path, *, tessdata: Path | None,
         except UnreadablePdf as e:
             result.skipped.append(SkippedFile(path=rel.as_posix(), reason=str(e)))
             continue
+        except Exception as e:  # one damaged file never stops the package
+            result.skipped.append(SkippedFile(path=rel.as_posix(), reason=f"read failed: {type(e).__name__}: {e}"))
+            continue
         result.documents.append(DocumentInfo(doc_id=doc_id, path=rel.as_posix(), page_count=len(doc.pages)))
-        norm = build_blocks(doc.lines, doc.sizes, doc.tables.regions)
+        norm = build_blocks(doc.lines, doc.sizes, _covered_regions(doc))
         result.pages.extend(p.model_copy(update={"label": norm.labels.get(p.page)}) for p in doc.pages)
         result.removed_lines += norm.removed_lines
         result.blocks.extend(_merge_rows(norm.blocks, doc.tables.rows))
     return result
+
+
+def _words(text: str) -> set[str]:
+    return set(re.findall(r"\w+", text.lower()))
+
+
+def _covered_regions(doc: _Document) -> dict[int, list[BBox]]:
+    """Table regions whose rows carry the words of the text lines inside them.
+
+    Lines inside a table's area are replaced by its rows. When the rows miss words (text pdfplumber
+    did not place in a cell), the region is not used, so the lines stay as ordinary blocks.
+    """
+    out: dict[int, list[BBox]] = {}
+    for page, regions in doc.tables.regions.items():
+        for r in regions:
+            def inside(b: BBox) -> bool:
+                cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
+                return r[0] <= cx <= r[2] and r[1] <= cy <= r[3]
+
+            want = set().union(*(_words(x.text) for x in doc.lines if x.page == page and inside(x.bbox)))
+            have = set().union(*(_words(b.text) for b in doc.tables.rows if b.page == page and inside(b.bbox)))
+            if not want or len(want & have) >= TABLE_TEXT_COVERAGE * len(want):
+                out.setdefault(page, []).append(r)
+            else:
+                logger.info("table on %s page %d keeps its text lines: rows miss %d words", doc.pages[0].doc_id,
+                               page, len(want - have))
+    return out
 
 
 def _merge_rows(blocks: list[Block], rows: list[Block]) -> list[Block]:
@@ -57,9 +92,14 @@ def _merge_rows(blocks: list[Block], rows: list[Block]) -> list[Block]:
 
 def _read(path: Path, doc_id: str, tessdata: Path | None) -> _Document:
     pages, lines, sizes = read_pdf(path, doc_id, tessdata=tessdata)
-    with pymupdf.open(path) as pdf:
-        ruled = {p.page for p in pages if p.status == "text" and has_ruled_lines(pdf[p.page - 1])}
-    return _Document(pages, lines, sizes, extract_tables(path, doc_id, ruled) if ruled else TableExtraction())
+    try:
+        with pymupdf.open(path) as pdf:
+            ruled = {p.page for p in pages if p.status == "text" and has_ruled_lines(pdf[p.page - 1])}
+        tables = extract_tables(path, doc_id, ruled) if ruled else TableExtraction()
+    except Exception as e:  # e.g. a truncated file MuPDF repairs but pdfminer can't parse: keep the text
+        logger.warning("table extraction failed for %s, text kept as lines: %s", doc_id, e)
+        tables = TableExtraction()
+    return _Document(pages, lines, sizes, tables)
 
 
 def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path | None) -> _Document:

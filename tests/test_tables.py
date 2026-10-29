@@ -48,3 +48,39 @@ def test_lakeview_trap3_row_is_extracted(lakeview_pdfs: Path) -> None:
     res = ingest_package(lakeview_pdfs, tessdata=None, cache_dir=None)
     assert any(b.kind == "table_row" and "Maximum transmembrane pressure" in b.text and "12 psi" in b.text
                for b in res.blocks)
+
+
+def test_headerless_key_value_table_keeps_every_row(tmp_path: Path) -> None:  # final review C1
+    html = ("<p>A. Design data:</p><table><tr><td>Peak hour flow</td><td>4.2 MGD</td></tr>"
+            "<tr><td>Average flow</td><td>2.0 MGD</td></tr><tr><td>Minimum flow</td><td>0.8 MGD</td></tr></table>")
+    make_pdf(tmp_path / "pkg/specs.pdf", [html])
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    rows = [b.text for b in res.blocks if b.kind == "table_row"]
+    assert rows == ["Peak hour flow | 4.2 MGD", "Average flow | 2.0 MGD", "Minimum flow | 0.8 MGD"]
+
+
+def test_one_row_table_is_not_consumed_as_a_header(tmp_path: Path) -> None:  # final review C1
+    html = (TABLE_HTML + "<table><tr><td>NOTE: The Supplier shall guarantee effluent TP below 0.1 mg/L.</td>"
+            "<td>Mandatory</td></tr></table>")
+    make_pdf(tmp_path / "pkg/specs.pdf", [html])
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    assert any("shall guarantee effluent TP below 0.1 mg/L" in b.text for b in res.blocks)
+
+
+def test_header_row_text_is_kept_as_a_block(tmp_path: Path) -> None:  # final review C1
+    make_pdf(tmp_path / "pkg/specs.pdf", [TABLE_HTML])
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    assert any(b.text == "Parameter | Value" and b.origin == "table" and b.kind == "heading" for b in res.blocks)
+
+
+def test_truncated_pdf_does_not_crash_the_run(tmp_path: Path) -> None:  # final review I1
+    src = make_pdf(tmp_path / "src/specs.pdf", [LONG_TABLE_HTML])
+    data = src.read_bytes()
+    for frac in (0.95, 0.9):
+        pkg = tmp_path / f"pkg{frac}"
+        pkg.mkdir()
+        (pkg / "specs.pdf").write_bytes(data[: int(len(data) * frac)])
+        (pkg / "ok.pdf").write_bytes(data)
+        res = ingest_package(pkg, tessdata=None, cache_dir=None)
+        assert "ok" in {d.doc_id for d in res.documents}
+        assert "specs" in {d.doc_id for d in res.documents} | {s.path.removesuffix(".pdf") for s in res.skipped}

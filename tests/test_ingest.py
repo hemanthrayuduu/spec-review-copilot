@@ -83,3 +83,29 @@ def test_cache_round_trip(tmp_path: Path) -> None:
     second = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=cache)
     assert [b.text for b in second.blocks] == [b.text.replace("Text.", "Cached.") for b in first.blocks]
     assert second.pages == first.pages
+
+
+def _stamped_scan(path: Path, text: str) -> Path:
+    import pymupdf
+
+    make_scanned_pdf(path, text)
+    doc = pymupdf.open(path)
+    doc[0].insert_text((72, 30), "Lakeview WWTP - Addendum No. 1 - Received November 2, 2026", fontsize=8)
+    out = path.with_name("stamped.pdf")
+    doc.save(out)
+    doc.close()
+    path.unlink()
+    return out
+
+
+@pytest.mark.skipif(find_tessdata(None) is None, reason="tesseract not installed")
+def test_scanned_page_with_a_typed_stamp_is_ocred(tmp_path: Path) -> None:  # final review I7
+    _stamped_scan(tmp_path / "pkg/permit.pdf", "Total Phosphorus 0.1 mg/L monthly average")
+    res = ingest_package(tmp_path / "pkg", tessdata=find_tessdata(None), cache_dir=None)
+    assert res.pages[0].status == "ocr" and any("0.1 mg/L" in b.text for b in res.blocks)
+
+
+def test_scanned_page_with_a_typed_stamp_without_tesseract_is_needs_ocr(tmp_path: Path) -> None:  # final review I7
+    _stamped_scan(tmp_path / "pkg/permit.pdf", "Total Phosphorus 0.1 mg/L monthly average")
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    assert res.pages[0].status == "needs_ocr"
