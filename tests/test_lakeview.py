@@ -1,16 +1,9 @@
 from pathlib import Path
 
 import pymupdf
-import pytest
 
 from scripts.make_lakeview import build_lakeview, dehyphenate_text, normalize_ws
 from spec_review.eval.golden import GoldenPackage
-
-
-@pytest.fixture(scope="module")
-def lakeview(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, GoldenPackage]:
-    out = tmp_path_factory.mktemp("lakeview")
-    return out, build_lakeview(out)
 
 
 def test_package_is_at_least_150_pages(lakeview: tuple[Path, GoldenPackage]) -> None:

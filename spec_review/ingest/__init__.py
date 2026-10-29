@@ -2,12 +2,24 @@
 
 import hashlib
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
-from spec_review.ingest.pdf_local import RawLine, UnreadablePdf, read_pdf
-from spec_review.models import Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
+import pymupdf
 
-INGEST_VERSION = "1a-1"  # bump when ingest output changes, so cached results are not reused
+from spec_review.ingest.pdf_local import RawLine, UnreadablePdf, read_pdf
+from spec_review.ingest.tables import TableExtraction, extract_tables, has_ruled_lines
+from spec_review.models import BBox, Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
+
+INGEST_VERSION = "1a-2"  # bump when ingest output changes, so cached results are not reused
+
+
+@dataclass
+class _Document:
+    pages: list[PageInfo]
+    lines: list[RawLine]
+    sizes: dict[int, tuple[float, float]]
+    tables: TableExtraction
 
 
 def ingest_package(package_dir: Path, *, tessdata: Path | None,
@@ -21,21 +33,43 @@ def ingest_package(package_dir: Path, *, tessdata: Path | None,
             continue
         doc_id = rel.with_suffix("").as_posix()
         try:
-            pages, lines, _ = _read_cached(path, doc_id, tessdata, cache_dir)
+            doc = _read_cached(path, doc_id, tessdata, cache_dir)
         except UnreadablePdf as e:
             result.skipped.append(SkippedFile(path=rel.as_posix(), reason=str(e)))
             continue
-        result.documents.append(DocumentInfo(doc_id=doc_id, path=rel.as_posix(), page_count=len(pages)))
-        result.pages.extend(pages)
-        result.blocks.extend(Block(doc_id=x.doc_id, page=x.page, bbox=x.bbox, text=x.text, kind="paragraph",
-                                   origin=x.origin) for x in lines)
+        result.documents.append(DocumentInfo(doc_id=doc_id, path=rel.as_posix(), page_count=len(doc.pages)))
+        result.pages.extend(doc.pages)
+        lines = [x for x in doc.lines if not _in_table(x.bbox, doc.tables.regions.get(x.page, []))]
+        blocks = [Block(doc_id=x.doc_id, page=x.page, bbox=x.bbox, text=x.text, kind="paragraph", origin=x.origin)
+                  for x in lines]
+        result.blocks.extend(_merge_rows(blocks, doc.tables.rows))
     return result
 
 
-def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path | None
-                 ) -> tuple[list[PageInfo], list[RawLine], dict[int, tuple[float, float]]]:
+def _in_table(bbox: BBox, regions: list[BBox]) -> bool:
+    cx, cy = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+    return any(r[0] <= cx <= r[2] and r[1] <= cy <= r[3] for r in regions)
+
+
+def _merge_rows(blocks: list[Block], rows: list[Block]) -> list[Block]:
+    """Insert each table row before the first block on its page that starts below it; keep other order."""
+    out = list(blocks)
+    for row in rows:
+        at = next((i for i, b in enumerate(out) if (b.page, b.bbox[1]) > (row.page, row.bbox[1])), len(out))
+        out.insert(at, row)
+    return out
+
+
+def _read(path: Path, doc_id: str, tessdata: Path | None) -> _Document:
+    pages, lines, sizes = read_pdf(path, doc_id, tessdata=tessdata)
+    with pymupdf.open(path) as pdf:
+        ruled = {p.page for p in pages if p.status == "text" and has_ruled_lines(pdf[p.page - 1])}
+    return _Document(pages, lines, sizes, extract_tables(path, doc_id, ruled) if ruled else TableExtraction())
+
+
+def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path | None) -> _Document:
     if cache_dir is None:
-        return read_pdf(path, doc_id, tessdata=tessdata)
+        return _read(path, doc_id, tessdata)
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     # OCR availability changes the result (ocr vs needs_ocr), so it is part of the key.
     cache = cache_dir / f"{digest}-{INGEST_VERSION}-{'ocr' if tessdata else 'noocr'}.json"
@@ -43,14 +77,19 @@ def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path
         data = json.loads(cache.read_text())
         pages = [PageInfo.model_validate({**p, "doc_id": doc_id}) for p in data["pages"]]
         lines = [RawLine(doc_id, x[0], tuple(x[1]), x[2], x[3], x[4], x[5]) for x in data["lines"]]  # type: ignore[arg-type]
-        return pages, lines, {int(k): tuple(v) for k, v in data["sizes"].items()}  # type: ignore[misc]
-    pages, lines, sizes = read_pdf(path, doc_id, tessdata=tessdata)
+        rows = [Block.model_validate({**r, "doc_id": doc_id}) for r in data["rows"]]
+        regions = {int(k): [tuple(r) for r in v] for k, v in data["regions"].items()}
+        return _Document(pages, lines, {int(k): tuple(v) for k, v in data["sizes"].items()},  # type: ignore[misc]
+                         TableExtraction(rows, regions))  # type: ignore[arg-type]
+    doc = _read(path, doc_id, tessdata)
     cache_dir.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_suffix(".tmp")
     tmp.write_text(json.dumps({
-        "pages": [p.model_dump(exclude={"doc_id"}) for p in pages],
-        "lines": [[x.page, list(x.bbox), x.text, x.size, x.bold, x.origin] for x in lines],
-        "sizes": sizes,
+        "pages": [p.model_dump(exclude={"doc_id"}) for p in doc.pages],
+        "lines": [[x.page, list(x.bbox), x.text, x.size, x.bold, x.origin] for x in doc.lines],
+        "sizes": doc.sizes,
+        "rows": [r.model_dump(exclude={"doc_id"}) for r in doc.tables.rows],
+        "regions": doc.tables.regions,
     }))
     tmp.replace(cache)
-    return pages, lines, sizes
+    return doc
