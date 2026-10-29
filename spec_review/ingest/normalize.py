@@ -20,6 +20,7 @@ ARTICLE_HEADING_RE = re.compile(r"^\d\.\d{2}\s+[A-Z][A-Z0-9 ,&'/()\-]*$")  # 2.0
 START_WORD_RE = re.compile(r"^(?:SECTION|DOCUMENT|PART|END OF SECTION)\b")
 MID_SENTENCE_RE = re.compile(r"[a-z,(]$")
 HYPHEN_END_RE = re.compile(r"[A-Za-z]-$")
+SPLIT_NUMBER_RE = re.compile(r"\b\d{2}[ _]\d{2}$")  # "Section 01 33" at a line end; "00." starts the next line
 
 
 @dataclass
@@ -81,7 +82,8 @@ def _join_markers(lines: list[RawLine]) -> list[RawLine]:
     i = 0
     while i < len(lines):
         ln = lines[i]
-        if MARKER_ONLY_RE.match(ln.text) and i + 1 < len(lines):
+        split_number = bool(out) and SPLIT_NUMBER_RE.search(out[-1].text) and re.match(r"\d{2}\.$", ln.text)
+        if MARKER_ONLY_RE.match(ln.text) and i + 1 < len(lines) and not split_number:
             nxt = lines[i + 1]
             ln = RawLine(ln.doc_id, ln.page, _union(ln.bbox, nxt.bbox), f"{ln.text} {nxt.text}",
                          max(ln.size, nxt.size), nxt.bold, nxt.origin)
@@ -96,6 +98,8 @@ def _starts_block(prev: RawLine, ln: RawLine, median_size: float, line_gap: floa
         return False
     if START_WORD_RE.match(ln.text):
         return True
+    if SPLIT_NUMBER_RE.search(prev.text) and re.match(r"\d{2}\b", ln.text):
+        return False
     if MARKER_RE.match(ln.text):
         # "0.1 mg/L" wrapped to the start of a line looks like a dotted marker; mid-sentence it is text.
         wrapped = (LEVEL1_RE.match(ln.text) and not ARTICLE_HEADING_RE.match(ln.text)

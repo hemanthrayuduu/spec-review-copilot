@@ -142,3 +142,10 @@ def test_lakeview_specs_has_no_running_lines_left(lakeview_pdfs: Path) -> None:
     assert {p.label for p in res.pages if p.doc_id == "specs" and p.label} >= {"46 61 00 - 1"}
     assert any(b.text.startswith("A. The membrane system shall produce effluent total phosphorus not exceeding 0.1")
                for b in res.blocks)
+
+
+def test_section_number_wrapped_across_lines_stays_together() -> None:
+    doc = build_blocks(page_lines(1, body=["D. Submit placement records in accordance with Section 01 33", "00.",
+                                           "E. Next paragraph."]), SIZES, {})
+    assert [b.text for b in doc.blocks] == ["D. Submit placement records in accordance with Section 01 33 00.",
+                                            "E. Next paragraph."]
