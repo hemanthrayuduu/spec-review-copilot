@@ -1,0 +1,254 @@
+SECTION 46 61 00
+FILTRATION EQUIPMENT
+PART 1 GENERAL
+1.1 REFERENCES
+The publications listed below form a part of this specification to the extent referenced. The publications are referred to within the text by the basic designation only.
+AMERICAN LADDER INSTITUTE (ALI)
+ALI A14.3 (2008; R 2018) Ladders - Fixed - Safety Requirements
+AMERICAN SOCIETY OF MECHANICAL ENGINEERS (ASME)
+ASME B16.1 (2020) Gray Iron Pipe Flanges and Flanged Fittings Classes 25, 125, and 250
+ASME B16.3 (2021) Malleable Iron Threaded Fittings, Classes 150 and 300
+ASME B16.5 (2025) Pipe Flanges and Flanged Fittings NPS 1/2 Through NPS 24 Metric/Inch Standard
+ASME B40.100 (2022) Pressure Gauges and Gauge Attachments
+ASME BPVC SEC VIII D1 (2023) BPVC Section VIII-Rules for Construction of Pressure Vessels Division 1
+AMERICAN SOCIETY OF SAFETY PROFESSIONALS (ASSP)
+ASSP A1264.1 (2017) Safety Requirements for Workplace Walking/Working Surfaces and Their Access; Workplace, Floor, Wall and Roof Openings; Stairs and Guardrail/Handrail Systems
+AMERICAN WATER WORKS ASSOCIATION (AWWA)
+AWWA B100 (2025) Granular Filter Material
+AWWA C110/A21.10 (2021) Ductile-Iron and Gray-Iron Fittings
+AWWA C111/A21.11 (2023) Rubber-Gasket Joints for Ductile-Iron Pressure Pipe and Fittings
+AWWA C115/A21.15 (2025) Flanged Ductile-Iron Pipe With Ductile-Iron or Gray-Iron Threaded Flanges
+AWWA C151/A21.51 (2023) Ductile-Iron Pipe, Centrifugally Cast
+AWWA D100 (2021) Welded Steel Tanks for Water Storage
+AMERICAN WELDING SOCIETY (AWS)
+AWS D1.1/D1.1M (2025) Structural Welding Code - Steel
+ASSOCIATION FOR MATERIALS PROTECTION AND PERFORMANCE (AMPP)
+SSPC SP 6/NACE No.3 (2007) Commercial Blast Cleaning
+ASTM INTERNATIONAL (ASTM)
+ASTM A36/A36M (2019) Standard Specification for Carbon Structural Steel
+ASTM A53/A53M (2024) Standard Specification for Pipe, Steel, Black and Hot-Dipped, Zinc-Coated, Welded and Seamless
+ASTM A126 (2004; R 2023) Standard Specification for Gray Iron Castings for Valves, Flanges, and Pipe Fittings
+ASTM A153/A153M (2023) Standard Specification for Zinc Coating (Hot-Dip) on Iron and Steel Hardware
+ASTM A167 (2011) Standard Specification for Stainless and Heat-Resisting Chromium-Nickel Steel Plate, Sheet, and Strip
+ASTM A193/A193M (2026) Standard Specification for Alloy-Steel and Stainless Steel Bolting for High Temperature or High Pressure Service and Other Special Purpose Applications
+ASTM A194/A194M (2026) Standard Specification for Carbon Steel, Alloy Steel, and Stainless Steel Nuts for Bolts for High-Pressure or High-Temperature Service, or Both
+ASTM A216/A216M (2021) Standard Specification for Steel Castings, Carbon, Suitable for Fusion Welding, for High-Temperature Service
+ASTM A276/A276M (2025) Standard Specification for Stainless Steel Bars and Shapes
+ASTM A283/A283M (2024) Standard Specification for Low and Intermediate Tensile Strength Carbon Steel Plates
+ASTM A307 (2023) Standard Specification for Carbon Steel Bolts, Studs, and Threaded Rod 60 000 PSI Tensile Strength
+ASTM A312/A312M (2025) Standard Specification for Seamless, Welded, and Heavily Cold Worked Austenitic Stainless Steel Pipes
+ASTM A420/A420M (2025a) Standard Specification for Piping Fittings of Wrought Carbon Steel and Alloy Steel for Low-Temperature Service
+ASTM A707/A707M (2025) Standard Specification for Forged Carbon and Alloy Steel Flanges for Low-Temperature Service
+ASTM C127 (2025) Standard Test Method for Density, Relative Density (Specific Gravity), and Absorption of Coarse Aggregate
+ASTM C128 (2025) Standard Test Method for Density, Relative Density (Specific Gravity), and Absorption of Fine Aggregate
+ASTM C136/C136M (2025) Standard Test Method for Sieve Analysis of Fine and Coarse Aggregates
+ASTM C582 (2023) Contact-Molded Reinforced Thermosetting Plastic (RTP) Laminates for Corrosion-Resistant Equipment
+ASTM C1147 (2014; R 2022) Standard Practice for Determining the Short Term Tensile Weld Strength of Chemical-Resistant Thermoplastics
+ASTM D1330 (2004; R 2022) Rubber Sheet Gaskets
+ASTM D1784 (2025) Standard Classification System and Basis for Specification for Rigid Poly(Vinyl Chloride) (PVC) Compounds and Chlorinated Poly(Vinyl Chloride) (CPVC) Compounds
+ASTM D1785 (2021a) Standard Specification for Poly(Vinyl Chloride) (PVC), Plastic Pipe, Schedules 40, 80, and 120
+ASTM D2241 (2025) Standard Specification for Poly(Vinyl Chloride) (PVC) Pressure-Rated Pipe (SDR Series)
+ASTM D2564 (2020; R 2024) Standard Specification for Solvent Cements for Poly(Vinyl Chloride) (PVC) Plastic Piping Systems
+ASTM D3139 (2019) Joints for Plastic Pressure Pipes Using Flexible Elastomeric Seals
+ASTM D3299 (2010) Filament-Wound Glass-Fiber-Reinforced Thermoset Resin Corrosion-Resistant Tanks
+ASTM D3308 (2012; R 2022) Standard Specification for PTFE Resin Skived Tape
+ASTM D4097 (2001; R 2010) Contact-Molded Glass-Fiber-Reinforced Thermoset Resin Corrosion-Resistant Tanks
+ASTM F477 (2014; R 2021) Standard Specification for Elastomeric Seals (Gaskets) for Joining Plastic Pipe
+INTERNATIONAL SOCIETY OF AUTOMATION (ISA)
+ANSI/ISA 5.1 (2024) Instrumentation Symbols and Identification
+MANUFACTURERS STANDARDIZATION SOCIETY OF THE VALVE AND FITTINGS INDUSTRY (MSS)
+MSS SP-58 (2025) Pipe Hangers and Supports - Materials, Design and Manufacture, Selection, Application, and Installation
+
+MSS SP-67 (2022) Butterfly Valves
+MSS SP-70 (2011) Gray Iron Gate Valves, Flanged and Threaded Ends
+MSS SP-71 (2018) Gray Iron Swing Check Valves, Flanged and Threaded Ends
+MSS SP-72 (2010a) Ball Valves with Flanged or Butt-Welding Ends for General Service
+MSS SP-78 (2011) Cast Iron Plug Valves, Flanged and Threaded Ends
+MSS SP-85 (2011) Gray Iron Globe & Angle Valves Flanged and Threaded Ends
+NATIONAL ELECTRICAL MANUFACTURERS ASSOCIATION (NEMA)
+NEMA ICS 1 (2022) Standard for Industrial Control and Systems: General Requirements
+NEMA MG 00001 (2024) Motors and Generators
+U.S. DEPARTMENT OF DEFENSE (DOD)
+UFC 3-301-01 (Digital Version) Structural Engineering
+1.2 SUBMITTALS
+Government approval is required for submittals with a "G" or "S" classification.Submittals not having a "G" or "S" classification are for Contractor Quality Control approval.Submittals not having a "G" or "S" classification are for information only. When used, a code following the "G" classification identifies the office that will review the submittal for the Government. Submit the following in accordance with Section 01 33 00 SUBMITTAL PROCEDURES:
+SD-02 Shop Drawings
+a. Filtration System; G, [_____]
+b. Include complete wiring and schematic diagrams; equipment layout and anchorage; and any other details required to demonstrate that the system has been coordinated and will properly function as a unit.
+SD-03 Product Data
+a. Posting Framed Instructions
+b. Qualifications
+c. Media
+d. Materials and Equipment
+e. Control System
+f. Spare Parts
+g. Submit after approval of the shop drawings, and not later than [_____] days prior to the start of operation.
+SD-06 Test Reports
+a. Acceptance Testing
+b. Factory Tests
+SD-07 Certificates
+a. Materials and Equipment
+SD-10 Operation and Maintenance Data
+a. Field Training
+b. Operating and Maintenance Instructions; G, [_____]
+1.3 MAINTENANCE MATERIAL SUBMITTALS
+1.3.1 Extra Materials
+Provide standard spare parts as recommended in the manufacturer's instruction manuals for each component of the equipment. Submit spare parts data for each different item of material and equipment specified. Include in the data a complete list of parts and supplies, with current unit prices and source of supply.
+1.4 QUALIFICATIONS
+Submit qualifications of the installer, and the manufacturer's and media supplier's representatives.
+1.4.1 Installer
+Installers are required to have a minimum of [_____] years' experience in the installation of a minimum of [_____] similar filtration systems and are required to show evidence of satisfactory operation for each installation.
+1.4.2 Manufacturer's Representative
+Ensure a representative of the filtration system manufacturer, who is familiar with the design and experienced in the installation, adjustment, and operation of the equipment specified is present at the jobsite during installation of the filtration system.
+1.4.3 Media Supplier Representative
+Ensure a representative of the media supplier who is experienced in the installation of the specified filtration media is present at the jobsite during media installation.
+1.5 DELIVERY, STORAGE, AND HANDLING
+Protect all equipment delivered and placed in storage from weather, excessive humidity, excessive temperature variation, and dirt, dust, or other contaminants.
+PART 2 PRODUCTS
+2.1 SYSTEM DESCRIPTION
+Provide a [pressure] [continuous backwash] [traveling bridge] [cartridge] [bag] filtration system. Design, construct and install the filtration system to comply with the following design conditions. Supply auxiliary systems and equipment required to maintain complete and workable filter systems including, but not limited to, required piping between units, auxiliary equipment for plumbing and power, and controls and interfaces between auxiliary equipment and the filter. Chemical additives [are] [are not] allowed to enhance the filtration system. Construct the installation [indoors] [outdoors]. [_____] volts of electricity, [_____]psi air pressure, and [_____]psi water pressure is available for installation.
+2.1.1 Influent Flow Characteristics
+Design Flow [_____]gallons per minute Maximum Flow Rate [_____]gallons per minute Minimum Available Head [_____]feet Design Influent Temperature [_____]degrees F Maximum Influent Temperature [_____]degrees F Minimum Influent Temperature [_____]degrees F Flow Conditions [intermittent] [continuous] [batch] Design Influent, Suspended Solids [_____] mg/L Design Influent, Particle Size [_____] micron Maximum pH [_____] Minimum pH [_____] Maximum BOD [_____] mg/L Minimum BOD [_____] mg/L Source of Process Water [metals precipitation] [biological treatment] [surface water] [landfill leachate] [_____] Chemical Pretreatment [alum] [polymer] [_____] Alkalinity [_____] mg CaCO3/L Calcium Concentration [_____] mg/L Hardness [_____] mg/L [_____] [_____]
+2.1.2 Design Criteria
+Number of Filters [_____] Maximum Effluent, Suspended Solids [_____] mg/L Maximum Effluent, Particle Size [_____] micron Maximum BOD [_____] mg/L Backwash Type [_____] Maximum Filtration Rate [_____] gal/second/square foot Maximum Influent, Pipe Velocity [_____] ft/s Maximum Effluent, Pipe Velocity [_____] ft/s Clean Bed Maximum Headloss (at design flow and temperature) [_____] feet
+2.1.3 Cartridge and Bag Influent
+Design Flow [_____] gal/minute Maximum Flow Rate [_____] gal/25 cm filter equivalent Design Inlet Pressure [_____] psi Design Influent Temperature [_____] degrees F Maximum Influent Temperature [_____] degrees F Minimum Influent Temperature [_____] degrees F Fluid Viscosity [_____] lb/ft-s Flow Conditions [intermittent] [continuous] [batch] Design Influent, Suspended Solids [_____] mg/L Design Influent, Particle Size [_____] micron Maximum pH [_____] Minimum pH [_____] Source of Process Water [metals precipitation] [biological treatment] [surface water] [landfill leachate] [_____] Chemical Pretreatment [alum] [polymer] [_____] Alkalinity [_____] mg CaCO3/L Calcium Concentration [_____] mg/L Hardness [_____] mg/L [_____] [_____]
+2.1.4 Cartridge and Bag Design Criteria
+Total Number Operating Units [_____] Number of On-line Units [_____] Number of Stand-by Units [_____] Number of Elements per Unit [_____] Design Effluent, Suspended Solids [_____] mg/L Design Effluent, Particle Size [_____] micron Maximum Differential Pressure [_____] psi at design temperature [_____] psi at maximum temperature
+2.2 EQUIPMENT
+2.2.1 Materials and Equipment
+Ensure all recyclable materials conform to EPA requirements in accordance with Section 01 33 29 SUSTAINABILITY REQUIREMENTS AND REPORTING.
+2.2.1.1 Standard Products
+
+Provide materials and equipment which are the standard products of a manufacturer regularly engaged in the manufacture of such products and that essentially duplicate items that have been in satisfactory use for at least 2 years prior to bid opening. Provide equipment that is supported by a service organization that is, in the opinion of the Contracting Officer, reasonably convenient to the site.
+2.2.1.2 Nameplates
+Provide each major item of equipment with the manufacturer's name, address, type of style, model or serial number, and catalog number on a plate secured to the item of equipment.
+2.2.1.3 Protection of Moving Parts
+Completely enclose by guards belts, chains, couplings, and other moving parts to prevent accidental personal injury. Fabricate guards to be removable or arranged in a way to allow access to the equipment for maintenance. If equipment is housed in a lockable housing, ensure the housing provides sufficient protection and no additional guards are necessary.
+2.2.1.4 Special Tools
+Provide one set of special tools, calibration devices, and instruments required for operation, calibration, and maintenance of the equipment.
+2.2.1.5 Steel Plates, Shapes and Bars
+ASTM A36/A36M.
+2.2.1.6 Pipe and Fittings
+Provide pipe and fittings that conform to the standards specified below.
+2.2.1.6.1 Steel Pipe
+ASTM A53/A53M.
+a. Flanged Joints: ASTM A707/A707M.
+b. Welded Joints: AWS D1.1/D1.1M.
+c. Bolts: ASTM A307, Grade B.
+d. Fittings: ASTM A420/A420M.
+2.2.1.6.2 Ductile Iron Pipe
+AWWA C115/A21.15.
+a. Flanged Pipe: AWWA C115/A21.15 with ASME B16.1, Class 125 flanges.
+b. Rubber-Gasket Joints: AWWA C111/A21.11.
+c. Fittings: AWWA C110/A21.10.
+d. Push-on Joints: AWWA C151/A21.51.
+e. Bolts and Nuts: ASTM A307, Grade B.
+2.2.1.6.3 Stainless Steel Pipe
+ASTM A312/A312M, Schedule 40, Type 316 or Type 304.
+a. Flanged Pipe: ASME B16.5, Class 150.
+b. Rubber-Gasket Joints: ASTM D1330.
+c. Fittings: ASME B16.3.
+d. Bolts: ASTM A193/A193M, Class 1, Grade B8.
+e. Nuts: ASTM A194/A194M, Grade 8.
+2.2.1.6.4 Polyvinyl Chloride (PVC) Pipe
+Provide PVC pipe and fittings less the4 inch diameter in accordance with ASTM D1785 or ASTM D2241. Provide PVC pipe and fittings4 inch in diameter or larger in accordance with ASTM D2241 with push-on joints.
+a. Push-on Joints: ASTM D3139 or ASTM F477.
+b. Solvent Cement: ASTM D2564.
+2.2.1.7 Pipe Hangers and Supports
+MSS SP-58.
+2.2.1.8 Valves
+2.2.1.8.1 Steel Valves
+ASTM A216/A216M, Grade WCB.
+2.2.1.8.2 Cast Iron Valves
+ASTM A126, Class B.
+a. Globe and Angle Valves: MSS SP-85.
+b. Gate Valves: MSS SP-70.
+c. Plug Valves: MSS SP-78.
+d. Butterfly Valves: MSS SP-67.
+e. Ball Valves: MSS SP-72.
+f. Check Valves: MSS SP-71.
+2.2.1.8.3 PVC Valves
+ASTM D1784, Class 12454-B (formerly designated Type I, Grade 1).
+2.2.1.9 Other Materials
+2.2.1.9.1 Polypropylene Support Material
+ASTM C1147.
+2.2.1.9.2 Joint Compound
+Use joint compound for threaded joints made from a stiff mixture of graphite and oil, inert filler and oil, or a graphite compound.
+2.2.1.9.3 Joint Tape
+Provide joint tape for threaded joints that complies with ASTM D3308.
+2.2.2 Electrical Equipment
+2.2.2.1 Electrical Work
+[Provide electrical motor-driven equipment specified complete with [motors] [motors and motor starters] and controls.] [Motor starters complete with properly sized thermal overload protection and other appurtenances necessary for the motor specified.] Perform electrical work as specified in Section 26 20 00 INTERIOR DISTRIBUTION SYSTEM. Provide manual or automatic control and protective or signal devices required for the operation specified and any control wiring required for controls and devices.
+
+2.2.2.2 Electric Motors
+Provide motors that conform to NEMA MG 00001. Provide motors with nameplate horsepower equal or greater than1/2 hp that are suitable for 480 volt, 3 phase operating service, unless otherwise specified. Provide motors of greater than1 hp that are high efficiency type as specified in Section 26 20 00 INTERIOR DISTRIBUTION SYSTEM.
+2.2.2.3 Motor Controls
+Provide controls that conform to NEMA ICS 1.
+2.2.2.4 Electrical Power Control
+2.2.2.4.1 General Requirements
+Provide a [manual] [semi-automatic] [automatic] [_____] complete electrical power, control, and instrumentation system as specified or recommended by the equipment manufacturer for the safe operation and supervision of the filter units and related equipment, except those items specified to be furnished under other sections. Provide schematics and interconnection wiring diagrams for power, control, and instrumentation circuits to equipment specified. Provide terminal blocks (plus 25 percent spare terminals) in panels to terminate field and interconnection wiring.
+2.2.2.4.2 Control System
+Provide control power transformers, relays, adjustable timers, auxiliary contacts, switches, or additional equipment as required to interconnect the filter equipment to a remote plant monitoring system, and control circuits as shown on schematic or instrument control system drawings. Furnish conduit wiring between control panels and control devices as part of this specification. Submit a description of the control system including, but not be limited to, the following items:
+a. Product information for sensors/transducers and field instruments.
+b. Programmable Controller System Information
+c. System Description
+d. Hardware Description
+e. Software Description
+f. Panels, Consoles, and Cabinets Information
+g. Layout Drawings
+h. Panel schematic and internal point-to-point wiring interconnect and/or piping diagrams
+i. Electrical control schematics in accordance with NFPA standards for all circuits indicated in the specifications or on the Contract Drawings. "Typical" wiring diagrams are acceptable but the use of tables or charts to describe wire numbers is not acceptable. Label wires and shown on the submittal drawings.
+j. Plan showing equipment layout
+k. Stock lists or Bill of Materials for each panel including tag number, functional name, manufacturer's name, manufacturer's model number, and quantity for components mounted in and on the panel, console, or cabinet.
+l. Field wiring and piping diagrams and point-to-point wiring diagrams including interconnections between field devices, panels, control stations, lighting panels, and motor starters.
+m. Instrument loop diagrams for analog display, control and I/O loops prepared using ISA standard symbols.
+n. System Software Documentation to include the following as a minimum:
+o. Complete hard copies of ladder diagram programming
+p. Complete listing of external and internal I/O address assignments, register assignments, and preset constant values along with functional point descriptions. Also list unused/undefined I/O and data table registers available.
+q. Complete hard copies of program documentation for all types of programs.
+r. Detailed system memory map defining memory segments used and spare memory segments available for system memory, I/O tables, Data Tables, and control program.
+s. Complete database listing.
+t. User's manual describing procedures and providing examples for use of programming terminal, accessories, and system utility routines to perform control, program modification, program verification, diagnostics, program documentation, loading and backup, and other required system support functions.
+2.2.2.5 Remote Alarm and Process Variable Monitoring
+2.2.2.6 Bolts, Nuts, Anchors, and Washers
+Provide steel bolts, nuts, anchors, and washers, galvanized in accordance with ASTM A153/A153M.
+2.2.2.7 Valves
+Transfer water to and from the filtration unit by a means of [ball valve] [butterfly valve] [globe valve] [air solenoid] [_____] for [automatic] [semiautomatic] [manual] operation. Design the valve mechanisms such that gradually increasing flows are attained as ports are opened and initial surges and sudden inrushes of water are avoided. Include a dial pointer to indicate each step of the operation.
+2.2.2.8 Pumps
+Supply air compressors where insufficient head is available to move the [influent] [effluent] [backwash] [wash] water. Ensure the pump complies with the requirements of Section 23 21 23 HYDRONIC PUMPS.
+2.2.2.9 Air Compressors
+Supply pump in accordance with Section 22 00 00 PLUMBING, GENERAL PURPOSE.
+2.2.2.10 Pressure Gauges
+Show or schedule gauge sizes and scale ranges on the Contract Drawings. Provide gauges that comply with ASME B40.100 Type 2A, as a minimum. Provide compound gauges on the suction side of pumps and standard pressure gauge on the discharge side of pumps. Use gauges with clear acrylic or shatterproof glass windows and shock-resistant cases. Set the design operations to fall at the midpoint of the graduated scale. Equally space major divisions and show in whole integers. Engrave scale units on the scale face. Limit pointer travel to not less than 200 degrees nor more than 270 degrees arc. Provide gauge accuracy of plus or minus 0.5 percent of span. Provide each gauge, except those for hydraulic systems, with a process shutoff valve.
+2.2.2.11 Gauge Panel
+Provide a gauge panel on which [1] [2] [_____] nominal pressure gauges to sense unit inlet and outlet pressures and [1] [2] [_____] pressure switch are mounted. Wire the pressure sensor switch to a control panel which sounds an alarm when the differential pressure exceeds the [maximum differential pressure specified in Paragraphs Design Criteria or Cartridge and Bag Design Criteria (as applicable)] [maximum differential pressure specified by the manufacturer].
+2.2.2.12 Tank Requirements
+2.2.2.12.1 Parameters
+Provide specified tanks in accordance with the following general requirements, unless otherwise indicated. Provide each tank with flanged fittings for inlet, outlet, overflow and drain. Provide the size, elevation and orientation in accordance with construction drawings. Provide hold down lugs to anchor the tank to the base.
+2.2.2.12.2 Tank Construction Materials
+Provide tank construction material compatible with the material to be handled. Provide tanks constructed of polyethylene, polypropylene, and fiberglass reinforced plastic (FRP) that conform to applicable material and construction provisions of ASTM C582, ASTM D3299, and ASTM D4097. Provide tanks constructed of steel that conform with applicable material and construction provisions of AWWA D100. Fabricate carbon steel tanks with ASTM A283/A283M carbon steel Grade C or D and protected with [an appropriate interior coating system for the intended service] [vinyl ester epoxy] [_____] in accordance with applicable requirements in Section 09 90 00 PAINTS AND COATINGS. Fabricate stainless steel tanks of Type 304 stainless steel conforming to ASTM A167 with structural support conforming to ASTM A276/A276M. Provide exterior painting or coating in accordance with Paragraph PAINTING.
+2.2.2.12.3 Site Glasses
+Provide a [_____]inch diameter observation port in the tank wall. Locate the observation port [at the surface of the filter media] [at the media interface] [_____].
+2.2.3 Media
+Provide filter materials that conform to the requirements of AWWA B100. Perform a sieve analysis in accordance with ASTM C136/C136M and AWWA B100. Determine specific gravity in accordance with ASTM C127 for support media and ASTM C128 for [silica sand] [anthracite coal] [high-density media]. Submit characteristics of each filter media material.
+2.2.3.1 High-Density Sand
+Provide high-density sand composed from [garnet] [ilmenite] [_____] with a specific gravity of [3.6] [4.0] [4.2] [_____], uniformity coefficient less than or equal to [_____], and an effective size between [_____] and [_____]. Ensure ninety-five percent of the material is larger than or equal to [_____].
+2.2.3.2 Silica Sand
+Provide silica sand with an effective size between [_____] and [_____], uniformity coefficient less than or equal to [_____], and a specific gravity of [2.55] [2.60] [2.65] [_____]. Ensure ninety-five percent of the material is larger than or equal to [_____].
+2.2.3.3 Anthracite Coal
+Provide anthracite coal with a specific gravity of [1.45] [1.50] [1.55] [1.73] [_____], uniformity coefficient of [_____], and an effective size between [_____] and [_____]. Ensure ninety-five percent of the material is larger than or equal to [_____]. The anthracite media is required to be clean and free from thin or scaly pieces, with a calcium carbonate and magnesium carbonate hardness of [_____].
+2.2.3.4 Support Media
+Provide support gravel consisting of hard, rounded stones with an average specific gravity of not less than [_____]. Ensure not more than [_____] percent by weight has a specific gravity of [_____] or less. Ensure gravel contains not more than [_____] percent by weight of thin, flat, or elongated pieces (pieces in which the largest dimension exceeds three times the smallest dimension), and is free from shale, mica, clay, sand, loam, and organic impurities of any kind.
+2.2.4 Continuous Backwash Filtration System
+
+2.2.4.1 Equipment Capacity
+Provide each unit with a moving bed, continuous backwash [upflow] [downflow] granular media filter, having a capacity to filter [_____]gpm of water at the operating conditions identified in Paragraph Design Criteria.
+2.2.4.2 Filter Tank
+Provide a cylindrical, sloped-bottom filter tank with the dimensions shown and constructed of [epoxy coated carbon steel] [type 304 stainless steel] [fiberglass reinforced plastic] [_____] construction, free from physical imperfections. Construct the tank with a minimum number of pieces and a minimum thickness of metal parts exposed to the water of [_____]. Fit the tank with lifting lugs to facilitate handling and placement. Provide the filter tank with sufficient support to withstand wind speed in excess of [_____]mph and design for seismic forces in accordance with UFC 3-301-01 and Sections 13 48 73 SEISMIC CONTROL FOR NONSTRUCTURAL COMPONENTS and 23 05 48.19 SEISMIC BRACING FOR MECHANICAL SYSTEMS [as shown on the drawings].
+2.2.4.3 Filter Media
+Provide silica sand filter media at a total depth of [_____]feet. Ensure all media conforms to the requirements of AWWA B100.
+2.2.4.4 Influent Dosing System
+Provide an influent dosing system capable of delivering the influent stream uniformly over the entire media bed. Introduce the influent water to the [bottom] [top] of the filter tank. Construct all components of the dosing system of [stainless steel] [fiberglass reinforced plastic] [_____].
+2.2.4.5 Effluent Collection System
+Collect effluent by [discharge of filtrate overflow over an effluent weir constructed of [stainless steel] [fiberglass reinforced plastic] [_____] and placed and sized dimensionally as shown on the Construction Drawings.] [a filtrate line connected to a filtrate chamber consisting of a cylinder with a wedgewire screen periphery and hood. Construct the screen of stainless steel trapezoidal bars having an opening smaller than the finest media grain. Configure and size dimensionally the effluent collection system as shown on the Construction Drawings.] [_____] discharge effluent through a [_____]inch diameter [stainless steel] [fiberglass reinforced] [_____] pipe.

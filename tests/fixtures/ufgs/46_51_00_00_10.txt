@@ -1,0 +1,254 @@
+SECTION 46 51 00.00 10
+AIR AND GAS DIFFUSION SYSTEM
+PART 1 GENERAL
+1.1 REFERENCES
+The publications listed below form a part of this specification to the extent referenced. The publications are referred to within the text by the basic designation only.
+AMERICAN BEARING MANUFACTURERS ASSOCIATION (ABMA)
+ABMA 9 (2015; R 2020; Errata 2026) Load Ratings and Fatigue Life for Ball Bearings
+ABMA 11 (2014; R 2020) Load Ratings and Fatigue Life for Roller Bearings
+AMERICAN GEAR MANUFACTURERS ASSOCIATION (AGMA)
+AGMA 6011 (2025K) Specifications for High Speed Helical Gear Units
+AMERICAN SOCIETY OF HEATING, REFRIGERATING AND AIR-CONDITIONING ENGINEERS (ASHRAE)
+ASHRAE 52.2 (2025) Method of Testing General Ventilation Air-Cleaning Devices for Removal Efficiency by Particle Size
+AMERICAN SOCIETY OF MECHANICAL ENGINEERS (ASME)
+ASME B16.1 (2020) Gray Iron Pipe Flanges and Flanged Fittings Classes 25, 125, and 250
+ASME B16.3 (2021) Malleable Iron Threaded Fittings, Classes 150 and 300
+ASME B16.5 (2025) Pipe Flanges and Flanged Fittings NPS 1/2 Through NPS 24 Metric/Inch Standard
+ASME B31.1 (2024) Power Piping
+ASME B40.100 (2022) Pressure Gauges and Gauge Attachments
+ASME BPVC SEC IX (2025) BPVC Section IX-Welding, Brazing and Fusing Qualifications
+AMERICAN WATER WORKS ASSOCIATION (AWWA)
+AWWA C110/A21.10 (2021) Ductile-Iron and Gray-Iron Fittings
+AWWA C111/A21.11 (2023) Rubber-Gasket Joints for Ductile-Iron Pressure Pipe and Fittings
+AWWA C115/A21.15 (2025) Flanged Ductile-Iron Pipe With Ductile-Iron or Gray-Iron Threaded Flanges
+AWWA C151/A21.51 (2023) Ductile-Iron Pipe, Centrifugally Cast
+AWWA C200 (2023) Steel Water Pipe - 6 In. (150 mm) and Larger
+AWWA C207 (2023) Standard for Steel Pipe Flanges for Waterworks Service, Sizes 4 in. through 144 in. (100 mm through 3600 mm)
+AWWA C208 (2022) Dimensions for Fabricated Steel Water Pipe Fittings
+AWWA C500 (2019) Metal-Seated Gate Valves for Water Supply Service
+AWWA C504 (2023) Standard for Rubber-Seated Butterfly Valves
+AMERICAN WELDING SOCIETY (AWS)
+AWS D1.1/D1.1M (2025) Structural Welding Code - Steel
+ASTM INTERNATIONAL (ASTM)
+ASTM A53/A53M (2024) Standard Specification for Pipe, Steel, Black and Hot-Dipped, Zinc-Coated, Welded and Seamless
+ASTM A240/A240M (2025a) Standard Specification for Chromium and Chromium-Nickel Stainless Steel Plate, Sheet, and Strip for Pressure Vessels and for General Applications
+ASTM A480/A480M (2025b) Standard Specification for General Requirements for Flat-Rolled Stainless and Heat-Resisting Steel Plate, Sheet, and Strip
+ASTM A524/A524M (2021) Standard Specification for Seamless Carbon Steel Pipe for Atmospheric and Lower Temperatures
+ASTM A530/A530M (2012) Standard Specification for General Requirements for Specialized Carbon and Alloy Steel Pipe
+ASTM A554 (2021) Standard Specification for Welded Stainless Steel Mechanical Tubing
+ASTM A774/A774M (2026) Standard Specification for As-Welded Wrought Austenitic Stainless Steel Fittings for General Corrosive Service at Low and Moderate Temperatures
+ASTM A778/A778M (2024) Standard Specification for Welded, Unannealed Austenitic Stainless Steel Tubular Products
+ASTM B98/B98M (2013; R 2019) Standard Specification for Copper-Silicon Alloy Rod, Bar, and Shapes
+ASTM B584 (2022) Standard Specification for Copper Alloy Sand Castings for General Applications
+ASTM D1785 (2021a) Standard Specification for Poly(Vinyl Chloride) (PVC), Plastic Pipe, Schedules 40, 80, and 120
+ASTM D2241 (2025) Standard Specification for Poly(Vinyl Chloride) (PVC) Pressure-Rated Pipe (SDR Series)
+ASTM D2310 (2006; R 2012) Machine-Made "Fiberglass" (Glass-Fiber-Reinforced Thermosetting-Resin) Pipe
+ASTM D2564 (2020; R 2024) Standard Specification for Solvent Cements for Poly(Vinyl Chloride) (PVC) Plastic Piping Systems
+ASTM D2992 (2024) Obtaining Hydrostatic or Pressure Design Basis for "Fiberglass" (Glass-Fiber-Reinforced Thermosetting-Resin) Pipe and Fittings
+ASTM D2996 (2023) Standard Specification for Filament-Wound "Fiberglass" (Glass-Fiber-Reinforced Thermosetting-Resin) Pipe
+INSTITUTE OF ELECTRICAL AND ELECTRONICS ENGINEERS (IEEE)
+IEEE C37.13 (2024) Standard for Low-Voltage AC Power Circuit Breakers Used in Enclosures
+IEEE C57.13 (2016) Standard Requirements for Instrument Transformers
+MANUFACTURERS STANDARDIZATION SOCIETY OF THE VALVE AND FITTINGS INDUSTRY (MSS)
+MSS SP-58 (2025) Pipe Hangers and Supports - Materials, Design and Manufacture, Selection, Application, and Installation
+MSS SP-80 (2019) Bronze Gate, Globe, Angle, and Check Valves
+NATIONAL ELECTRICAL MANUFACTURERS ASSOCIATION (NEMA)
+NEMA 250 (2020) Enclosures for Electrical Equipment (1000 Volts Maximum)
+NEMA ICS 1 (2022) Standard for Industrial Control and Systems: General Requirements
+NEMA ICS 2 (2000; R 2020) Industrial Control and Systems Controllers, Contactors, and Overload Relays Rated 600 V
+NEMA ICS 3 (2005; R 2010) Medium-Voltage Controllers Rated 2001 to 7200 V AC
+NEMA ICS 4 (2015) Application Guideline for Terminal Blocks
+
+NEMA ICS 6 (1993; R 2016) Industrial Control and Systems: Enclosures
+NEMA MG 00001 (2024) Motors and Generators
+NEMA ST 20 (2014) Dry-Type Transformers for General Applications
+NATIONAL FIRE PROTECTION ASSOCIATION (NFPA)
+NFPA 70 (2026; TIA 26-1; ERTA 26-1; TIA 26-2; TIA 26-3; TIA 26-4; TIA 26-5; TIA 26-6; TIA 26-7; ERTA 26-2; ERTA 26-3) National Electrical Code
+UL SOLUTIONS (UL)
+UL 508 (2018; Reprint Jul 2021) UL Standard for Safety Industrial Control Equipment
+UL 845 (2021; Reprint Feb 2025) UL Standard for Safety Motor Control Centers
+1.2 SUBMITTALS
+Government approval is required for submittals with a "G" or "S" classification.Submittals not having a "G" or "S" classification are for Contractor Quality Control approval.Submittals not having a "G" or "S" classification are for information only. When used, a code following the "G" classification identifies the office that will review the submittal for the Government. Submit the following in accordance with Section 01 33 00 SUBMITTAL PROCEDURES:
+SD-02 Shop Drawings
+a. Equipment Installation
+b. Drawings as specified.
+SD-03 Product Data
+a. Materials and Equipment
+SD-06 Test Reports
+a. Field Testing
+SD-10 Operation and Maintenance Data
+a. Operating and Maintenance Manuals; G, [_____]
+1.3 QUALITY CONTROL
+1.3.1 Qualifications
+Welding procedures and welders are required to be qualified in accordance with the code under which the welding is specified to be accomplished.
+1.4 MATERIALS SUBMITTALS
+Submit a complete list of equipment and materials, including manufacturer's descriptive data and technical literature, performance charts and curves, catalog cuts, proposed diagrams, installation instructions and other sheets. Spare parts data for each different item of material and equipment specified, after approval of the related submittals, and not later than [_____] months prior to the date of beneficial occupancy. Include a complete list of parts and supplies, with current unit prices and source of supply.
+1.4.1 Standard Products
+Provide materials and equipment which are the standard products of a manufacturer regularly engaged in the manufacture of such products and which essentially duplicate items that have been in satisfactory use for at least 2 years prior to bid opening. Equipment in required to be supported by a service organization that is, in the opinion of the Contracting Officer, reasonably convenient to the site.
+1.4.2 Nameplates
+Include on each major item of equipment the manufacturer's name, address, type or style, model or serial number, and catalog number on a plate secured to the item of equipment.
+1.4.3 Special Tools
+Provide one set of special tools, calibration devices, and instruments required for operation, calibration, and maintenance of the equipment.
+1.4.4 Factory Painting
+Unless otherwise specified, clean, prime, and give two coats of machinery enamel to all equipment at the factory. Fiberglass, stainless steel, and galvanized components need not be painted.
+1.5 DELIVERY, STORAGE, AND HANDLING
+Ensure all equipment delivered and placed in storage is stored with protection from the weather, excessive humidity and excessive temperature variation; and dirt, dust, or other contaminants.
+PART 2 PRODUCTS
+2.1 SYSTEM DESCRIPTION
+An air and gas diffusion system consists of Air Supply Equipment, the Air Distribution System, the Air Diffusers, and other Miscellaneous Equipment, as specified herein.
+2.2 EQUIPMENT
+2.2.1 Air-Supply Equipment
+The air-supply consists of [multi-stage] [_____] [centrifugal] [and] [or] [positive displacement] air blowers and drive units with filters, controls, and appurtenances as indicated or specified.
+2.2.1.1 Centrifugal Blowers
+2.2.1.1.1 Performance and Design Requirements
+Provide blowers that are [multistage] [single stage] centrifugal, oil-free types designed for continuous duty with [closed backward-bladed] [open radial-bladed] impellers. Provide with performance and design requirements as shown.
+2.2.1.1.2 Casing
+Provide centrifugal blowers of modular design with the casing either vertically or horizontally split and with the required number of compression stages to comply with the specified operating requirements. Machine all horizontally split casings at the split to be tight without a gasket. Vertically split casings are to include rigid cast iron sections held securely between cast iron inlet and outlet heads by steel tie rods. Provide tapped and plugged drains at the lowest points of the casing. Ensure inlet and discharge connections comply with ASME B16.1[125 pound] [_____] drilled and tapped flanges and are an integral part of the head. Provide casing with lifting eyes capable of supporting blower.
+2.2.1.1.3 Impellers
+Provide impellers cast of high grade [aluminum alloy] [steel], mounted and keyed to the shaft and secured by a locknut. Install impeller hubs to be butted against each other either directly or through one piece metal spacers. Provide ample clearance between the impeller and casing. Test each impeller by operating at a speed to [20] [_____] percent above operating speed and check for cracks using the dye penetrant method or similar method of equal accuracy. Ensure the impeller and shaft assembly are statically and dynamically balanced as a unit. Removing of metal from the impeller by boring is not an acceptable means of balancing the impeller and shaft unit. Vibration is not allowed to exceed1.0 mil at the bearing housing with the blower operating. First critical speed is required to be at least 150 percent of maximum operating speed.
+2.2.1.1.4 Diffusers
+Provide diffuser vanes, cast into each section of the blower casing, to receive air from the impeller and direct the air to the next impeller for multi-stage type blowers.
+2.2.1.1.5 Shaft
+Provide a shaft of ground and polished high grade [high alloy steel] [carbon steel][stainless steel] of sufficient diameter to operate below first critical speed.
+2.2.1.1.6 Shaft Seals
+Provide solid carbon ring shaft seals where the shaft passes through the inlet and discharge heads. Design seals to permit seal inspection or replacement without disconnecting suction or discharge piping.
+2.2.1.1.7 Internal Seals
+Provide labyrinth type seals between stages.
+2.2.1.1.8 Bearings
+Provide each blower with two [pressure oil lubricated sleeve type journal] [splash oil lubricated anti-friction type] bearings. Design bearings for both radial and thrust loads and size for an L-10 life of 5 years continuous operation as defined by ABMA 9 or ABMA 11. Design bearings to allow replacement without disassembling the blower casing or disconnecting piping.
+2.2.1.1.9 Pressure Oil Lubrication System
+Provide a console mounted pressure lubrication system to oil the sleeve bearings. The lubrication system consists of a main oil pump mounted on and driven by the blower shaft, an auxiliary electric motor driven oil pump, an oil cooler, an oil filter, a 3-minute retention time oil reservoir, and all required switches, temperature sensors, and gauges. Ensure the electric motor driving the auxiliary oil pump has Class F insulation, Type NEMA Design B, in accordance with NEMA MG 00001, and is totally enclosed fan cooled; equipped with 120 volts space heaters; and controlled in accordance with NEMA ICS 1. Completely pipe the lubrication system and wire with only interconnecting piping between the console and the pump required in the field.
+2.2.1.1.10 Splash Oil Lubrication System
+
+Provide a simple splash lubrication system with each bearing having its own oil reservoir integral with the bearing housing. Maintain proper oil level by a constant level oiler located on each bearing housing. Provide a slinger on the shaft to splash oil into the bearing when the compressor is running. Provide a sight level gauge in the bearing housing. Provide a labyrinth seal combined with an atmospheric vent to prevent oil contamination of the air stream.
+2.2.1.1.11 Inlet Guide Vanes
+Provide inlet guide vanes for each single stage centrifugal blower.
+2.2.1.1.12 Centrifugal Blower Speed Increasing Gears
+Provide high speed, single stage centrifugal gears made of hardened, helical, alloy steel, manufactured in accordance with AGMA 6011 with a minimum 1.5 service factor applied to full horsepower rating of blower.
+2.2.1.2 Positive Displacement Blowers
+2.2.1.2.1 Performance and Design Requirements
+Provide positive displacement rotary blowers, oil-free types, designed for continuous duty. Performance and design requirements are to be as shown.
+2.2.1.2.2 Casing
+Provide a one piece blower casing with separate head plates constructed of close-grained cast iron, suitably ribbed to prevent distortion under the specified operating conditions. Fabricate casing with lifting eyes for installation and maintenance purposes.
+2.2.1.2.3 Impeller and Shaft
+Provide impeller and shaft constructed of a common ductile iron casting. Provide impellers of the straight, two-lobe involute type that operate without rubbing, liquid seals, or lubrication. Ensure the peak vibration velocity of blower is less than0.30 inch/second.
+2.2.1.2.4 Timing Gears
+Positively time impellers by a pair of machined, heat-treated, spur tooth timing gears. Mount timing gears on the impeller shafts on a tapered fit and secured by a locknut.
+2.2.1.2.5 Bearings
+Support impeller shaft by antifriction [spherical ball] [roller] bearings sized for a minimum L-10 life of [30,000] [50,000] hours as defined by ABMA 9 or ABMA 11.
+2.2.1.2.6 Seals
+Provide a lip type oil seal at each bearing to prevent lubricant from leaking into the air stream. Provide labyrinth seals at the point where the shaft passes through the head. Provide ventilation of the impeller side of the oil seals to atmosphere to eliminate any carry-over of lubricant into the air stream.
+2.2.1.2.7 Lubrication
+Provide drive and bearings of the [grease lubricated type and also provide with a grease fitting] [splash oil lubricated type]. Provide timing gears and gear end bearings of the [pressure oil lubricated type] [splash oil lubricated type]. Regulate oil level by a metering orifice.
+[If using a full pressure lubrication system built into positive displacement blower, direct connect to oil pump and include oil strainer, oil reservoir, piping to bearings, and oil spray for gears with piping to air-to-oil cooler. Design oil vents so that oil vapors do not enter motor. Design system to prevent leakage and dirt contaminants.]
+2.2.1.3 Drive Connection
+[Connect the blower to the motor by a heavy-duty flexible forged steel spacer coupling, keyed or locked to the shaft.] [Connect the blower to the motor by a V-belt drive capable of transmitting the motor power to the blower. Provide additional sheaves so that the blowers output can be varied in[40] [_____] cfm increments between minimum and maximum flow conditions.] Cover the drive with an acoustically treated sheet metal guard.
+2.2.1.4 Motors
+Size motors to be within their rated load under the specified operating conditions. Ensure all motors conform to NEMA MG 00001 and are the squirrel cage induction Type NEMA Design B, Class B or F insulated, with a service factor of not less than 1.15. Motors are required to be horizontal foot-mounted, totally enclosed fan-cooled, cast iron or aluminum construction and a quiet series type with a noise level not exceeding 80 dB (A Scale). The motor frame is required to be the standard NEMA assigned frame size supplied for constant speed use on full voltage, fixed frequency line power. Provide resistance temperature detectors (RTD's) embedded in two phases of the stator windings. Provide motor bearings with a minimum L-10 life of 50,000 hours.
+2.2.1.5 Power Factor Capacitors
+Equip all motors over5 hp with power factor correcting capacitors. Furnish capacitors complete with internal fusing and bleed-off resistors. Provide for a corrected power factor of not less than 95 percent at full load. Install capacitors in enclosures coordinated with the individual motor construction with leads terminated in the motor terminal box and identified as capacitor leads. Provide overcurrent device settings within the motor controls that are properly reduced for the motor and capacitor combination.
+2.2.1.6 Blower - Motor Base
+Provide a full length common base of steel box construction for the blower and drive. Ensure the base is suitable for direct attachment to the foundation. Provide anchor bolts, [anti-vibration strips,] and grout as required for proper installation.
+2.2.1.7 Concrete Foundation
+Provide a concrete foundation as indicated. Ensure the foundation is entirely separated from the surrounding floor. Provide concrete as specified in Section 03 30 00 CAST-IN-PLACE CONCRETE.
+2.2.1.8 Filters
+Provide filters of the [washable dry type,] [disposable dry type,] rated to be at least 90 percent efficient when tested in compliance with ASHRAE 52.2 dust spot method. Ensure filter has at least1 sq. ft. of filter area per25 cfm of air flow. Use polyester felt filter material with1 inch pleat separation. For filters located outside of the building, provide a weather hood designed to keep rain, snow, and other foreign articles away from the filter element. Design the weather hood for inlet velocities between the hood and the filter element of500 ft/min or less. Provide a manometer or differential pressure gauge on the filter unit to indicate when the filter element requires cleaning or replacing. [Provide a filter element by-pass with counter-weighted doors to prevent destruction of the element in the event freezing moisture clogs the filter].
+2.2.1.9 Accessories
+2.2.1.9.1 Silencers
+Provide each blower with [inlet] [and] [discharge] silencers. Provide silencers for [standard] [critical] grade silencing. Provide intake silencers of the [chamber] [absorption] type. Provide discharge silencers of the [chamber] [absorption] [combination chamber-absorption] type. Size silencer as recommended by the silencer manufacturer and ensure compatibility with the blower requirements. Ensure silencer connections match the adjacent piping. Provide mounting brackets as required for silencer support. Construct silencer of heavy-duty rolled and welded steel plate with inner liner properly welded to outer shell for purpose of deadening outer shell.
+2.2.1.9.2 Acoustical Insulation
+Wrap silencers, [interior air piping,] [expansion joints,] [valves,] [and] [drive guards] with1 inch thick high density woven glass fiber mat having a minimum density of15 ounces/square foot and lag with a0.0l6 inch thick aluminum jacket. Comply with EPA requirements in accordance with Section 01 33 29 SUSTAINABILITY REQUIREMENTS AND REPORTING.
+2.2.1.9.3 Gauges
+Provide gauges that comply with ASME B40.100. Ensure inlet gauges have a range of[0 to 30 inch] [_____] water gauge vacuum. Ensure outlet gauges have a range of[0 to 15 psi] [_____]. Provide all accessories for [control panel] [wall] [pipe] mounting of the gauges.
+2.2.1.9.4 Thermometers
+Provide thermometers to indicate [inlet air temperature,] [discharge air temperature,] [lubrication oil temperature,] [and] [diffuser point of discharge temperature for three locations within the system]. Thermometers of either red-reading mercury-in-glass type or dial type are acceptable. Provide a scale range covering the full range of expected operation and up to 125 percent, but not more than 150 percent of maximum.
+2.2.1.9.5 Temporary Screens
+Provide a temporary screen, consisting of 16-mesh wire backed up by1/4 inch hardware cloth, at the blower inlet connection. Remove the screens after initial blower start-up and testing.
+2.2.1.9.6 Inlet and Discharge Elbows
+Provide inlet and discharge elbows of the long sweep type constructed of cast iron with ASME B16.1, Class 125 flanges.
+2.2.1.9.7 Expansion Couplings
+Provide couplings of the extra heavy gauge rubber, wire reinforced type suitable for temperature range of-20 to plus 250 degrees F and pressure range from15 inch of mercury vacuum to15 psig.
+2.2.1.10 Manual Control System
+Provide each blower with a control panel containing all starters, circuit breakers, disconnects, and other equipment required for manual starting and stopping of the blower. Ensure controls and motor control centers conform to NEMA ICS 1, NEMA ICS 2, NEMA ICS 3, NEMA ICS 4, NEMA ICS 6, UL 508, and UL 845. Ensure circuit breakers conform to IEEE C37.13. Provide the control panel in a NEMA 250, [Type 12] [Type 3R] [Type 4] enclosure. Ensure all materials and construction complies with Section 26 20 00 INTERIOR DISTRIBUTION SYSTEM.
+2.2.1.11 Automatic Control and Monitoring System
+Provide each blower with an automatic control and monitoring system to control start-up and shut-down sequences, to indicate various operation parameters, and to actuate blower protective devices. All accessory devices are required to be operated through this system.
+2.2.1.11.1 Panel Construction
+Enclose the automatic control and monitoring system in a NEMA 250, [Type 12] [Type 3R] [Type 4] panel and that is completely wired and tested with internal connections being made on terminal blocks. Provide a power supply to the control panel rated at [_____] volts ac, [_____] phase, 60 Hz to a [_____] amp flange mounted disconnect. Derive internal voltages, including [120] [_____] volts ac, from the [_____] volts ac, supply. Provide control power transformer rated at [_____] volts primary and [_____] volts secondary with kVA rating as recommended by the manufacturer. Ensure instrument and control transformers comply with IEEE C57.13 and NEMA ST 20.
+2.2.1.11.2 Automatic Control
+a. Provide automatic controls for all machine parts to ensure proper startup and shutdown sequences. Provide a manual-off-automatic switch for each blower. In addition, provide manual control switches for the [auxiliary oil pump,] [unloading valve,] [and] [inlet butterfly valve]. Ensure the manual control switches are active only when the selector switch is in the manual position. When the selector switch is in the automatic position, initiate the control system sequence startup of the blower as follows:
+b. Start auxiliary oil pump and allow to run for 3 minutes.
+c. Open unloading valve and close inlet butterfly valve.
+d. Start main drive motor.
+e. When the motor reaches full speed, open the inlet butterfly valve and close the unloading valve. Open the inlet butterfly valve to a minimum set point slightly above the surge point. Control the inlet butterfly valve from then on by a 4 to 20 mA dc signal from the control system to maintain the desired flow. When the shaft-driven main oil pump reaches specified pressure setting, stop the auxiliary oil pump.
+
+f. Upon turning the selector switch to the off position, initiate the control panel sequence shutdown of the blowers as follows:
+g. Open the unloading valve and close the inlet butterfly valve.
+h. De-energize the drive motor.
+i. When the shaft-driven oil pump pressure drops, start the auxiliary oil pump and allow to run for [30] [_____] minutes to provide for post lubrication and cooling.
+2.2.1.11.3 Indicators
+Provide the following indicators, mounted on the control panel:
+a. Inlet and outlet pressure gauges.
+b. Valve position indicators for the unloading valve (open or closed) and the inlet butterfly valve (in percentage open).
+c. Inlet air volume in cfm indicator. Provide an ammeter measuring the current draw of the blower motor and calibrated so that a given amount of current draw correspond to the volume of air being handled by the blower.
+d. Lights to indicate the auxiliary oil pump is running and is as required for the protective devices.
+2.2.1.11.4 Blower Protective Devices
+a. All blower protective devices, upon alarm condition, are required to cause immediate de-energization of the motor, initiation of the automatic shutdown sequence, and provide audible and visual alarm indication. Equip positive displacement blowers with automatic pressure relief valve.
+b. Provide bearing temperature protection consisting of encapsulated temperature switches in milled slots directly over each blower bearing, a control relay, a selector switch and test pushbuttons, and a running light. Upon excessively high temperature of any bearing, initiate protective shutdown and indicate which bearing is affected.
+c. Provide a protective device to prevent the blower from operating in a surge condition. Initiate automatic blower shutdown sequence when the blower is reduced to surge volume as indicated by motor current draw and give visual indication of reason for shutdown. Provide an override as necessary for blower startup and shutdown.
+d. Provide a system to control blower overload by opening and closing the inlet [butterfly valve] [inlet guide vanes on single stage centrifugal blower] based upon the current draw of the motor. The system is required to monitor motor current input to a suitably conditioned and set-point controller.
+2.2.1.11.5 Vibration Monitoring
+Provide vibration pick-ups for motor and blower bearings. Provide vibration monitoring system on control panel. Equip centrifugal blowers with radial and axial vibration monitoring. Monitor consists of front panel and circuit board and includes switches for display of signal and alarm levels, LED indicators for annunciation of OK and alarm status, calibration and alarm adjustments, and connectors for output signals.
+2.2.1.11.6 Control Logic
+Provide control logic to monitor dissolved oxygen level signals and select the number and [inlet guide vane setting for single stage centrifugal blowers] [rotation speed of positive displacement blowers] to provide for sufficient air to maintain desired dissolved oxygen level in aeration tank(s).
+2.2.2 Air Distribution System
+Provide a system, including piping, valves, and supports to distribute air from the blowers to the air diffusers. Ensure the system is of adequate capacity for the intended purpose and is adjustable for balancing of air distribution.
+2.2.2.1 Air Main
+Supply the air main from the blowers to the air supply assemblies as indicated. Provide eccentric reducers at each change in air main diameter. Ensure the crown of the air main is maintained at the same elevation for the full length of the tank. Provide fittings as indicated. For air main piping6 inches in diameter and larger, provide be ductile iron or Schedule 40 steel pipe. For air main piping less than6 inch in diameter, provide ductile iron or Schedule 40 galvanized steel pipe. Provide hangers and supports as required for a complete installation.
+2.2.2.2 Removable Header Air Distribution System
+Provide removable header air distribution systems as indicated that consist of an air supply assembly, removable header assembly, and supports. Ensure the system is compatible with the air main and the specified diffusers.
+2.2.2.2.1 Air Supply Riser Assembly
+Provide an air supply riser assembly for each removable header to connect the drop leg to the air main. The riser assembly consists of a vertical pipe projecting from the air main through a floor sleeve cast in the concrete T-wall, an elbow, a butterfly valve between the elbow and the drop leg, and required supports and anchors.
+2.2.2.2.2 Air Supply Lateral Assembly
+Provide an air supply lateral assembly for each removable header to connect the drop leg to the air main. The lateral assembly consists of piping, a butterfly valve, and required supports and anchors.
+2.2.2.2.3 Removable Header Assembly
+The removable header assembly consists of a drop leg and a header. The upper end of the header assembly contains a 90 degree elbow with face ring and neoprene gasket for connection to the air supply assembly. The connection to the air supply assembly is required to be a [quick coupling flange][grooved coupling system]. Provide a flanged connection for the lower end of the drop leg for connection to the header. Provide welded end caps and a beveled flange on the headers for connection to the drop leg. Provide diffuser connectors for field installation of diffusers. Design the removable header assembly to withstand a vertical load that results in a moment of500 inch-pounds at the diffuser connection without permanent deformation. Provide lifting lugs on the assembly as required for removal of the header. Fabricate the removable header assembly of stainless steel or galvanized steel as follows:
+a. Stainless Steel Systems: Fabricate the removable header assembly from 304L stainless steel complying with ASTM A240/A240M. Ensure drop legs and headers have a nominal wall thickness of0.1094 inch (12 gauge). Use the header dimensions as indicated with dimensional tolerances complying with ASTM A530/A530M and ASTM A554. Fabricate welded wrought stainless steel fittings and welded stainless steel tubular products in accordance with ASTM A774/A774M and ASTM A778/A778M. Perform all welding in the shop. Add filler wire to all welds to provide a cross section equal to the parent material. Ensure butt welds have full penetration to the interior surface. Ensure all interior weld beads are smooth, evenly distributed, with an interior projection not exceeding1/16 inch. Wire brush outside weld areas with stainless steel brushes. After fabrication, passivate the assembly by pickling and ensure it is completely neutralized. Use nickel plated ductile iron for the quick-coupling flange and equip with a stainless steel hinge pin. Provide anchor bolts made of 303 stainless steel.
+b. Galvanized Steel Systems: Fabricate the removable header assembly from Schedule 40 steel pipe conforming to ASTM A53/A53M. Perform all welding in the shop. Ensure all butt welds are full penetration welds with an interior projection not exceeding1/16 inch. Ensure welding conforms to AWS D1.1/D1.1M. Hot-dip galvanized the assembly after fabrication. Provide anchor bolts made of 303 stainless steel. Use nickel plated ductile iron for quick-coupling flange and equip with a stainless steel hinge pin.
+2.2.2.2.4 Supports and Guides
+Support removable header by two adjustable supports with vee-shaped guides. Fabricate supports from1/4 inch steel plate and provide at least1 inch vertical adjustment. The supports are required to support the weight of the assembly so that the quick-coupling can be easily disconnected.
+2.2.2.3 Rotary or Swing Header Air Distribution System
+Provide rotary or swing header air distribution systems as indicated consisting of an air supply assembly, rotary or swing-type air header assembly, and supports. Ensure system compatibility with the air main and the specified diffusers.
+2.2.2.3.1 Air Supply Assembly
+Provide an air supply assembly for each rotary or swing header to connect the upper swing joint to the air main. The assembly consists of the required pipe and fittings, a butterfly valve, and a combination connector and support for the upper swing joint.
+2.2.2.3.2 Rotary or Swing Header Assembly
+The rotary or swing header assembly consists of an upper swing joint, a knee joint, hanger pipes, and a header. The upper swing joint connects to the air supply assembly and includes connectors for field installation of diffusers. Design the rotary or swing header assembly to withstand a vertical load that results in a moment of500 in-lb at the diffuser connection without permanent deformation. Provide lifting lugs on the assembly as required to lift the header assembly out of the tank. Fabricate the rotary or swing header assembly of stainless steel systems, carbon steel systems, galvanized steel systems, or fiberglass systems as follows:
+a. Stainless Steel Systems: Provide upper swing joint and knee joint of cast stainless steel. Connect between the two sections by means of a stainless steel pin working in a graphite bronze bushing. Provide graphite impregnated cast bronze bearings complying with ASTM B584. Provide seal rings with labyrinth grooves between the two joint sections. Provide a grease fitting to lubricate the seal rings. Provide an adjustable stop to prevent the knee joint from opening beyond 180 degrees. Fabricate the hanger pipes and air headers from 304L stainless steel in accordance with ASTM A240/A240M. Fabricate the upper hanger pipes from Schedule 10S. Fabricate the hanger pipes from Schedule 5S. Fabricate air header pipes from 12 gauge. Provide header dimensions as indicated with dimensional tolerances in accordance with ASTM A530/A530M and ASTM A554. Fabricate welded wrought stainless steel fittings and welded stainless steel tubular products in accordance with ASTM A774/A774M and ASTM A778/A778M. Perform all welding in the shop. Add filler wire to all welds to provide a cross section equal to the parent material. Ensure butt welds have full penetration to the interior surface. Ensure interior weld beads are smooth, evenly distributed, and with an interior projection not exceeding1/16 inch. Wire brush outside weld areas with stainless steel brushes. After fabrication, passivate the assembly by pickling and ensure it is completely neutralized. Weld the hanger pipes to the upper swing joint and knee joint. Flange connect the header pipe to the hanger pipe. Weld diffuser connectors to the header. Provide the header with welded end caps.
+b. Carbon Steel Systems: Provide the upper swing joint and knee joint of cast steel. Connect between the two sections by means of a stainless steel pin working in a graphite bronze bushing. Use graphite impregnated cast bronze bearings in accordance with ASTM B584. Provide brass seal rings with labyrinth grooves between the two joint sections. Provide a grease fitting to lubricate the seal rings. Provide an adjustable stop to prevent the knee joint from opening beyond 180 degrees. Fabricate the hanger and header pipes from schedule [40] [80] carbon steel pipe in accordance with ASTM A524/A524M. Provide header dimensions as indicated. Perform welding in the shop. After fabrication, paint the assembly with the manufacturer's standard finish. Weld the hanger pipes to the upper swing joint and knee joint. Connect the header pipe to the hanger pipe. Weld diffuser connectors to the header. Provide the header with welded end caps.
+c. Galvanized Steel Systems: Provide the upper swing joint and knee joint made from cast iron. Connect between the two sections by means of a stud equipped with a spring to maintain seal between the faces. Use graphite impregnated bronze seal rings and bearings in accordance with ASTM B584. Provide grease fittings for lubrication. Fabricate the hanger and header pipes from schedule [40] [80] galvanized steel pipe in accordance with ASTM A53/A53M. Provide header dimensions as indicated. The header consists of two lengths of pipe, flange connected to a cast iron tee. Screw connect the hanger pipes to the upper swing joint and knee joint, and flange connected to the header tee. Weld the diffuser connectors to the header. Provide the header with gasketed, screwed end caps.
+d. Fiberglass Systems: Provide the upper swing joint and knee joint of the trunnion sleeve type manufactured of glass reinforced synthetic resin capable of continuously operating in pH levels of 5.0 to 9.0 and at gas temperatures up to225 degrees F. Rib all areas of high stress to provide increased strength. Provide each rotating bearing surface with ring type air seals. Hold the assemblies together by a1/2 inch diameter stainless steel rod with locking nuts. Fabricate the hanger and header pipes from reinforced thermosetting resin pipe in accordance with ASTM D2310, Type I, Grade l, Class F, ASTM D2992, and ASTM D2996. Provide pipe in accordance with the following: 40,000 psi minimum hoop stress; 9,500 psi minimum tensile strength; 19,000 psi minimum axial compression strength; minimum 55 Barcol hardness; 54.75 degree wind angle; 0.110 inch minimum wall thickness. Provide ultraviolet protection for the pipe material. Provide liner resin that is 85 to 89 percent resin with glass filler and at least0.020 inch thick. Use filled epoxy adhesive joints. Provide header dimensions as indicated. Flange connect the hanger to the header.
+2.2.2.3.3 Supports and Guides
+Provide supports and guides as required for support and leveling of the header.
+2.2.2.4 Fixed Header Air Distribution System
+Provide a fixed header air distribution as indicated consisting of a drop leg assembly, fixed headers, and supports. Ensure the system is compatible with the air main and the specified diffusers.
+2.2.2.4.1 Drop Leg Assembly
+Provide a drop leg assembly to connect the fixed headers to the air main. Provide the assembly of the dimensions indicated.
+2.2.2.4.2 Fixed Headers
+Provide fixed headers of the dimensions and configuration indicated. Provide header connections of a type allowing rotational adjustment of individual header sections of sufficient strength to transmit the longitudinal forces caused by expansion and contraction of the header. Design the headers to allow expansion and contraction up to a maximum temperature of125 degrees F without damage to the system. Prevent rotation of the header due to thermal expansion and contraction. Provide fixed headers of stainless steel systems or fiberglass systems as follows:
+a. Stainless Steel Systems: Fabricate all welded parts of the system from 304L stainless steel in accordance with ASTM A240/A240M. [Provide stainless steel pipe with a 2D finish in accordance with ASTM A480/A480M .] Provide pipe wall thickness as follows: for10 inch diameter and less, supply0.0625 inch (16 gauge) thick pipe; for12 inch diameter, supply0.0781 inch (14 gauge) thick pipe; for 14 inch through18 inch diameter, supply0.l094 inch (12 gauge) thick pipe; for20 inch diameter, supply0.1250 inch (11 gauge) thick pipe; for24 inch diameter, supply0.1406 inch (10 gauge) thick pipe. Provide header dimensions as indicated with dimensional tolerances in accordance with ASTM A530/A530M and ASTM A554. Fabricate welded stainless steel fittings and welded stainless steel tubular products in accordance with ASTM A774/A774M and ASTM A778/A778M . Perform all welding in the shop. Add filler wire to all welds to provide a cross section equal to the parent material. Ensure butt welds have full penetration to the interior surface. Ensure interior weld beads are smooth, evenly distributed, and with an interior projection not exceeding1/16 inch . Wire brush outside weld area with stainless steel brushes. Prior to fabrication, passivate each part of the assembly by pickling and ensure it is completely neutralized. Provide bolts, washers, follower flanges, and other non-welded parts made of 304 stainless steel. Provide low silicon bronze nuts in accordance with ASTM B98/B98M.
+b. Fiberglass Systems: Provide reinforced thermosetting resin pipe in accordance with ASTM D2310, Type I, Grade l, Class F, ASTM D2992, and ASTM D2996. All pipe is required to be in accordance with the following: 9,500 psi minimum tensile strength; 16,000 psi minimum axial compression strength; minimum 55 Barcol hardness; 54.75 degree wind angle; 0.110 inch minimum wall thickness. Provide ultraviolet protection for the pipe material. Use liner resin with 85 to 89 percent resin with glass filler and is at least0.020 inch thick. Use filled epoxy adhesive joints. Provide header dimensions as indicated. Provide a1 inch drain leg at each end of each section of pipe.
+2.2.2.4.3 Support System
+Provide a system for support and anchoring of the header. Ensure the system is compatible with the expansion and contraction control design. Ensure the support system provides for a minimum of4 inch vertical adjustment and1 inch lateral adjustment of the header. Contour the system to fit the bottom 90 degrees of the pipe while maintaining a bearing surface at least2 inch wide.
+2.2.2.5 Lagoon Air Distribution System
+2.2.2.5.1 Fixed Air Distribution Headers
+Provide fixed air distribution headers to connect the air main to the lagoon aeration diffuser tubing. Construct header and feeder piping using PVC with flanged or threaded connections. Provide one of the following types of air distribution systems:
+
+a. Dual Header System: The system consists of a dual header supported above the side slopes, one on each side of the lagoon with feeder tubes connecting to each end of the diffuser tubing.
+b. Single Header System: The system consists of a single header, supported above the lagoon bottom in the center of the lagoon with feeder tubes connecting to one end of the diffuser tubing.
+2.2.2.5.2 Supports
+Provide adjustable supports that allow free longitudinal movement with little or no lateral or vertical movement for the air header piping. Ensure all ferrous metal in the support system is galvanized.
+2.2.2.5.3 Airlift Purge System
+Provide a plastic airlift, complete with integral plastic air jet. Include air supply tubing and piping connected to the main air header. Provide a control valve on the air supply pipe.
+2.2.2.5.4 Gas Cleaning System
+Provide a complete system as required for gas cleaning of the air diffusion system. Provide a single valve to control flow to all points.
+2.2.3 Diffusers
+2.2.3.1 Diffuser Performance

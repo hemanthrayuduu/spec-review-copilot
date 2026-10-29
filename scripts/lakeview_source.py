@@ -844,10 +844,6 @@ S466100 = SpecSection("46 61 00", "MEMBRANE FILTRATION EQUIPMENT", (
               "control.", lab("testing_piloting", "manual operation before automatic control", ">=", "48",
                               "hours")),
         )),
-        Article("OPERATION AND MAINTENANCE DATA", (
-            p("Provide operation and maintenance data for the membrane system in accordance with Section "
-              "01 33 00.", lab("submittal")),
-        )),
         Article("MANUFACTURER'S FIELD SERVICES", (
             p("Provide a manufacturer's process engineer on site during the performance test.", lab("commercial")),
             p("Field service reports shall be submitted within 7 days after each visit.",

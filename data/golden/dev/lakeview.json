@@ -4003,24 +4003,6 @@
       "section_number": "46 61 00",
       "paragraph_path": "3.08.A",
       "page": 141,
-      "source_text": "Provide operation and maintenance data for the membrane system in accordance with Section 01 33 00.",
-      "category": "submittal",
-      "parameter": null,
-      "operator": null,
-      "value": null,
-      "unit": null,
-      "mandatory": true,
-      "named_manufacturer": [],
-      "or_equal_allowed": null,
-      "from_addendum": null,
-      "trap": null,
-      "expected_status": null
-    },
-    {
-      "doc_id": "specs",
-      "section_number": "46 61 00",
-      "paragraph_path": "3.09.A",
-      "page": 141,
       "source_text": "Provide a manufacturer's process engineer on site during the performance test.",
       "category": "commercial",
       "parameter": null,
@@ -4037,7 +4019,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.B",
+      "paragraph_path": "3.08.B",
       "page": 141,
       "source_text": "Field service reports shall be submitted within 7 days after each visit.",
       "category": "submittal",
@@ -4055,7 +4037,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.1",
+      "paragraph_path": "3.08.C.1",
       "page": 141,
       "source_text": "Inspection of each membrane tank before cassettes are installed.",
       "category": "commercial",
@@ -4073,7 +4055,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.2",
+      "paragraph_path": "3.08.C.2",
       "page": 141,
       "source_text": "Inspection of the cassette installation and alignment.",
       "category": "commercial",
@@ -4091,7 +4073,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.3",
+      "paragraph_path": "3.08.C.3",
       "page": 141,
       "source_text": "Witnessing of the clean water test.",
       "category": "commercial",
@@ -4109,7 +4091,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.4",
+      "paragraph_path": "3.08.C.4",
       "page": 141,
       "source_text": "Calibration checks of the transmembrane pressure and turbidity instruments.",
       "category": "commercial",
@@ -4127,7 +4109,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.5",
+      "paragraph_path": "3.08.C.5",
       "page": 141,
       "source_text": "Verification of the PLC programming and alarm setpoints.",
       "category": "commercial",
@@ -4145,7 +4127,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.6",
+      "paragraph_path": "3.08.C.6",
       "page": 141,
       "source_text": "Supervision of the first maintenance clean.",
       "category": "commercial",
@@ -4163,7 +4145,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.7",
+      "paragraph_path": "3.08.C.7",
       "page": 141,
       "source_text": "The Contractor shall provide a factory-trained service technician on site for not less than 10 working days during startup.",
       "category": "commercial",
@@ -4181,7 +4163,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.09.C.8",
+      "paragraph_path": "3.08.C.8",
       "page": 141,
       "source_text": "Assistance with the performance test and the test report.",
       "category": "commercial",
@@ -4199,7 +4181,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.10.A",
+      "paragraph_path": "3.09.A",
       "page": 141,
       "source_text": "Provide not less than 16 hours of operator training on the membrane system in two sessions.",
       "category": "commercial",
@@ -4217,7 +4199,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.10.B",
+      "paragraph_path": "3.09.B",
       "page": 141,
       "source_text": "Training shall cover normal operation, cleaning procedures, membrane integrity testing, and troubleshooting.",
       "category": "commercial",
@@ -4235,7 +4217,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.10.C",
+      "paragraph_path": "3.09.C",
       "page": 141,
       "source_text": "Training sessions shall be video recorded and the recordings given to the Owner.",
       "category": "commercial",
@@ -4253,7 +4235,7 @@
     {
       "doc_id": "specs",
       "section_number": "46 61 00",
-      "paragraph_path": "3.11.A",
+      "paragraph_path": "3.10.A",
       "page": 141,
       "source_text": "Spare membrane modules should be stored in the original shipping containers.",
       "category": "material",
