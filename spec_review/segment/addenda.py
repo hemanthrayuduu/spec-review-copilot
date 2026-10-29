@@ -4,17 +4,23 @@ import re
 
 from spec_review.ingest.normalize import classify_kind
 from spec_review.models import AddendumAction, AddendumChange, BBox, Block, Section
-from spec_review.segment.paths import display_number, path_key, section_key
-from spec_review.segment.sections import CSI_NUMBER, SECTION_HEADER_RE
+from spec_review.segment.paths import PART_RE, display_number, path_key, section_key
+from spec_review.segment.sections import CSI_NUMBER, match_header, split_sections
 
-ADDENDUM_TITLE_RE = re.compile(r"ADDENDUM\s+(?:NO\.?|NUMBER)\s*(\d+)", re.IGNORECASE)
+ADDENDUM_TITLE_RE = re.compile(r"\s*ADDENDUM\s+(?:NO\.?|NUMBER)\s*(\d+)\b", re.IGNORECASE)
 TITLE_BLOCKS = 15
 REPLACEMENT_BLOCKS = 20
 ITEM_RE = re.compile(r"^(\d+)\.\s+")
 SECTION_NUMBER_RE = re.compile(rf"\b({CSI_NUMBER})\b|\bSection\s+(\d{{5}}[A-Z]?)\b", re.IGNORECASE)
-QUESTION_RE = re.compile(r"^Question\s*:", re.IGNORECASE)
-ANSWER_RE = re.compile(r"^Answer\s*:", re.IGNORECASE)
+QUESTION_RE = re.compile(r"^(?:Question\s*\d*\s*[:.)]|Q\s*\d+\s*[:.)]|Q\s*:)", re.IGNORECASE)
+ANSWER_RE = re.compile(r"^(?:Answer\s*\d*\s*[:.)]|A\s*\d+\s*[:.)]|A\s*:)", re.IGNORECASE)
+# Words that make loose addendum text worth an engineer's look. Recall first: such text becomes "unparsed".
+INSTRUCTION_HINT_RE = re.compile(r"\b(?:delete[sd]?|revise[sd]?|replace[sd]?|add(?:ed|s)?|insert(?:ed|s)?|change[sd]?|"
+                                 r"substitut\w*|remove[sd]?|shall|must|required)\b", re.IGNORECASE)
+NEXT_INSTRUCTION_RE = re.compile(r"(?<=[.;])\s+(?=(?:delete|revise|add)\s+(?:the following\s+)?(?:new\s+)?"
+                                 r"(?:paragraph|section)\b)", re.IGNORECASE)
 UNPARSED_NOTE = "instruction not recognized — needs engineer review"
+LOOSE_NOTE = "addendum text outside a numbered item — needs engineer review"
 CLARIFICATION_NOTE = "clarification; not applied automatically — check whether the answer changes a requirement"
 
 # Matched in this order against the instruction text (spec 8.3; plan Task 7).
@@ -30,10 +36,11 @@ PATTERNS: tuple[tuple[re.Pattern[str], AddendumAction], ...] = tuple((re.compile
 
 
 def find_addendum_docs(blocks: list[Block]) -> dict[str, int]:
-    """doc_id → addendum number, for documents whose first blocks carry an ADDENDUM NO. title.
+    """doc_id → addendum number, for documents with a block that starts "ADDENDUM NO. n" among their first blocks.
 
-    A reissued section stamped "ADDENDUM NO. 1" below its SECTION header is a replacement section,
-    not an addendum document, so the title must come before any section header.
+    The title must start a block ("Conformed set incorporating Addendum No. 2" on a spec book's cover is not
+    one) and come before any section header (a reissued section stamped with the addendum number is a
+    replacement section, not an addendum document).
     """
     first: dict[str, list[Block]] = {}
     for b in blocks:
@@ -43,9 +50,9 @@ def find_addendum_docs(blocks: list[Block]) -> dict[str, int]:
     out = {}
     for doc_id, head in first.items():
         for b in head:
-            if SECTION_HEADER_RE.match(b.text):
+            if match_header(b.text):
                 break
-            m = ADDENDUM_TITLE_RE.search(b.text)
+            m = ADDENDUM_TITLE_RE.match(b.text)
             if m:
                 out[doc_id] = int(m.group(1))
                 break
@@ -58,8 +65,11 @@ def _section_in(text: str) -> str | None:
 
 
 def _items(blocks: list[Block]) -> list[tuple[str, list[Block]]]:
-    """("item" | "qa" | "context", blocks): numbered instructions with their continuation blocks,
-    question-and-answer pairs, and the other blocks (headings name the section for later items)."""
+    """("item" | "qa" | "context", blocks): numbered instructions, question-and-answer pairs, and the rest.
+
+    An item ending with a colon ("replace with the following:") takes the paragraph blocks after it as its new
+    text, up to the next heading, table row, question, or numbered item.
+    """
     out: list[tuple[str, list[Block]]] = []
     current: list[Block] | None = None
     for b in blocks:
@@ -72,49 +82,87 @@ def _items(blocks: list[Block]) -> list[tuple[str, list[Block]]]:
         elif ANSWER_RE.match(b.text) and out and out[-1][0] == "qa" and len(out[-1][1]) == 1 \
                 and not ANSWER_RE.search(out[-1][1][0].text):
             out[-1][1].append(b)
-        elif current is not None and b.kind in ("paragraph", "list_item"):
-            current.append(b)  # the new text often follows "replace with the following:" in its own block
+        elif current is not None and b.kind in ("paragraph", "list_item") \
+                and (len(current) > 1 or current[0].text.rstrip().endswith(":")):
+            current.append(b)
         else:
             current = None
             out.append(("context", [b]))
     return out
 
 
+def _instructions(body: str, inherited: str | None) -> list[dict[str, object]]:
+    """Change fields for one numbered item, which may hold more than one instruction."""
+    for rx, action in PATTERNS:
+        m = rx.search(body)
+        if not m:
+            continue
+        if action == "replace_section":
+            return [dict(action=action, target_section=display_number(m.group(1).strip()))]
+        if action == "revise_date":
+            return [dict(action=action, target_section=_section_in(body[:m.start(1)]), new_text=m.group(1).strip())]
+        # The section is named before the new text; numbers inside the new text are references, not targets.
+        lead = body[:m.start(2)] if action in ("replace_paragraph", "add_paragraph") else body
+        section = _section_in(lead) or inherited
+        rest: list[dict[str, object]] = []
+        new_text = None
+        if action in ("replace_paragraph", "add_paragraph"):
+            new_text = m.group(2).strip()
+            split = NEXT_INSTRUCTION_RE.search(new_text)
+            if split:
+                rest = _instructions(new_text[split.end():], section)
+                new_text = new_text[:split.start()].strip()
+        return [dict(action=action, target_section=section, target_paragraph=m.group(1).rstrip(".,:;"),
+                     new_text=new_text), *rest]
+    return [dict(action="unparsed", target_section=_section_in(body), note=UNPARSED_NOTE)]
+
+
 def parse_addendum(doc_id: str, number: int, blocks: list[Block]) -> list[AddendumChange]:
+    """Every numbered item, question and answer, and instruction-like loose text becomes a change record."""
     addendum_id = f"Addendum {number}"
     changes: list[AddendumChange] = []
     last_section: str | None = None
+
+    def add(page: int, text: str, **fields: object) -> None:
+        changes.append(AddendumChange(change_id=f"A{number}-{len(changes) + 1}", addendum_id=addendum_id,
+                                      doc_id=doc_id, page=page, source_text=text, **fields))  # type: ignore[arg-type]
+
     for kind, group in _items(blocks):
         text = " ".join(b.text for b in group)
         if kind == "context":
-            last_section = _section_in(text) or last_section
-            continue
-        base = dict(change_id=f"A{number}-{len(changes) + 1}", addendum_id=addendum_id, doc_id=doc_id,
-                    page=group[0].page, source_text=text)
-        if kind == "qa":
-            changes.append(AddendumChange(**base, action="clarification", target_section=_section_in(text),
-                                          note=CLARIFICATION_NOTE))
-            continue
-        body = ITEM_RE.sub("", text, count=1)
-        named = _section_in(body)
-        for rx, action in PATTERNS:
-            m = rx.search(body)
-            if not m:
-                continue
-            if action == "replace_section":
-                changes.append(AddendumChange(**base, action=action, target_section=display_number(m.group(1).strip())))
-            elif action == "revise_date":
-                changes.append(AddendumChange(**base, action=action, target_section=named, new_text=m.group(1).strip()))
+            if group[0].kind == "heading":
+                last_section = _section_in(text)  # a heading that names no section ends the previous one
+            elif INSTRUCTION_HINT_RE.search(text):
+                add(group[0].page, text, action="unparsed", target_section=_section_in(text), note=LOOSE_NOTE)
             else:
-                section = named or last_section
-                new_text = m.group(2).strip() if action in ("replace_paragraph", "add_paragraph") else None
-                changes.append(AddendumChange(**base, action=action, target_section=section,
-                                              target_paragraph=m.group(1).rstrip(".,:;"), new_text=new_text))
-            break
-        else:
-            changes.append(AddendumChange(**base, action="unparsed", target_section=named, note=UNPARSED_NOTE))
-        last_section = named or last_section
+                last_section = _section_in(text) or last_section
+            continue
+        if kind == "qa":
+            add(group[0].page, text, action="clarification", target_section=_section_in(text), note=CLARIFICATION_NOTE)
+            continue
+        found = _instructions(ITEM_RE.sub("", text, count=1), last_section)
+        for fields in found:
+            add(group[0].page, text, **fields)
+        last_section = next((str(f["target_section"]) for f in found if f.get("target_section")), last_section)
     return changes
+
+
+def split_addendum(doc_id: str, number: int, blocks: list[Block]) -> tuple[list[AddendumChange], list[Section]]:
+    """An addendum's instructions, and the reissued sections attached to it.
+
+    An attachment starts at the first section header followed by a PART 1 line before the next header; a
+    section heading that only groups instructions has no PART lines. Attached blocks carry from_addendum.
+    """
+    addendum_id = f"Addendum {number}"
+    headers = [i for i, b in enumerate(blocks) if match_header(b.text)]
+    start = len(blocks)
+    for k, i in enumerate(headers):
+        nxt = headers[k + 1] if k + 1 < len(headers) else len(blocks)
+        if any(PART_RE.match(b.text) for b in blocks[i + 1:nxt]):
+            start = i
+            break
+    attached = [b.model_copy(update={"from_addendum": addendum_id}) for b in blocks[start:]]
+    return parse_addendum(doc_id, number, blocks[:start]), split_sections(attached) if attached else []
 
 
 def _order(c: AddendumChange) -> tuple[int, int]:
@@ -183,12 +231,14 @@ def apply_addenda(sections: list[Section], changes: list[AddendumChange], addend
         if c.action == "revise_date":
             applied, note = True, "revised date recorded for the brief"
         elif c.action == "unparsed":
-            note = UNPARSED_NOTE
+            note = c.note or UNPARSED_NOTE
         elif c.action == "replace_section" and c.target_section:
             key = section_key(c.target_section)
             same = [i for i, s in enumerate(secs) if s.number and section_key(s.number) == key and s.superseded_by is None]
             stamp = re.compile(rf"ADDENDUM\s+(?:NO\.?|NUMBER)\s*{_order(c)[0]}\b", re.IGNORECASE)
-            new = [i for i in same if any(stamp.search(b.text) for b in by_doc[secs[i].doc_id][:REPLACEMENT_BLOCKS])]
+            # The replacement is attached to this addendum, or sits in a document stamped with its number.
+            new = [i for i in same if any(b.from_addendum == c.addendum_id for b in secs[i].blocks)
+                   or any(stamp.search(b.text) for b in by_doc[secs[i].doc_id][:REPLACEMENT_BLOCKS])]
             if len(new) == 1:
                 for i in same:
                     if i != new[0]:
@@ -201,8 +251,11 @@ def apply_addenda(sections: list[Section], changes: list[AddendumChange], addend
                 note = "no target section named"
             else:
                 key = section_key(c.target_section)
-                idx = next((i for i, s in enumerate(secs) if s.number and section_key(s.number) == key
-                            and s.superseded_by is None), None)
+                live = [i for i, s in enumerate(secs) if s.number and section_key(s.number) == key
+                        and s.superseded_by is None]
+                # The section that holds the paragraph; else the fullest one, so a stray stub never wins.
+                holding = [i for i in live if any(_in_paragraph(b, c.target_paragraph or "") for b in secs[i].blocks)]
+                idx = max(holding or live, key=lambda i: len(secs[i].blocks), default=None)
                 if idx is None:
                     note = f"target section {c.target_section} not found"
                 else:

@@ -82,3 +82,19 @@ def test_blank_pages_inside_kept_sections_are_not_counted_as_kept(tmp_path: Path
                          FilterResult(package_id="pkg", decisions=decide(secs, [], load_product_map())))
     assert (cov.pages_blank, cov.pages_in_kept_sections) == (1, 2)
     assert pages_kept_ratio(cov) == 2 / 3
+
+
+def test_reissued_section_in_an_addendum_pdf_reaches_the_filter(tmp_path: Path) -> None:  # final review C2
+    make_pdf(tmp_path / "pkg/specs.pdf", ["<p>SECTION 46 61 00</p><p>MEMBRANES</p><p>PART 2 PRODUCTS</p>"
+                                          "<p>2.04 WARRANTY</p><p>B. Modules shall carry a warranty of 5 years.</p>"])
+    make_pdf(tmp_path / "pkg/addendum_1.pdf", ["<p>ADDENDUM NO. 1</p><p>1. Delete Section 46 61 00 in its entirety "
+                                               "and replace with the attached.</p>",
+                                               "<p>SECTION 46 61 00</p><p>MEMBRANES</p><p>PART 2 PRODUCTS</p>"
+                                               "<p>2.04 WARRANTY</p><p>B. Modules shall carry a warranty of 10 years.</p>"])
+    out = run_read(tmp_path / "pkg", RunWriter("r", root=tmp_path / "runs"), Settings(_env_file=None),
+                   cache_dir=None)
+    live = [s for s in out.segment.sections if s.number == "46 61 00" and s.superseded_by is None]
+    assert [s.doc_id for s in live] == ["addendum_1"] and out.coverage.silent_drops == 0
+    assert any("10 years" in b.text for b in live[0].blocks)
+    kept = {d.section_id: d.keep for d in out.filter.decisions}
+    assert kept[live[0].section_id] and not kept["specs#1"]

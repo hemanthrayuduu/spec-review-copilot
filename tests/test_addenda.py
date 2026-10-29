@@ -2,7 +2,7 @@ from pathlib import Path
 
 from spec_review.eval.golden import GoldenPackage
 from spec_review.ingest import ingest_package
-from spec_review.segment.addenda import apply_addenda, find_addendum_docs, parse_addendum
+from spec_review.segment.addenda import apply_addenda, find_addendum_docs, parse_addendum, split_addendum
 from spec_review.segment.sections import split_sections
 from tests.block_fixtures import blocks_from
 
@@ -156,3 +156,77 @@ def test_lakeview_addendum_matches_golden(lakeview_pdfs: Path, lakeview_golden: 
     assert sum(c.action == "clarification" for c in changes) == 1
     secs, applied = apply_addenda(split_sections(res.blocks, exclude_docs=frozenset(docs)), changes, res.blocks)
     assert sum(c.applied for c in applied) == 3
+
+
+def test_unnumbered_instruction_is_flagged_unparsed() -> None:  # final review C2
+    add = blocks_from(["ADDENDUM NO. 1", "CHANGES TO SECTION 46 61 00", 'Paragraph 2.04.B: Change "5 years" to "10 years".'],
+                      doc="addendum_1")
+    ch = parse_addendum("addendum_1", 1, add)
+    assert [(c.action, c.page) for c in ch] == [("unparsed", 1)] and "10 years" in ch[0].source_text
+
+
+def test_requirement_text_outside_items_is_flagged() -> None:  # final review C2/I3
+    add = blocks_from(["ADDENDUM NO. 1", "1. Revise the proposal due date to December 15, 2026.",
+                       "A. All proposers shall attend a mandatory site visit on November 9, 2026."], doc="addendum_1")
+    ch = parse_addendum("addendum_1", 1, add)
+    assert [c.action for c in ch] == ["revise_date", "unparsed"]
+    assert ch[0].new_text == "December 15, 2026."
+
+
+def test_numbered_qa_forms_are_clarifications() -> None:  # final review C2
+    add = blocks_from(["ADDENDUM NO. 1", "Q1: Are 316 frames required?", "A1: No. Frames shall be 304 stainless steel."],
+                      doc="addendum_1")
+    ch = parse_addendum("addendum_1", 1, add)
+    assert [c.action for c in ch] == ["clarification"] and "304 stainless" in ch[0].source_text
+
+
+def test_reissued_section_inside_the_addendum_replaces_the_old_one() -> None:  # final review C2
+    base = split_sections(blocks_from(BASE))
+    add = blocks_from(["ADDENDUM NO. 1", "1. Delete Section 46 61 00 in its entirety and replace with the attached.",
+                       "SECTION 46 61 00", "MEMBRANES", "PART 1 GENERAL", "1.01 WARRANTY",
+                       "A. Modules shall carry a warranty of 10 years.", "1. Spare modules shall be furnished."],
+                      doc="addendum_1")
+    changes, attached = split_addendum("addendum_1", 1, add)
+    assert [c.action for c in changes] == ["replace_section"]
+    assert [(s.number, s.doc_id) for s in attached] == [("46 61 00", "addendum_1")]
+    assert all(b.from_addendum == "Addendum 1" for b in attached[0].blocks)
+    secs, applied = apply_addenda(base + attached, changes, add)
+    assert applied[0].applied and [s.superseded_by for s in secs] == ["Addendum 1", None]
+
+
+def test_section_heading_inside_addendum_is_not_an_attachment() -> None:
+    add = blocks_from(["ADDENDUM NO. 1", "SECTION 46 61 00 - MEMBRANES",
+                       "1. Delete paragraph 2.04.B and replace with: Modules shall carry a warranty of 7 years."],
+                      doc="addendum_1")
+    changes, attached = split_addendum("addendum_1", 1, add)
+    assert attached == [] and changes[0].target_section == "46 61 00"
+
+
+def test_section_number_inside_new_text_is_not_the_target() -> None:  # final review I3
+    add = blocks_from(["ADDENDUM NO. 1", "CHANGES TO SECTION 46 61 00",
+                       "1. Delete paragraph 1.05.A and replace with the following: Submit O&M manuals per Section "
+                       "01 78 23."], doc="addendum_1")
+    ch = parse_addendum("addendum_1", 1, add)
+    assert (ch[0].target_section, ch[0].target_paragraph) == ("46 61 00", "1.05.A")
+
+
+def test_second_instruction_in_one_item_is_its_own_change() -> None:  # final review I3
+    add = blocks_from(["ADDENDUM NO. 1", "1. Section 46 61 00: Delete paragraph 2.04.B and replace with: Warranty of 7 "
+                       "years. Delete paragraph 2.04.C."], doc="addendum_1")
+    ch = parse_addendum("addendum_1", 1, add)
+    assert [(c.action, c.target_paragraph, c.new_text) for c in ch] == [
+        ("replace_paragraph", "2.04.B", "Warranty of 7 years."), ("delete_paragraph", "2.04.C", None)]
+    assert [c.target_section for c in ch] == ["46 61 00", "46 61 00"]
+
+
+def test_heading_without_a_section_resets_the_inherited_section() -> None:  # final review I3
+    add = blocks_from(["ADDENDUM NO. 1", "SECTION 46 61 00 - MEMBRANES", "1. Delete paragraph 2.04.B.",
+                       "CHANGES TO THE REQUEST FOR PROPOSALS", "2. Delete paragraph 3.2."], doc="addendum_1")
+    ch = parse_addendum("addendum_1", 1, add)
+    assert [c.target_section for c in ch] == ["46 61 00", None]
+
+
+def test_cover_mentioning_an_addendum_is_not_an_addendum_document() -> None:  # final review I8
+    book = blocks_from(["TECHNICAL SPECIFICATIONS", "Conformed set incorporating Addendum No. 2",
+                        "1. General information."], doc="specs")
+    assert find_addendum_docs(book) == {}

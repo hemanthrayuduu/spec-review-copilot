@@ -9,7 +9,7 @@ from spec_review.ingest import ingest_package
 from spec_review.ingest.pdf_local import find_tessdata
 from spec_review.models import CoverageReport, FilterResult, IngestResult, SegmentResult
 from spec_review.runs import RunWriter
-from spec_review.segment.addenda import apply_addenda, find_addendum_docs, parse_addendum
+from spec_review.segment.addenda import apply_addenda, find_addendum_docs, split_addendum
 from spec_review.segment.sections import split_sections
 from spec_review.segment.xrefs import find_xrefs
 
@@ -28,8 +28,9 @@ def build_coverage(ingest: IngestResult, segment: SegmentResult, filt: FilterRes
         return (b.doc_id, b.page, b.bbox, b.text)  # type: ignore[attr-defined]
 
     in_sections = {key(b) for s in segment.sections for b in s.blocks}
-    section_docs = {s.doc_id for s in segment.sections}
-    addendum_docs = {c.doc_id for c in segment.addenda} - section_docs
+    # An addendum's instruction blocks become change records (numbered items, Q&A, and loose text with
+    # instruction words); its headings and plain preamble are context. Attached sections are in sections.
+    addendum_docs = {c.doc_id for c in segment.addenda}
     unassigned = sum(1 for b in ingest.blocks if b.doc_id not in addendum_docs and key(b) not in in_sections)
     kept = {d.section_id for d in filt.decisions if d.keep}
     # Distinct pages, since sections share pages; blank pages inside a section's span are not reading.
@@ -65,10 +66,13 @@ def run_read(package_dir: Path, writer: RunWriter, settings: Settings, *,
 
     docs = find_addendum_docs(ing.blocks)
     sections = split_sections(ing.blocks, exclude_docs=frozenset(docs))
+    changes = []
+    for doc_id, n in sorted(docs.items(), key=lambda kv: kv[1]):
+        found, attached = split_addendum(doc_id, n, [b for b in ing.blocks if b.doc_id == doc_id])
+        changes += found
+        sections += attached  # reissued sections inside an addendum PDF
     writer.write("segment", SegmentResult(package_id=ing.package_id, sections=sections))
 
-    changes = [c for doc_id, n in sorted(docs.items(), key=lambda kv: kv[1])
-               for c in parse_addendum(doc_id, n, [b for b in ing.blocks if b.doc_id == doc_id])]
     sections, changes = apply_addenda(sections, changes, ing.blocks)
     writer.write("addenda", SegmentResult(package_id=ing.package_id, sections=sections, addenda=changes))
 
