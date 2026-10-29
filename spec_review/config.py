@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     llm_price_input_per_mtok: float = Field(default=0.0, ge=0.0)
     llm_price_output_per_mtok: float = Field(default=0.0, ge=0.0)
     mock_fixtures_dir: Path = Path(__file__).parent / "llm" / "fixtures"
+    tessdata_prefix: Path | None = None  # folder holding eng.traineddata; None means search the usual places
 
 
 def get_settings() -> Settings:

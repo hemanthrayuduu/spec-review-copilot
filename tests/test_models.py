@@ -5,6 +5,7 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from spec_review.models import (
+    AddendumChange,
     Block,
     Brief,
     BriefItem,
@@ -14,15 +15,24 @@ from spec_review.models import (
     Capability,
     CapabilityBasis,
     Category,
+    CoverageReport,
+    CrossRef,
+    DocumentInfo,
     Evidence,
+    FilterResult,
+    IngestResult,
     LimitType,
     MatchResult,
     MatchStatus,
+    PageInfo,
     PermitLimit,
     RedFlag,
     Requirement,
     ReviewDecision,
     Section,
+    SectionDecision,
+    SegmentResult,
+    SkippedFile,
 )
 
 REQ = dict(req_id="r1", doc_id="div46_membranes", section_number="46 61 00",
@@ -75,6 +85,33 @@ VALID: dict[type[BaseModel], dict[str, Any]] = {
     Brief: dict(package_id="lakeview", relevant_sections=[BRIEF_SECTION], deadlines=[BRIEF_ITEM],
                 red_flags=[{**BRIEF_ITEM, "flag_type": "named_manufacturer"}],
                 permit_limits=[PERMIT]),
+    PageInfo: dict(doc_id="specs", page=1, status="text", char_count=1200, label="46 61 00 - 1"),
+    DocumentInfo: dict(doc_id="specs", path="specs.pdf", page_count=130),
+    SkippedFile: dict(path="notes.SEC", reason="not a PDF"),
+    IngestResult: dict(package_id="lakeview", documents=[dict(doc_id="specs", path="specs.pdf", page_count=1)],
+                       pages=[dict(doc_id="specs", page=1, status="text", char_count=10)], blocks=[BLOCK],
+                       skipped=[dict(path="notes.SEC", reason="not a PDF")], removed_lines=2),
+    AddendumChange: dict(change_id="A1-1", addendum_id="Addendum 1", doc_id="addendum_1", page=1,
+                         source_text="Delete paragraph 2.04.B and replace with the following: ...",
+                         action="replace_paragraph", target_section="46 61 00", target_paragraph="2.04.B",
+                         new_text="Membrane modules shall carry a warranty of 7 years.", applied=True),
+    CrossRef: dict(from_section_id="specs#7", to_number="01 33 00", to_section_id="specs#1", doc_id="specs",
+                   page=12, source_text="per Section 01 33 00"),
+    SectionDecision: dict(section_id="specs#7", number="46 61 00", title="MEMBRANE FILTRATION EQUIPMENT",
+                          keep=True, product_lines=["membranes"], reasons=["title keyword 'membrane'"],
+                          method="rule"),
+    SegmentResult: dict(package_id="lakeview", sections=[SECTION],
+                        addenda=[dict(change_id="A1-2", addendum_id="Addendum 1", doc_id="addendum_1", page=1,
+                                      source_text="Question: ... Answer: ...", action="clarification")],
+                        xrefs=[dict(from_section_id="s1", to_number="01 33 00", doc_id="specs", page=3,
+                                    source_text="per Section 01 33 00")]),
+    FilterResult: dict(package_id="lakeview", decisions=[dict(section_id="s1", number=None, title="FRONT MATTER",
+                                                              keep=True, reasons=["front end"], method="rule")]),
+    CoverageReport: dict(package_id="lakeview", pages_total=150, pages_text=147, pages_ocr=1, pages_blank=1,
+                         needs_ocr_pages=["permit:2"], skipped_files=["notes.SEC: not a PDF"], blocks_total=900,
+                         blocks_unassigned=0, removed_header_footer_lines=300, sections_total=20,
+                         sections_kept=15, pages_in_kept_sections=90, unparsed_addendum_items=0,
+                         unresolved_xrefs=1, silent_drops=0),
 }
 
 
@@ -162,3 +199,18 @@ def test_review_decision_needs_reviewer_and_aware_time() -> None:
 def test_extra_fields_are_rejected() -> None:
     with pytest.raises(ValidationError):
         Requirement(**REQ, status="comply")
+
+
+def test_block_defaults_keep_phase0_shape() -> None:
+    b = Block(**BLOCK)
+    assert (b.origin, b.paragraph_path, b.from_addendum, b.superseded_by) == ("text", None, None, None)
+
+
+def test_section_decision_needs_a_reason() -> None:
+    with pytest.raises(ValidationError):
+        SectionDecision(section_id="s1", number="46 61 00", title="X", keep=False, reasons=[], method="rule")
+
+
+def test_page_info_rejects_negative_chars() -> None:
+    with pytest.raises(ValidationError):
+        PageInfo(doc_id="specs", page=1, status="text", char_count=-1)

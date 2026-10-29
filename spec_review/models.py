@@ -41,6 +41,12 @@ MatchStatus = Literal["comply", "comply_with_clarification", "deviation", "needs
 MatchMethod = Literal["rule", "llm"]
 RedFlagType = Literal["named_manufacturer", "pilot_testing", "bond", "liquidated_damages",
                       "domestic_content", "experience_minimum"]
+PageStatus = Literal["text", "ocr", "blank", "needs_ocr"]
+BlockOrigin = Literal["text", "ocr", "table"]
+AddendumAction = Literal["replace_paragraph", "add_paragraph", "delete_paragraph", "replace_section",
+                         "revise_date", "clarification", "unparsed"]
+DecisionMethod = Literal["rule", "linked", "default_keep", "llm"]
+Count = Annotated[int, Field(ge=0)]
 
 
 class ContractModel(BaseModel):
@@ -53,6 +59,10 @@ class Block(ContractModel):
     bbox: BBox
     text: str
     kind: BlockKind
+    origin: BlockOrigin = "text"
+    paragraph_path: str | None = None  # e.g. "2.03.B.4", set by the segmenter
+    from_addendum: str | None = None  # "Addendum 1" when the text was inserted by an addendum
+    superseded_by: str | None = None  # "Addendum 1" when an addendum replaced or deleted this text
 
 
 class Section(ContractModel):
@@ -229,3 +239,96 @@ class Brief(ContractModel):
     red_flags: list[RedFlag] = []
     permit_limits: list[PermitLimit] = []
     addenda_changes: list[BriefItem] = []
+
+
+class PageInfo(ContractModel):
+    doc_id: NonBlankStr
+    page: Page
+    status: PageStatus
+    char_count: Count
+    label: str | None = None  # printed page label, e.g. "46 61 00 - 3"
+
+
+class DocumentInfo(ContractModel):
+    doc_id: NonBlankStr
+    path: NonBlankStr  # relative to the package directory
+    page_count: Count
+
+
+class SkippedFile(ContractModel):
+    path: NonBlankStr
+    reason: NonBlankStr
+
+
+class IngestResult(ContractModel):
+    package_id: NonBlankStr
+    documents: list[DocumentInfo] = []
+    pages: list[PageInfo] = []
+    blocks: list[Block] = []
+    skipped: list[SkippedFile] = []
+    removed_lines: Count = 0  # running header and footer lines removed by normalize
+
+
+class AddendumChange(ContractModel):
+    change_id: NonBlankStr
+    addendum_id: NonBlankStr
+    doc_id: NonBlankStr
+    page: Page
+    source_text: NonBlankStr
+    action: AddendumAction
+    target_section: str | None = None  # display form, e.g. "46 61 00"
+    target_paragraph: str | None = None  # as written, e.g. "2.04.B"
+    new_text: str | None = None
+    applied: bool = False
+    note: str = ""
+
+
+class CrossRef(ContractModel):
+    from_section_id: NonBlankStr
+    to_number: NonBlankStr  # display form
+    to_section_id: str | None = None  # None when the section is not in the package
+    doc_id: NonBlankStr
+    page: Page
+    source_text: NonBlankStr
+
+
+class SectionDecision(ContractModel):
+    section_id: NonBlankStr
+    number: str | None
+    title: str
+    keep: bool
+    product_lines: list[str] = []
+    permit: bool = False
+    reasons: Annotated[list[NonBlankStr], Field(min_length=1)]  # every keep or drop is explained
+    method: DecisionMethod
+
+
+class SegmentResult(ContractModel):
+    package_id: NonBlankStr
+    sections: list[Section] = []
+    addenda: list[AddendumChange] = []
+    xrefs: list[CrossRef] = []
+
+
+class FilterResult(ContractModel):
+    package_id: NonBlankStr
+    decisions: list[SectionDecision] = []
+
+
+class CoverageReport(ContractModel):
+    package_id: NonBlankStr
+    pages_total: Count
+    pages_text: Count
+    pages_ocr: Count
+    pages_blank: Count
+    needs_ocr_pages: list[str] = []  # "doc_id:page"
+    skipped_files: list[str] = []  # "path: reason"
+    blocks_total: Count
+    blocks_unassigned: Count
+    removed_header_footer_lines: Count
+    sections_total: Count
+    sections_kept: Count
+    pages_in_kept_sections: Count
+    unparsed_addendum_items: Count
+    unresolved_xrefs: Count
+    silent_drops: Count  # blocks_unassigned; must be 0
