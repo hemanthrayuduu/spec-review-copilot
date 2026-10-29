@@ -47,11 +47,13 @@ RC generates your key pair in your Explorer home folder: `/home/<user>/.ssh/<use
 
    **If there are no `<user>-*` files** in `~/.ssh` on Explorer, RC hasn't generated your keys yet. Email rchelp@northeastern.edu and ask for your Explorer SSH keys, mentioning the November 6 key requirement.
 
-2. **Lock down the permissions:**
+2. **Lock down the permissions, then authorize the key.** RC generates the key pair, but the server doesn't accept it until the public key is in your `~/.ssh/authorized_keys` on Explorer. `ssh-copy-id` asks for your password once and adds it.
    ```bash
    chmod 600 ~/.ssh/<key>
    chmod 644 ~/.ssh/<key>.pub
+   ssh-copy-id -i ~/.ssh/<key>.pub <user>@login.explorer.northeastern.edu
    ```
+   If `ssh-copy-id` isn't available, run this on the cluster instead: `cat ~/.ssh/<key>.pub >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys`.
 
 3. **Log in once from your own Terminal app**, so the cluster's host key gets saved:
    ```bash
@@ -109,6 +111,8 @@ srun -p gpu --gres=gpu:1 --mem=16G --time=00:10:00 --pty nvidia-smi     # the GP
 df -h ~ /scratch/$USER                                                  # space for model weights
 srun -p short --time=00:05:00 curl -sI https://pypi.org | head -1      # can compute nodes reach the internet?
 ```
+
+**If every `srun`, even on `short`, fails with "Invalid account or account/partition combination specified"**, your login works but you have no Slurm account. `sacctmgr show assoc where user=$USER` prints nothing in that case. The partitions themselves allow all accounts, so only RC can fix this: email rchelp@northeastern.edu and ask them to add a Slurm association for your user.
 
 The GPU's memory decides the model size:
 
