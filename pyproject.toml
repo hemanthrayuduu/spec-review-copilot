@@ -30,3 +30,5 @@ packages = ["spec_review"]
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "--disable-socket --allow-unix-socket"
+# PyMuPDF's SWIG bindings warn at import time on Python 3.11; nothing to act on.
+filterwarnings = ["ignore:builtin type .* has no __module__ attribute:DeprecationWarning"]
