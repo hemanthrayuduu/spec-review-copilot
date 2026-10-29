@@ -87,3 +87,26 @@ def test_lakeview_specs_sections(lakeview_pdfs: Path) -> None:
     assert any(b.paragraph_path == "3.08.C.7" for b in s4661.blocks)  # trap 1 is reachable by path
     assert [s.number for s in secs if s.doc_id == "rfp"] == [None, "1", "2", "3", "4", "5", "6", "7", "8", "9"]
     assert [s.title for s in secs if s.doc_id == "permit"] == ["NPDES DISCHARGE PERMIT EXCERPT"]
+
+
+def test_toc_tail_page_starts_no_section() -> None:  # final review I2
+    toc1 = [f"SECTION 46 {n} 00 - TITLE {n} .......... {n}" for n in (21, 43, 51, 53)]
+    toc2 = ["SECTION 05 50 00 - METAL FABRICATIONS .......... 40", "SECTION 46 61 00 - MEMBRANES .......... 61"]
+    body = ["SECTION 05 50 00", "METAL FABRICATIONS", "PART 1 GENERAL", "SECTION 46 61 00", "MEMBRANES", "PART 1 GENERAL"]
+    secs = split_sections(blocks_from(toc1, page=1) + blocks_from(toc2, page=2) + blocks_from(body, page=3))
+    assert [(s.number, s.page_start) for s in secs if s.number] == [("05 50 00", 3), ("46 61 00", 3)]
+
+
+def test_mixed_case_header_title() -> None:  # final review I5
+    secs = split_sections(blocks_from(["SECTION 46 21 00", "BAND SCREENS", "A. Text.",
+                                       "SECTION 46 61 00 - Membrane Filtration Equipment", "A. More text.",
+                                       "SECTION 46 43 00", "Circular Clarifier Equipment", "A. Clarifier text."]))
+    assert [(s.number, s.title) for s in secs] == [("46 21 00", "BAND SCREENS"),
+                                                  ("46 61 00", "Membrane Filtration Equipment"),
+                                                  ("46 43 00", "Circular Clarifier Equipment")]
+
+
+def test_mixed_case_prose_reference_is_not_a_header() -> None:  # final review I5
+    secs = split_sections(blocks_from(["SECTION 46 61 00", "MEMBRANES", "Section 26 05 00 - Common Work Results for "
+                                       "Electrical.", "Section 01 33 00 applies to all submittals"]))
+    assert [s.number for s in secs] == ["46 61 00"]

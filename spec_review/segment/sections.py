@@ -3,18 +3,42 @@
 import re
 from collections import Counter
 
+from spec_review.ingest.normalize import MARKER_RE
 from spec_review.models import Block, NumberingStyle, Section
 from spec_review.segment.paths import PathBuilder, display_number
 
 CSI_NUMBER = r"\d{2}[ _]\d{2}[ _]\d{2}(?:\.\d{2})?(?: \d{2})?"
 LEGACY_NUMBER = r"\d{5}[A-Z]?"
-# The keyword in any case; after the number only an optional all-caps title (no lowercase), so prose
-# such as "Section 26_05_00 - Common Work Results for Electrical." is not a header.
-SECTION_HEADER_RE = re.compile(rf"^(?i:SECTION|DOCUMENT)\s+(?P<number>{CSI_NUMBER}|{LEGACY_NUMBER})(?![\d.])"
-                               rf"(?P<title>[^a-z]*)$")
+SECTION_HEADER_RE = re.compile(rf"^(?P<keyword>(?i:SECTION|DOCUMENT))\s+(?P<number>{CSI_NUMBER}|{LEGACY_NUMBER})"
+                               rf"(?![\d.])(?P<title>.*)$")
+TOC_ENTRY_RE = re.compile(r"\.{4,}|…")  # dot leaders to a page number
 NUMBERED_HEADING_RE = re.compile(r"^(\d{1,2})\.\s+([A-Z][A-Z0-9 ,&/()\-]{2,})$")
 TOC_MIN_HEADERS = 4
+TITLE_MAX_WORDS = 15
 FRONT_MATTER = "FRONT MATTER"
+
+
+def match_header(text: str) -> re.Match[str] | None:
+    """A section or document header line, or None.
+
+    The keyword may be in any case with an all-caps title or none. A title with lowercase letters needs the
+    keyword in capitals and no closing period, so prose such as "Section 26_05_00 - Common Work Results for
+    Electrical." stays prose while "SECTION 46 61 00 - Membrane Filtration Equipment" is a header.
+    """
+    m = SECTION_HEADER_RE.match(text)
+    if not m:
+        return None
+    title = m.group("title").strip()
+    if any(c.islower() for c in title) and (m.group("keyword") not in ("SECTION", "DOCUMENT")
+                                            or title.endswith(".") or len(title.split()) > TITLE_MAX_WORDS):
+        return None
+    return m
+
+
+def _title_block(b: Block) -> bool:
+    """The block after a bare header can be its title: short, not a sentence, not a marker or a header."""
+    return (len(b.text.split()) <= TITLE_MAX_WORDS and not b.text.endswith(".") and not MARKER_RE.match(b.text)
+            and not b.text.startswith(("PART ", "SECTION ", "DOCUMENT ", "END OF SECTION")))
 
 
 def _title(rest: str) -> str:
@@ -29,11 +53,23 @@ def _make(doc_id: str, n: int, number: str | None, title: str, style: NumberingS
                    page_start=min(b.page for b in blocks), page_end=max(b.page for b in blocks), blocks=with_paths)
 
 
-def _split_doc(doc_id: str, blocks: list[Block]) -> list[Section]:
-    matches = [SECTION_HEADER_RE.match(b.text) for b in blocks]
+def _toc_pages(blocks: list[Block], matches: list[re.Match[str] | None]) -> set[int]:
+    """Pages of a table of contents: 4 or more header lines, or a page of nothing but header lines right
+    after such a page (the tail of a TOC)."""
     per_page = Counter(b.page for b, m in zip(blocks, matches, strict=True) if m)
-    toc_pages = {p for p, n in per_page.items() if n >= TOC_MIN_HEADERS}
-    starts = [i for i, (b, m) in enumerate(zip(blocks, matches, strict=True)) if m and b.page not in toc_pages]
+    toc = {p for p, n in per_page.items() if n >= TOC_MIN_HEADERS}
+    on_page = Counter(b.page for b in blocks)
+    for p in sorted(per_page):
+        if p - 1 in toc and per_page[p] == on_page[p]:
+            toc.add(p)
+    return toc
+
+
+def _split_doc(doc_id: str, blocks: list[Block]) -> list[Section]:
+    matches = [match_header(b.text) for b in blocks]
+    toc_pages = _toc_pages(blocks, matches)
+    starts = [i for i, (b, m) in enumerate(zip(blocks, matches, strict=True))
+              if m and b.page not in toc_pages and not TOC_ENTRY_RE.search(b.text)]
     sections: list[Section] = []
     if starts:
         if starts[0] > 0:
@@ -44,8 +80,7 @@ def _split_doc(doc_id: str, blocks: list[Block]) -> list[Section]:
             assert m is not None
             number = display_number(m.group("number"))
             title = _title(m.group("title"))
-            if not title and start + 1 < end and blocks[start + 1].kind == "heading" \
-                    and not blocks[start + 1].text.startswith(("PART ", "SECTION ", "END OF SECTION")):
+            if not title and start + 1 < end and _title_block(blocks[start + 1]):
                 title = blocks[start + 1].text
             style: NumberingStyle = "legacy" if re.fullmatch(LEGACY_NUMBER, number) else "csi"
             sections.append(_make(doc_id, len(sections) + 1, number, title, style, blocks[start:end]))

@@ -53,3 +53,18 @@ def test_headers_and_toc_lines_are_not_references() -> None:
     secs = split_sections(blocks_from(["TABLE OF CONTENTS", *toc], page=1) +
                           blocks_from(["SECTION 03 30 00", "CONCRETE", "SECTION 46 61 00", "MEMBRANES"], page=2))
     assert find_xrefs(secs) == []
+
+
+def test_every_number_in_a_list_reference_is_linked() -> None:  # final review I6
+    secs = split_sections(blocks_from(["SECTION 05 50 00", "METALS", "SECTION 09 96 00", "COATINGS", "SECTION 26 05 00",
+                                       "ELECTRICAL", "SECTION 46 61 00", "MEMBRANES",
+                                       "A. Coordinate with Sections 05 50 00, 09 96 00, and 26 05 00."]))
+    assert [r.to_number for r in find_xrefs(secs)] == ["05 50 00", "09 96 00", "26 05 00"]
+
+
+def test_reference_prefers_the_full_section_over_a_stub() -> None:  # final review I2
+    stub = blocks_from(["SECTION 05 50 00 - METALS"], page=2)
+    full = blocks_from(["SECTION 05 50 00", "METALS", "A. Steel.", "B. Bolts."], page=3)
+    secs = split_sections(stub + full + blocks_from(["SECTION 46 61 00", "MEMBRANES", "A. Per Section 05 50 00."],
+                                                    page=4))
+    assert [r.to_section_id for r in find_xrefs(secs)] == ["specs#2"]
