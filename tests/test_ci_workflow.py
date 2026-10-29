@@ -11,3 +11,4 @@ def test_ci_runs_pytest_on_every_push() -> None:
     assert "push" in triggers
     runs = [step.get("run", "") for job in wf["jobs"].values() for step in job["steps"]]
     assert "uv sync --locked" in runs and "uv run pytest" in runs
+    assert any("tesseract-ocr" in r for r in runs)

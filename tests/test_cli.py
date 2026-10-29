@@ -1,8 +1,12 @@
+import json
+import shutil
 from pathlib import Path
 
+import pytest
 from typer.testing import CliRunner
 
 from spec_review.cli import app
+from spec_review.eval.golden import GoldenPackage
 
 
 def test_help_lists_run_and_eval() -> None:
@@ -10,9 +14,39 @@ def test_help_lists_run_and_eval() -> None:
     assert result.exit_code == 0 and "run" in result.output and "eval" in result.output
 
 
-def test_run_stub_fails_loudly(tmp_path: Path) -> None:
-    result = CliRunner().invoke(app, ["run", str(tmp_path)])
-    assert result.exit_code == 1 and "Phase 1" in result.output
+def test_run_prints_summary(tmp_path: Path, lakeview_pdfs: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = CliRunner().invoke(app, ["run", str(lakeview_pdfs), "--run-id", "cli1"])
+    assert result.exit_code == 0 and "silent drops: 0" in result.output and (tmp_path / "runs/cli1/coverage.json").exists()
+    assert "runs/cli1" in result.output
+
+
+def test_run_missing_folder_fails(tmp_path: Path) -> None:
+    result = CliRunner().invoke(app, ["run", str(tmp_path / "nope")])
+    assert result.exit_code == 1 and "not a folder" in result.output
+
+
+def test_eval_dev_scores_lakeview(tmp_path: Path, lakeview_pdfs: Path, lakeview_golden: GoldenPackage,
+                                  monkeypatch: pytest.MonkeyPatch) -> None:
+    shutil.copytree(lakeview_pdfs, tmp_path / "data/raw/dev/lakeview")
+    (tmp_path / "data/golden/dev").mkdir(parents=True)
+    (tmp_path / "data/golden/dev/lakeview.json").write_text(lakeview_golden.model_dump_json())
+    monkeypatch.chdir(tmp_path)
+    result = CliRunner().invoke(app, ["eval", "dev"])
+    assert result.exit_code == 0, result.output
+    card = json.loads((tmp_path / "runs/latest/scorecard.json").read_text())
+    assert card["section_recall"] == 1.0 and card["silent_drops"] == 0
+
+
+def test_eval_dev_without_package_says_how_to_build_it(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = CliRunner().invoke(app, ["eval", "dev"])
+    assert result.exit_code == 1 and "uv run python scripts/make_lakeview.py" in result.output
+
+
+def test_eval_test_is_guarded() -> None:
+    result = CliRunner().invoke(app, ["eval", "test"])
+    assert result.exit_code == 1 and "Phase 4" in result.output
 
 
 def test_eval_rejects_unknown_split() -> None:

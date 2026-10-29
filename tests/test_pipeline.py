@@ -1,0 +1,84 @@
+import zipfile
+from pathlib import Path
+
+from spec_review.config import Settings
+from spec_review.eval.golden import GoldenPackage
+from spec_review.eval.metrics import pages_kept_ratio, section_recall
+from spec_review.eval.scorecard import build_scorecard
+from spec_review.filter.relevance import decide, load_product_map
+from spec_review.ingest import ingest_package
+from spec_review.models import FilterResult, SegmentResult
+from spec_review.pipeline import build_coverage, run_read
+from spec_review.runs import RunWriter
+from spec_review.segment.sections import split_sections
+from tests.pdf_fixtures import make_pdf, make_scanned_pdf
+
+
+def test_run_writes_every_stage(tmp_path: Path, lakeview_pdfs: Path) -> None:
+    run_read(lakeview_pdfs, RunWriter("t1", root=tmp_path), Settings(_env_file=None), cache_dir=tmp_path / "cache")
+    assert sorted(p.stem for p in (tmp_path / "t1").glob("*.json")) == ["addenda", "coverage", "filter", "ingest",
+                                                                        "segment", "xrefs"]
+    assert (tmp_path / "latest").resolve() == (tmp_path / "t1").resolve()
+    seg = SegmentResult.model_validate_json((tmp_path / "t1/segment.json").read_text())
+    assert seg.addenda == [] and seg.xrefs == []  # split only; later stages add to it
+    assert SegmentResult.model_validate_json((tmp_path / "t1/xrefs.json").read_text()).xrefs
+
+
+def test_lakeview_scorecard_meets_phase_1a(tmp_path: Path, lakeview_pdfs: Path, lakeview_golden: GoldenPackage) -> None:
+    out = run_read(lakeview_pdfs, RunWriter("t2", root=tmp_path), Settings(_env_file=None), cache_dir=tmp_path / "c")
+    card = build_scorecard(lakeview_golden, out)
+    assert card.section_recall == 1.0 and card.silent_drops == 0 and card.sections_missed == []
+    assert card.pages_blank == 1 and (card.pages_ocr == 1 or card.needs_ocr_pages == 1)
+    assert card.addenda_applied == 3 and card.addenda_unparsed == 0
+    assert 0 < card.pages_kept_ratio < 0.75  # the filter actually cuts reading
+    assert out.coverage.pages_total == (out.coverage.pages_text + out.coverage.pages_ocr + out.coverage.pages_blank
+                                        + len(out.coverage.needs_ocr_pages))
+
+
+def test_coverage_counts_needs_ocr_and_skips(tmp_path: Path) -> None:
+    make_pdf(tmp_path / "pkg/specs.pdf", ["<p>SECTION 46 61 00</p><p>MEMBRANES</p><p>A. Text shall be here.</p>"])
+    make_scanned_pdf(tmp_path / "pkg/permit.pdf", "Total Phosphorus 0.1 mg/L monthly average")
+    with zipfile.ZipFile(tmp_path / "pkg/drawings.zip", "w") as z:
+        z.writestr("M-101.txt", "sheet")
+    ing = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    secs = split_sections(ing.blocks)
+    seg = SegmentResult(package_id=ing.package_id, sections=secs)
+    cov = build_coverage(ing, seg, FilterResult(package_id=ing.package_id, decisions=decide(secs, [], load_product_map())))
+    assert cov.needs_ocr_pages == ["permit:1"] and cov.skipped_files == ["drawings.zip: not a PDF"]
+    assert cov.silent_drops == 0 and cov.pages_total == 2 and cov.sections_kept == 1
+
+
+def test_blocks_outside_sections_are_counted_as_silent_drops(tmp_path: Path) -> None:
+    make_pdf(tmp_path / "pkg/specs.pdf", ["<p>SECTION 46 61 00</p><p>MEMBRANES</p>"])
+    make_pdf(tmp_path / "pkg/other.pdf", ["<p>Some text nobody assigned.</p>"])
+    ing = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    secs = [s for s in split_sections(ing.blocks) if s.doc_id == "specs"]
+    cov = build_coverage(ing, SegmentResult(package_id="pkg", sections=secs),
+                         FilterResult(package_id="pkg", decisions=decide(secs, [], load_product_map())))
+    assert cov.blocks_unassigned == cov.silent_drops == 1
+
+
+def test_section_recall_lists_misses(lakeview_golden: GoldenPackage) -> None:
+    seg = SegmentResult(package_id="lakeview", sections=[])
+    r = section_recall(lakeview_golden, seg, FilterResult(package_id="lakeview"))
+    assert r.found == 0 and r.total == len(lakeview_golden.relevant_sections) and r.value == 0.0
+    assert "specs:46 61 00" in r.missed and "permit:NPDES DISCHARGE PERMIT EXCERPT" in r.missed
+
+
+def test_pages_kept_ratio_ignores_blank_pages(tmp_path: Path, lakeview_pdfs: Path) -> None:
+    out = run_read(lakeview_pdfs, RunWriter("t3", root=tmp_path), Settings(_env_file=None), cache_dir=tmp_path / "c")
+    c = out.coverage
+    assert pages_kept_ratio(c) == c.pages_in_kept_sections / (c.pages_total - c.pages_blank)
+    assert c.pages_in_kept_sections <= c.pages_total - c.pages_blank
+
+
+def test_blank_pages_inside_kept_sections_are_not_counted_as_kept(tmp_path: Path) -> None:
+    make_pdf(tmp_path / "pkg/specs.pdf", ["<p>SECTION 46 61 00</p><p>MEMBRANES</p><p>A. Text shall be here.</p>", "",
+                                          "<p>B. More text after a blank page.</p>",
+                                          "<p>SECTION 03 30 00</p><p>CONCRETE</p><p>A. Concrete shall cure.</p>"])
+    ing = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
+    secs = split_sections(ing.blocks)
+    cov = build_coverage(ing, SegmentResult(package_id="pkg", sections=secs),
+                         FilterResult(package_id="pkg", decisions=decide(secs, [], load_product_map())))
+    assert (cov.pages_blank, cov.pages_in_kept_sections) == (1, 2)
+    assert pages_kept_ratio(cov) == 2 / 3
