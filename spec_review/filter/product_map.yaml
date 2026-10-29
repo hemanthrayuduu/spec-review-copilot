@@ -36,3 +36,8 @@ always_include:
   # instructions to bidders, bid form, submittal procedures, closeout and warranties (verify per package)
   keywords: ["approved equal", "or equal", "substitution", "warranty", "Buy America", "BABA",
              "liquidated damages", "performance bond", "pilot", "installation list", "references"]
+
+# Permit excerpts: always kept and flagged for the permit extractor.
+permits:
+  section_prefixes: []
+  keywords: ["NPDES", "discharge permit", "effluent limitations", "permit limits"]
