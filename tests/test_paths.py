@@ -43,3 +43,10 @@ def test_part_line_resets_and_guards_stray_decimals() -> None:
     assert b.feed("4.2 MGD at peak flow.") == "2.01.A"  # Part 2 articles start with 2.
     assert b.feed("2.02 DESIGN CRITERIA") == "2.02"
     assert b.feed("END OF SECTION") is None
+
+
+def test_letter_paren_marker_level() -> None:  # final review I4
+    b = PathBuilder()
+    b.start_section()
+    assert [b.feed(t) for t in ["2.03 COUPLINGS", "E. Couplings:", "3. Rigid:", "a) Victaulic, Style 107.",
+                                "b) Gruvlok."]] == ["2.03", "2.03.E", "2.03.E.3", "2.03.E.3.a", "2.03.E.3.b"]

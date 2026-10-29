@@ -11,10 +11,11 @@ from spec_review.models import BBox, Block, BlockKind
 BAND = 0.08  # top and bottom share of the page where running headers and footers live
 BIG_FONT = 1.2  # a line this many times the page's median size is a heading
 PARAGRAPH_GAP = 0.3  # space above a line beyond normal line spacing, in line heights, that starts a paragraph
+SAME_BASELINE = 0.5  # consecutive lines overlapping by this share of a line height sit side by side
 
-MARKER_ONLY_RE = re.compile(r"^(?:\d\.\d{2}|[A-Z]\.|\d{1,2}\.|[a-z]\.|\(\d{1,2}\)|\([a-z]\)|\d{1,2}\)|PART [123])$")
+MARKER_ONLY_RE = re.compile(r"^(?:\d\.\d{2}|[A-Z]\.|\d{1,2}\.|[a-z]\.|\(\d{1,2}\)|\([a-z]\)|\d{1,2}\)|[a-z]\)|PART [123])$")
 PAGE_LABEL_RE = re.compile(r"^\d{2}[ _]\d{2}[ _]\d{2}(?:\.\d{2})?(?: \d{2})?\s*-\s*\d+$")
-MARKER_RE = re.compile(r"^(?:\d\.\d{2}|\d+(?:\.\d+)+|[A-Z]\.|\d{1,2}\.|[a-z]\.|\(\d{1,2}\)|\([a-z]\)|\d{1,2}\))(?=\s|$)")
+MARKER_RE = re.compile(r"^(?:\d\.\d{2}|\d+(?:\.\d+)+|[A-Z]\.|\d{1,2}\.|[a-z]\.|\(\d{1,2}\)|\([a-z]\)|\d{1,2}\)|[a-z]\))(?=\s|$)")
 LEVEL1_RE = re.compile(r"^(?:\d\.\d{2}|\d+(?:\.\d+)+)(?=\s|$)")  # 1.01 or 4.2: also how wrapped decimals look
 ARTICLE_HEADING_RE = re.compile(r"^\d\.\d{2}\s+[A-Z][A-Z0-9 ,&'/()\-]*$")  # 2.03 MATERIALS
 START_WORD_RE = re.compile(r"^(?:SECTION|DOCUMENT|PART|END OF SECTION)\b")
@@ -147,9 +148,10 @@ def build_blocks(lines: list[RawLine], page_sizes: dict[int, tuple[float, float]
         median_size = statistics.median(x.size for x in kept)
         median_height = statistics.median(x.bbox[3] - x.bbox[1] for x in kept)
         # Normal line spacing is the tightest gap on the page; a median can itself be a paragraph gap when
-        # most paragraphs are one line. Large negative gaps (a jump back up to another column) are ignored.
+        # most paragraphs are one line. Lines that overlap by half a line or more share a baseline (a marker
+        # beside its text, a two-column form) or jump back to another column, so they say nothing about spacing.
         gaps = [b.bbox[1] - a.bbox[3] for a, b in zip(kept, kept[1:], strict=False)]
-        line_gap = min((g for g in gaps if g > -median_height), default=0.0)
+        line_gap = min((g for g in gaps if g > -SAME_BASELINE * median_height), default=0.0)
         group = [kept[0]]
         for prev, ln in zip(kept, kept[1:], strict=False):
             if _starts_block(prev, ln, median_size, line_gap, median_height):

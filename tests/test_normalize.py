@@ -149,3 +149,26 @@ def test_section_number_wrapped_across_lines_stays_together() -> None:
                                            "E. Next paragraph."]), SIZES, {})
     assert [b.text for b in doc.blocks] == ["D. Submit placement records in accordance with Section 01 33 00.",
                                             "E. Next paragraph."]
+
+
+def test_same_baseline_lines_do_not_split_paragraphs() -> None:  # final review I4
+    lines = [RawLine("specs", 1, (131, 100, 143, 112), "a)", 11, False, "text"),
+             RawLine("specs", 1, (156, 100, 520, 112), "Housings shall be cast with offsetting angle-pattern bolt pads to",
+                     11, False, "text"),
+             RawLine("specs", 1, (156, 112, 520, 124), "provide rigidity and prevent rotation.", 11, False, "text"),
+             RawLine("specs", 1, (131, 125, 143, 137), "b)", 11, False, "text"),
+             RawLine("specs", 1, (156, 125, 520, 137), "Gaskets shall be EPDM.", 11, False, "text")]
+    doc = build_blocks(lines, SIZES, {})
+    assert [b.text for b in doc.blocks] == [
+        "a) Housings shall be cast with offsetting angle-pattern bolt pads to provide rigidity and prevent rotation.",
+        "b) Gaskets shall be EPDM."]
+
+
+def test_two_column_form_lines_do_not_set_the_line_gap() -> None:  # final review I4
+    lines = [RawLine("specs", 1, (72, 100, 200, 112), "Bidder name:", 11, False, "text"),
+             RawLine("specs", 1, (300, 100.5, 540, 112.5), "________________", 11, False, "text"),
+             RawLine("specs", 1, (72, 130, 540, 142), "The Bidder agrees to hold the bid open for 90 days and to", 11,
+                     False, "text"),
+             RawLine("specs", 1, (72, 143, 540, 155), "furnish the bonds required.", 11, False, "text")]
+    doc = build_blocks(lines, SIZES, {})
+    assert doc.blocks[-1].text == "The Bidder agrees to hold the bid open for 90 days and to furnish the bonds required."

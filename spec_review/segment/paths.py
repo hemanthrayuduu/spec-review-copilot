@@ -12,7 +12,7 @@ LEVELS: tuple[tuple[int, re.Pattern[str]], ...] = (
     (3, re.compile(r"^(\d{1,2})\.(?=\s|$)")),
     (4, re.compile(r"^([a-z])\.(?=\s|$)")),
     (5, re.compile(r"^\((\d{1,2})\)(?=\s|$)|^(\d{1,2})\)(?=\s|$)")),
-    (6, re.compile(r"^\(([a-z])\)(?=\s|$)")),
+    (6, re.compile(r"^\(([a-z])\)(?=\s|$)|^([a-z])\)(?=\s|$)")),
 )
 PARTS: dict[str, Part] = {"1": "general", "2": "products", "3": "execution"}
 
