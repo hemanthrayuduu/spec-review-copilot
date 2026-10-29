@@ -42,3 +42,4 @@ def test_part_line_resets_and_guards_stray_decimals() -> None:
     assert b.feed("0.1 mg/L as a monthly average.") == "2.01.A"  # continuation of a sentence from the previous page
     assert b.feed("4.2 MGD at peak flow.") == "2.01.A"  # Part 2 articles start with 2.
     assert b.feed("2.02 DESIGN CRITERIA") == "2.02"
+    assert b.feed("END OF SECTION") is None

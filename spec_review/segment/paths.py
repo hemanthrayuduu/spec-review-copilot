@@ -52,6 +52,8 @@ class PathBuilder:
         if part:
             self.stack, self.part = {}, part.group(1)
             return None
+        if text.startswith("END OF SECTION"):
+            return None
         for level, rx in LEVELS:
             m = rx.match(text)
             if not m:
