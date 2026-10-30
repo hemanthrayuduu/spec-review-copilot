@@ -4,11 +4,14 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pymupdf
 
 from spec_review.models import BBox, BlockOrigin, PageInfo, PageStatus
+
+if TYPE_CHECKING:
+    from spec_review.ingest.azure_docintel import PageReader
 
 MIN_TEXT_CHARS = 50  # fewer characters than this on a page with images means "scanned"
 SCAN_COVERAGE = 0.8  # an image covering this share of the page is a scan, even with a typed stamp on it
@@ -84,9 +87,21 @@ def _open(path: Path) -> pymupdf.Document:
     return doc
 
 
-def read_pdf(path: Path, doc_id: str, *, tessdata: Path | None
+def _docintel_lines(doc: pymupdf.Document, pg: pymupdf.Page, doc_id: str, n: int,
+                    docintel: "PageReader") -> list[RawLine]:
+    with pymupdf.open() as one:  # one page per request
+        one.insert_pdf(doc, from_page=pg.number, to_page=pg.number)
+        data = one.tobytes()
+    return [RawLine(doc_id, n, bbox, text, round((bbox[3] - bbox[1]) * 0.8, 1), False, "ocr")
+            for text, bbox in docintel.read_page(data) if text.strip()]
+
+
+def read_pdf(path: Path, doc_id: str, *, tessdata: Path | None, docintel: "PageReader | None" = None
              ) -> tuple[list[PageInfo], list[RawLine], dict[int, tuple[float, float]]]:
-    """Pages with their status, every text line, and each page's (width, height)."""
+    """Pages with their status, every text line, and each page's (width, height).
+
+    Scanned pages go to Document Intelligence when docintel is given, else to Tesseract when tessdata is.
+    """
     pages: list[PageInfo] = []
     lines: list[RawLine] = []
     sizes: dict[int, tuple[float, float]] = {}
@@ -103,10 +118,13 @@ def read_pdf(path: Path, doc_id: str, *, tessdata: Path | None
             elif has_images and (chars < MIN_TEXT_CHARS
                                  or (chars < STAMP_CHARS and _image_coverage(pg) >= SCAN_COVERAGE)):
                 status = "needs_ocr"  # typed text on the page (a stamp) is kept until OCR does better
-                if tessdata is not None:
+                if docintel is not None or tessdata is not None:
                     try:
-                        tp = pg.get_textpage_ocr(tessdata=str(tessdata), dpi=OCR_DPI, full=True)
-                        ocr = _lines(pg.get_text("dict", textpage=tp, flags=TEXT_FLAGS), doc_id, n, "ocr")
+                        if docintel is not None:
+                            ocr = _docintel_lines(doc, pg, doc_id, n, docintel)
+                        else:
+                            tp = pg.get_textpage_ocr(tessdata=str(tessdata), dpi=OCR_DPI, full=True)
+                            ocr = _lines(pg.get_text("dict", textpage=tp, flags=TEXT_FLAGS), doc_id, n, "ocr")
                     except Exception as e:  # a failed OCR leaves the page needs_ocr, counted in coverage
                         logger.warning("OCR failed on %s page %d: %s", doc_id, n, e)
                         ocr = []

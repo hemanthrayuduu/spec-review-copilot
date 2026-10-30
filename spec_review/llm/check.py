@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+import pymupdf
+
+from spec_review.ingest.azure_docintel import PageReader
 from spec_review.llm.client import LLMClient
 from spec_review.models import ContractModel
 
@@ -19,3 +22,10 @@ def check_chat(client: LLMClient) -> str:
     out = f"chat ok: model={call.model} in={call.input_tokens} out={call.output_tokens} cost=${call.cost_usd:.6f}"
     limit = getattr(client.provider, "last_rate_limit", {}).get("x-ratelimit-limit-tokens")
     return f"{out} tokens/min limit={limit}" if limit else out
+
+
+def check_docintel(reader: PageReader) -> str:
+    with pymupdf.open() as doc:
+        doc.new_page().insert_text((72, 72), "azure check", fontsize=14)
+        data = doc.tobytes()
+    return f"docintel ok: {len(reader.read_page(data))} lines"

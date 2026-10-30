@@ -6,6 +6,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pymupdf
 
@@ -14,7 +15,10 @@ from spec_review.ingest.pdf_local import RawLine, UnreadablePdf, read_pdf
 from spec_review.ingest.tables import TableExtraction, extract_tables, has_ruled_lines
 from spec_review.models import BBox, Block, DocumentInfo, IngestResult, PageInfo, SkippedFile
 
-INGEST_VERSION = "1a-3"  # bump when ingest output changes, so cached results are not reused
+if TYPE_CHECKING:
+    from spec_review.ingest.azure_docintel import PageReader
+
+INGEST_VERSION = "1b-1"  # bump when ingest output changes, so cached results are not reused
 TABLE_TEXT_COVERAGE = 0.95  # table rows must carry this share of the words found inside the table's area
 
 logger = logging.getLogger("spec_review.ingest")
@@ -28,8 +32,8 @@ class _Document:
     tables: TableExtraction
 
 
-def ingest_package(package_dir: Path, *, tessdata: Path | None,
-                   cache_dir: Path | None = Path(".cache/ingest")) -> IngestResult:
+def ingest_package(package_dir: Path, *, tessdata: Path | None, cache_dir: Path | None = Path(".cache/ingest"),
+                   docintel: "PageReader | None" = None) -> IngestResult:
     """Read every PDF under package_dir. Other files and unreadable PDFs are listed in skipped, never dropped."""
     result = IngestResult(package_id=package_dir.resolve().name)
     for path in sorted(p for p in package_dir.rglob("*") if p.is_file()):
@@ -39,7 +43,7 @@ def ingest_package(package_dir: Path, *, tessdata: Path | None,
             continue
         doc_id = rel.with_suffix("").as_posix()
         try:
-            doc = _read_cached(path, doc_id, tessdata, cache_dir)
+            doc = _read_cached(path, doc_id, tessdata, cache_dir, docintel)
         except UnreadablePdf as e:
             result.skipped.append(SkippedFile(path=rel.as_posix(), reason=str(e)))
             continue
@@ -90,8 +94,8 @@ def _merge_rows(blocks: list[Block], rows: list[Block]) -> list[Block]:
     return out
 
 
-def _read(path: Path, doc_id: str, tessdata: Path | None) -> _Document:
-    pages, lines, sizes = read_pdf(path, doc_id, tessdata=tessdata)
+def _read(path: Path, doc_id: str, tessdata: Path | None, docintel: "PageReader | None" = None) -> _Document:
+    pages, lines, sizes = read_pdf(path, doc_id, tessdata=tessdata, docintel=docintel)
     try:
         with pymupdf.open(path) as pdf:
             ruled = {p.page for p in pages if p.status == "text" and has_ruled_lines(pdf[p.page - 1])}
@@ -102,12 +106,14 @@ def _read(path: Path, doc_id: str, tessdata: Path | None) -> _Document:
     return _Document(pages, lines, sizes, tables)
 
 
-def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path | None) -> _Document:
+def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path | None,
+                 docintel: "PageReader | None" = None) -> _Document:
     if cache_dir is None:
-        return _read(path, doc_id, tessdata)
+        return _read(path, doc_id, tessdata, docintel)
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    # OCR availability changes the result (ocr vs needs_ocr), so it is part of the key.
-    cache = cache_dir / f"{digest}-{INGEST_VERSION}-{'ocr' if tessdata else 'noocr'}.json"
+    # The OCR engine changes the result (ocr vs needs_ocr, and the text), so it is part of the key.
+    engine = "docintel" if docintel is not None else "tesseract" if tessdata else "noocr"
+    cache = cache_dir / f"{digest}-{INGEST_VERSION}-{engine}.json"
     if cache.is_file():
         data = json.loads(cache.read_text())
         pages = [PageInfo.model_validate({**p, "doc_id": doc_id}) for p in data["pages"]]
@@ -116,7 +122,7 @@ def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path
         regions = {int(k): [tuple(r) for r in v] for k, v in data["regions"].items()}
         return _Document(pages, lines, {int(k): tuple(v) for k, v in data["sizes"].items()},  # type: ignore[misc]
                          TableExtraction(rows, regions))  # type: ignore[arg-type]
-    doc = _read(path, doc_id, tessdata)
+    doc = _read(path, doc_id, tessdata, docintel)
     cache_dir.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_suffix(".tmp")
     tmp.write_text(json.dumps({

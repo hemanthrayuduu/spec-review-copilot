@@ -84,3 +84,9 @@ def test_run_fails_fast_on_incomplete_azure_settings(tmp_path: Path, lakeview_pd
     result = CliRunner().invoke(app, ["run", str(lakeview_pdfs)])
     assert result.exit_code == 1 and "AZURE_OPENAI_ENDPOINT" in result.output
     assert not list(tmp_path.rglob("ingest.json"))
+
+
+def test_azure_check_names_missing_docintel_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PROVIDER_OCR", "azure")
+    result = CliRunner().invoke(app, ["azure-check"])
+    assert result.exit_code == 1 and "AZURE_DOCINTEL_ENDPOINT" in result.output

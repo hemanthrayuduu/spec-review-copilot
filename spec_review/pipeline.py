@@ -14,6 +14,7 @@ from spec_review.extract.requirements import extract_groups
 from spec_review.extract.verify import build_report, page_texts
 from spec_review.filter.relevance import decide, load_product_map
 from spec_review.ingest import ingest_package
+from spec_review.ingest.azure_docintel import docintel_from_settings
 from spec_review.ingest.pdf_local import find_tessdata
 from spec_review.llm.client import LLMCall, LLMClient, get_client
 from spec_review.models import (
@@ -81,7 +82,8 @@ def build_coverage(ingest: IngestResult, segment: SegmentResult, filt: FilterRes
 def run_read(package_dir: Path, writer: RunWriter, settings: Settings, *,
              cache_dir: Path | None = Path(".cache/ingest")) -> ReadOutputs:
     """Run the read stages, writing runs/<run_id>/<stage>.json after each one, then point runs/latest here."""
-    ing = ingest_package(package_dir, tessdata=find_tessdata(settings.tessdata_prefix), cache_dir=cache_dir)
+    ing = ingest_package(package_dir, tessdata=find_tessdata(settings.tessdata_prefix), cache_dir=cache_dir,
+                         docintel=docintel_from_settings(settings))
     writer.write("ingest", ing)
 
     docs = find_addendum_docs(ing.blocks)

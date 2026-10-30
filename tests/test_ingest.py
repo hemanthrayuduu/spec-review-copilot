@@ -109,3 +109,52 @@ def test_scanned_page_with_a_typed_stamp_without_tesseract_is_needs_ocr(tmp_path
     _stamped_scan(tmp_path / "pkg/permit.pdf", "Total Phosphorus 0.1 mg/L monthly average")
     res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None)
     assert res.pages[0].status == "needs_ocr"
+
+
+class StubDI:
+    def __init__(self, lines: list[tuple[str, tuple[float, float, float, float]]] | None = None,
+                 error: Exception | None = None) -> None:
+        self.lines, self.error, self.pages = lines or [], error, 0
+
+    def read_page(self, pdf_bytes: bytes) -> list[tuple[str, tuple[float, float, float, float]]]:
+        import pymupdf
+        with pymupdf.open(stream=pdf_bytes, filetype="pdf") as one:
+            assert one.page_count == 1  # one page per request: F0 reads only the first two
+        self.pages += 1
+        if self.error:
+            raise self.error
+        return self.lines
+
+
+def test_scanned_page_uses_docintel_when_given(tmp_path: Path) -> None:
+    from spec_review.ingest.pdf_local import read_pdf
+    pdf = make_scanned_pdf(tmp_path / "scan.pdf", "PERMIT LIMITS")
+    di = StubDI([("Total Phosphorus 0.1 mg/L monthly average for the permit term", (72, 144, 288, 162))])
+    pages, lines, _ = read_pdf(pdf, "scan", tessdata=None, docintel=di)
+    assert pages[0].status == "ocr" and di.pages == 1
+    assert lines[0].origin == "ocr" and lines[0].text.startswith("Total Phosphorus") and lines[0].bbox == (72, 144, 288, 162)
+
+
+def test_docintel_failure_leaves_needs_ocr(tmp_path: Path) -> None:
+    from spec_review.ingest.azure_docintel import DocIntelError
+    from spec_review.ingest.pdf_local import read_pdf
+    pdf = make_scanned_pdf(tmp_path / "scan.pdf", "PERMIT LIMITS")
+    pages, _, _ = read_pdf(pdf, "scan", tessdata=None, docintel=StubDI(error=DocIntelError("timeout")))
+    assert pages[0].status == "needs_ocr"
+
+
+def test_text_pages_never_go_to_docintel(tmp_path: Path) -> None:
+    make_pdf(tmp_path / "pkg/specs.pdf", ["<p>SECTION 46 61 00</p><p>2.01 A. The system shall treat 4.2 MGD.</p>"])
+    di = StubDI()
+    ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=None, docintel=di)
+    assert di.pages == 0
+
+
+def test_ingest_cache_key_names_the_ocr_engine(tmp_path: Path) -> None:
+    make_scanned_pdf(tmp_path / "pkg/permit.pdf", "Total Phosphorus 0.1 mg/L")
+    di = StubDI([("Total Phosphorus 0.1 mg/L monthly average for the permit term", (72, 144, 288, 162))])
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=tmp_path / "c", docintel=di)
+    assert res.pages[0].status == "ocr" and [p.name.split("-")[-1] for p in (tmp_path / "c").glob("*.json")] == [
+        "docintel.json"]
+    ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=tmp_path / "c")
+    assert sorted(p.name.split("-")[-1] for p in (tmp_path / "c").glob("*.json")) == ["docintel.json", "noocr.json"]
