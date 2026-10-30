@@ -39,6 +39,8 @@ Requirements:
 5. specreview eval dev computes the spec section 9 metrics for Lakeview.
 6. Implement the local Ollama chat provider in spec_review/llm/ollama.py behind the existing client, and Tesseract OCR for scanned pages. Pick an open-weight model that fits an 8 GB M2 by a quick benchmark on Lakeview. Report dev metrics from a real-model run, never from mock mode.
 
+> 2026-10-29: the owner moved the project to Azure. Azure OpenAI replaces Ollama, and Azure AI Search replaces ChromaDB. The text above is kept as history.
+
 Plan first. Stop when the Phase 1 acceptance criteria pass. Report the dev scorecard, the coverage check results, and the three weakest areas you see.
 ```
 
@@ -51,6 +53,8 @@ Build matching from spec sections 8.11 to 8.14.
 2. Create data/knowledge/past_exceptions.csv with 20 past exceptions and clarifications, clearly labeled fictional.
 3. Rule checks first, with pint for units. Skip the LLM only when a rule is decisive against a guaranteed capability, and record method = rule.
 4. Hybrid evidence search (rank_bm25 plus ChromaDB, with a local Ollama embedding model) over capabilities, product docs, and past exceptions. Tests use a fake embedder, never a model download.
+
+> 2026-10-29: the owner moved the project to Azure. Azure OpenAI replaces Ollama, and Azure AI Search replaces ChromaDB. The text above is kept as history.
 5. Use Appendix B as spec_review/match/prompts/judge_v1.md. Enforce in code that comply without a supporting evidence id becomes needs_engineer.
 6. Confidence gate driven by config.
 7. Extend specreview eval dev with status accuracy on Lakeview, and confirm the phosphorus trap comes out as needs_engineer.
@@ -80,6 +84,8 @@ I have hand labeled Manor, Sandy, and Avila Beach in data/golden/test/.
 1. Freeze prompts, rules, and thresholds. Run specreview eval test once, with the same provider, model, and prompts as the final dev scorecard, and save the scorecard. Do not change anything based on the test results in this phase. List suggested fixes instead.
 2. Only if Azure access is available: implement the Azure providers (Document Intelligence layout model, Azure OpenAI chat and embeddings) behind the existing interfaces, switched by .env. Otherwise skip this item.
 3. Dockerfile and docker compose for the API, the app, and Ollama.
+
+> 2026-10-29: the owner moved the project to Azure. Azure OpenAI replaces Ollama, and Azure AI Search replaces ChromaDB. The text above is kept as history.
 4. README: the problem, architecture (mermaid), how to run locally (and on Azure, if implemented), dev and test scorecards with honest commentary, limitations, and what production would need.
 5. scripts/demo.sh that runs Lakeview end to end in mock mode.
 

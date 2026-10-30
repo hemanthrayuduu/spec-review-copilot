@@ -1,5 +1,7 @@
 # Explorer and Azure: setup and cost plan
 
+> **2026-10-29:** the owner moved the project to Azure for everything. Part 3 is the setup to follow now. Parts 1 and 2 (the Explorer split) are kept as history; Explorer is no longer on the critical path.
+
 This project runs in three places:
 
 - **Northeastern's Explorer cluster** does the heavy, repeatable model work for free.
@@ -201,3 +203,40 @@ Benchmark both options on the Lakeview package on day 1: Azure OpenAI's mini mod
 - [Azure for Students quota reports (Microsoft Q&A)](https://learn.microsoft.com/en-ie/answers/questions/2224916/azure-ai-foundry-quota-insufficient-issues-student)
 
 The prices above come from third-party price trackers checked in October 2026, because Microsoft's own pages didn't show the numbers. Confirm them in the Azure pricing calculator before relying on them.
+
+
+---
+
+## Part 3: Azure setup for Phase 1b (do once)
+
+Nothing here bills by the hour. Azure OpenAI and Document Intelligence bill per call, and Document Intelligence has a free F0 tier.
+
+### Steps
+
+1. **Create an Azure OpenAI (Azure AI Foundry) resource** in a region that offers gpt-5-mini as Global Standard, for example East US 2 or Sweden Central.
+2. **Deploy `gpt-5-mini`** with deployment type Global Standard and deployment name `gpt-5-mini`. Note the deployment's tokens-per-minute (TPM) quota.
+3. **Create a Document Intelligence resource** on the free F0 tier.
+4. **Set budget alerts** at $25, $50, and $75 on the subscription.
+5. **Copy the endpoints and keys into `.env`** (copy `.env.example` first; `.env` is gitignored):
+
+   ```
+   PROVIDER_LLM=azure
+   PROVIDER_OCR=azure
+   AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+   AZURE_OPENAI_KEY=<key>
+   AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-5-mini
+   AZURE_OPENAI_REASONING_EFFORT=minimal
+   AZURE_DOCINTEL_ENDPOINT=https://<resource>.cognitiveservices.azure.com
+   AZURE_DOCINTEL_KEY=<key>
+   LLM_PRICE_INPUT_PER_MTOK=0.25
+   LLM_PRICE_OUTPUT_PER_MTOK=2.00
+   ```
+
+   Leave `PROVIDER_OCR=local` if you skip Document Intelligence; Tesseract handles scanned pages offline.
+6. **Check the setup:** `uv run specreview azure-check`. It makes one tiny call per configured service and prints the model, tokens, cost, and the deployment's tokens-per-minute limit when Azure reports it.
+
+### What a run costs, and the quota risk
+
+- **Lakeview:** about 78 calls and 64K input tokens, roughly $0.10 per run.
+- **Mountain Regional:** about 734 calls, 1.1M input tokens and several hundred thousand output tokens, roughly $1.50 per run.
+- **Quota is the real risk.** A Mountain Regional run needs about 1.5–2M tokens in total. At 10K tokens per minute that is about 3 hours; at 1K it is more than a day. Every reply is cached in `.cache/llm/`, so an interrupted run resumes for free. If the quota is too low, request more in Foundry, or run Mountain Regional overnight.

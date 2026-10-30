@@ -27,7 +27,7 @@ In scope: ingest, segmentation, addenda merge, cross references, relevance filte
 
 Out of scope: equipment sizing calculations, pricing, final bid decisions, integration with real company systems, user authentication, Postgres (SQLite only), and the EPA ECHO dataset. The stretch packages are optional.
 
-The prototype is an interview demo, built in one week: an end-to-end product that really solves the problem, from uploading a package to an approved compliance matrix. It runs on open-source tools. Azure providers come later, behind the same interfaces, once Azure access is available. Cut only what is complex and invisible in the demo.
+The prototype is an interview demo, built in one week: an end-to-end product that really solves the problem, from uploading a package to an approved compliance matrix. It runs on Azure: Azure OpenAI for chat and embeddings, Document Intelligence for scanned pages, Azure AI Search for evidence, and Container Apps plus Blob storage for hosting. PyMuPDF, pdfplumber, and Tesseract stay as the local and offline path. Cut only what is complex and invisible in the demo.
 
 ## 4. Data
 
@@ -108,17 +108,17 @@ flowchart TD
 Layers:
 
 1. Interface: Streamlit review app and the specreview CLI.
-2. API: FastAPI service that runs packages as background jobs, with progress, and serves results to the app. A real package takes minutes on a local model, so the app must not block on it.
+2. API: FastAPI service that runs packages as background jobs, with progress, and serves results to the app. A real package takes minutes, so the app must not block on it.
 3. Pipeline: the stages above.
 4. Services and storage: OCR provider, LLM provider, SQLite, vector index, file store.
 
 Providers are pluggable through config:
 
 * Mock: deterministic fixtures, for tests and CI only.
-* Local (open source, the demo default): PyMuPDF and pdfplumber, Tesseract OCR for scanned pages, an open-weight chat model and an embedding model served by Ollama, ChromaDB. The development machine is an Apple M2 with 8 GB, so the chat model must fit in roughly 3 to 8B parameters.
-* Azure (later, once access is available): AI Document Intelligence (layout model), Azure OpenAI (chat and embeddings), optionally Azure AI Search.
+* Local (offline path, no chat model): PyMuPDF and pdfplumber for text and tables, Tesseract OCR for scanned pages.
+* Azure (the default for real runs): Azure OpenAI chat (gpt-5-mini) and embeddings, AI Document Intelligence (read model) for scanned pages, Azure AI Search for evidence.
 
-Accuracy numbers always come from a real chat model, so the local Ollama chat provider lands in Phase 1 and every dev scorecard is measured with it. Never build mock fixtures from golden labels, and never report mock-mode metrics as accuracy.
+Accuracy numbers always come from a real chat model, so the Azure OpenAI chat provider lands in Phase 1 and every dev scorecard is measured with it. Never build mock fixtures from golden labels, and never report mock-mode metrics as accuracy.
 
 ## 6. Repo layout
 
@@ -126,13 +126,13 @@ Accuracy numbers always come from a real chat model, so the local Ollama chat pr
 spec_review/
   config.py
   models.py
-  llm/            client.py, mock.py, ollama.py, azure.py
+  llm/            client.py, mock.py, azure.py, check.py
   ingest/         pdf_local.py, ocr_tesseract.py, azure_docintel.py, normalize.py, tables.py
   segment/        sections.py, addenda.py, xrefs.py
   filter/         product_map.yaml, relevance.py
   extract/        candidates.py, requirements.py, permits.py, verify.py, prompts/
   brief/          build.py
-  knowledge/      capabilities.py, index.py
+  knowledge/      capabilities.py, index.py (Azure AI Search)
   match/          rules.py, evidence.py, judge.py, gate.py, prompts/
   outputs/        matrix_xlsx.py, markup_pdf.py, letter_docx.py, questions.py, addendum_diff.py
   eval/           golden.py, metrics.py, scorecard.py
@@ -175,7 +175,7 @@ Categories: performance, effluent_limit, design_basis, material, certification, 
 
 ## 8. Pipeline details
 
-**8.1 Ingest.** Extract text with block coordinates using PyMuPDF. Extract tables with pdfplumber and convert each row into a labeled line, like "Peak flow: 4.2 MGD". If a page has very little text, mark it as scanned. In local mode, OCR scanned pages with Tesseract; in Azure mode, send them to Document Intelligence. A page with no text and no images is blank, not scanned. A page that still has no text after OCR is recorded as needs_ocr and counted in the coverage report.
+**8.1 Ingest.** Extract text with block coordinates using PyMuPDF. Extract tables with pdfplumber and convert each row into a labeled line, like "Peak flow: 4.2 MGD". If a page has very little text, mark it as scanned. In local mode, OCR scanned pages with Tesseract; in Azure mode, send them to Document Intelligence (prebuilt-read model, one page per request, cached). A page with no text and no images is blank, not scanned. A page that still has no text after OCR is recorded as needs_ocr and counted in the coverage report.
 
 **8.2 Segment.** Detect section headers in CSI format ("SECTION 46 21 00"), legacy formats ("SECTION 11300", "Section 13226A"), and front end documents (Division 00 and 01). Build paragraph paths (1.01, A, 1, a) and track Part 1, 2, and 3.
 
@@ -202,7 +202,7 @@ Categories: performance, effluent_limit, design_basis, material, certification, 
 
 **8.11 Rule checks.** Unit conversion with pint. Numeric ranges against capabilities, certification sets, material lists. When a rule is decisive, skip the LLM and record method = rule. A rule may decide on its own only against capabilities with basis = guaranteed. Typical and claim values never decide; they go to the judge as evidence.
 
-**8.12 Evidence search.** Hybrid keyword search (rank_bm25) plus vector search (ChromaDB locally) over capabilities, product docs, and past exceptions. Return the top results with scores.
+**8.12 Evidence search.** Hybrid keyword search (rank_bm25) plus vector search (Azure AI Search, free tier) over capabilities, product docs, and past exceptions. Return the top results with scores.
 
 **8.13 Judge.** The LLM receives the requirement and its evidence and returns status, reason, evidence ids, and confidence. Enforced in code: comply or comply_with_clarification without a supporting evidence id becomes needs_engineer. Prompt template: Appendix B.
 
@@ -263,8 +263,8 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 
 * Lakeview: section filter recall of 100% and zero silent coverage drops.
 * Quote and number checks run on every record, with pass rates reported.
-* The local Ollama chat provider works behind spec_review/llm/client.py, and the Phase 1 dev metrics come from a real-model run.
-* Scanned pages are OCRed with Tesseract, and blank pages are reported as blank.
+* The Azure OpenAI chat provider works behind spec_review/llm/client.py, and the Phase 1 dev metrics come from a real-model run.
+* Scanned pages are OCRed with Tesseract or Document Intelligence, and blank pages are reported as blank.
 * The brief lists every planted deadline, required form, and red flag with its page.
 * Requirement recall on Lakeview is reported.
 * Mountain Regional runs end to end and produces brief.md and requirements.xlsx.
@@ -286,8 +286,7 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 **Phase 4: Test and polish (day 7)**
 
 * The test scorecard is saved and reported as is.
-* Docker compose runs the API and the app, with Ollama, on one machine.
-* Azure providers are added behind the same interfaces only if Azure access is available; the demo does not depend on them.
+* Docker compose runs the API and the app locally; the demo is hosted on Azure Container Apps.
 * README is complete, with honest results and limitations.
 
 ## 11. Config
@@ -296,19 +295,23 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 
 ```
 PROVIDER_OCR=local            # local (Tesseract) or azure
-PROVIDER_LLM=mock             # mock, ollama, or azure
-OLLAMA_HOST=http://localhost:11434
-OLLAMA_CHAT_MODEL=
-OLLAMA_EMBED_MODEL=
+PROVIDER_LLM=mock             # mock or azure
 AZURE_DOCINTEL_ENDPOINT=
 AZURE_DOCINTEL_KEY=
 AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_KEY=
 AZURE_OPENAI_CHAT_DEPLOYMENT=
 AZURE_OPENAI_EMBED_DEPLOYMENT=
+AZURE_OPENAI_REASONING_EFFORT=
 AZURE_SEARCH_ENDPOINT=
 AZURE_SEARCH_KEY=
 CONFIDENCE_THRESHOLD=0.6
+LLM_PRICE_INPUT_PER_MTOK=
+LLM_PRICE_OUTPUT_PER_MTOK=
+LLM_MAX_CONCURRENCY=
+LLM_CACHE_DIR=
+MOCK_FIXTURES_DIR=
+TESSDATA_PREFIX=
 ```
 
 ## Appendix A: Extraction prompt (extract_v1.md)
