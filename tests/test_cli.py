@@ -51,3 +51,14 @@ def test_eval_test_is_guarded() -> None:
 
 def test_eval_rejects_unknown_split() -> None:
     assert CliRunner().invoke(app, ["eval", "train"]).exit_code == 2
+
+
+def test_azure_check_in_mock_mode_explains() -> None:
+    result = CliRunner().invoke(app, ["azure-check"])
+    assert result.exit_code == 1 and "PROVIDER_LLM is mock" in result.output
+
+
+def test_azure_check_names_missing_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("PROVIDER_LLM", "azure")
+    result = CliRunner().invoke(app, ["azure-check"])
+    assert result.exit_code == 1 and "AZURE_OPENAI_KEY" in result.output

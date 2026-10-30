@@ -24,6 +24,7 @@ def estimate_tokens(text: str) -> int:
 
 class MockProvider:
     name = "mock"
+    model_id = "mock"
 
     def __init__(self, fixtures_dir: Path) -> None:
         self.fixtures_dir = fixtures_dir
