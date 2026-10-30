@@ -25,25 +25,58 @@ flowchart LR
   CA -. Phase 2 .-> AS[AI Search, Free tier]
 ```
 
+## Names
+
+Every resource follows Microsoft's [Cloud Adoption Framework naming convention](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming): `<type>-<workload>-<environment>-<region>`. The type prefixes come from Microsoft's [abbreviation list](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations). The workload is `specreview`, the environment is `demo`, and the region code here is `eus2` (East US 2); change it if you deploy elsewhere.
+
+| What | Name | Phase |
+|---|---|---|
+| Resource group | `rg-specreview-demo-eus2` | 1b |
+| Azure OpenAI (Foundry) resource | `oai-specreview-demo-eus2` | 1b |
+| Chat deployment | `gpt-5-mini` | 1b |
+| Embedding deployment | `text-embedding-3-small` | 2 |
+| Document Intelligence resource | `di-specreview-demo-eus2` | 1b |
+| Budget | `budget-specreview-demo` | 1b |
+| AI Search service | `srch-specreview-demo-eus2` | 2 |
+| Search index | `idx-capabilities` | 2 |
+| Storage account | `stspecreviewdemo` (lowercase, no hyphens, 3–24 characters) | 4 |
+| Blob containers | `packages`, `runs`, `reviews` | 4 |
+| Log Analytics workspace | `log-specreview-demo-eus2` | 4 |
+| Container Apps environment | `cae-specreview-demo-eus2` | 4 |
+| Container apps | `ca-specreview-api`, `ca-specreview-app` | 4 |
+| Container images (GitHub Container Registry) | `ghcr.io/hemanthrayuduu/spec-review-copilot-api`, `…-app` | 4 |
+
+- **Global uniqueness:** the OpenAI, Document Intelligence, AI Search, and storage names become public hostnames, so they must be unique across Azure. If one is taken, add a short suffix, for example `oai-specreview-demo-eus2-01` or `stspecreviewdemo01`.
+- **Deployment names match the model name,** so `.env` reads plainly.
+- **Tags:** put these on the resource group, so every resource inherits them and the cost view groups cleanly:
+
+  | Tag | Value |
+  |---|---|
+  | `project` | `spec-review-copilot` |
+  | `environment` | `demo` |
+  | `owner` | your Northeastern email |
+  | `data` | `public-synthetic` |
+  | `cost-center` | `azure-for-students` |
+
 ## Setup, done once by you
 
-1. **Create a resource in [Microsoft Foundry](https://ai.azure.com)** (formerly Azure AI Foundry) that can deploy OpenAI models. Pick a region where `gpt-5-mini` is offered as Global Standard. Foundry shows this when you deploy; I couldn't confirm a region list.
+1. **Create the resource group** `rg-specreview-demo-eus2` with the tags above. Then create a resource in [Microsoft Foundry](https://ai.azure.com) (formerly Azure AI Foundry) named `oai-specreview-demo-eus2`, inside that group, that can deploy OpenAI models. Pick a region where `gpt-5-mini` is offered as Global Standard. Foundry shows this when you deploy; I couldn't confirm a region list.
 2. **Deploy `gpt-5-mini`**:
    - deployment type **Global Standard**;
    - deployment name **`gpt-5-mini`**;
    - note the tokens-per-minute (TPM) quota it shows, since that sets how long a large package takes (see "Quota" below).
-3. **Create a Document Intelligence resource** on the **F0 (free)** tier. This step is optional: without it, `PROVIDER_OCR=local` uses Tesseract.
-4. **Set budget alerts** at $25, $50, and $75 under Cost Management. They only notify you; they don't stop spending. On a new subscription they can take up to 48 hours to become available. The Azure for Students subscription itself stops when the $100 credit runs out ([Azure for Students costs](https://learn.microsoft.com/en-us/azure/education-hub/navigate-costs)).
+3. **Create a Document Intelligence resource** named `di-specreview-demo-eus2`, on the **F0 (free)** tier, in the same group. This step is optional: without it, `PROVIDER_OCR=local` uses Tesseract.
+4. **Set budget alerts:** a budget named `budget-specreview-demo`, with alerts at $25, $50, and $75, under Cost Management. They only notify you; they don't stop spending. On a new subscription they can take up to 48 hours to become available. The Azure for Students subscription itself stops when the $100 credit runs out ([Azure for Students costs](https://learn.microsoft.com/en-us/azure/education-hub/navigate-costs)).
 5. **Fill in `.env`.** Copy `.env.example` to `.env` (it's gitignored), then set:
 
    ```
    PROVIDER_LLM=azure
    PROVIDER_OCR=azure
-   AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+   AZURE_OPENAI_ENDPOINT=https://oai-specreview-demo-eus2.openai.azure.com
    AZURE_OPENAI_KEY=<key>
    AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-5-mini
    AZURE_OPENAI_REASONING_EFFORT=minimal
-   AZURE_DOCINTEL_ENDPOINT=https://<resource>.cognitiveservices.azure.com
+   AZURE_DOCINTEL_ENDPOINT=https://di-specreview-demo-eus2.cognitiveservices.azure.com
    AZURE_DOCINTEL_KEY=<key>
    LLM_PRICE_INPUT_PER_MTOK=0.25
    LLM_PRICE_OUTPUT_PER_MTOK=2.00
@@ -97,7 +130,7 @@ Azure reports the deployment's limit in the `x-ratelimit-limit-tokens` response 
 4. **Free tiers only:** AI Search Free and the Container Apps grant. Never provisioned throughput (PTU), and never a paid Search tier; both bill every hour.
 5. **Let containers scale to zero** (Phase 4). Keep one copy running only on interview day.
 6. **Push images to GitHub Container Registry,** which is free for public repos, rather than Azure Container Registry.
-7. **Keep the budget alerts on,** and delete the resource group after the demo.
+7. **Keep the budget alerts on,** and delete `rg-specreview-demo-eus2` after the demo. Everything is in that one group, so one delete removes it all.
 
 ## Troubleshooting
 
