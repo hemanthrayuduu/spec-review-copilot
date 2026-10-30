@@ -6,6 +6,12 @@ from pydantic import BaseModel, ValidationError
 
 from spec_review.models import (
     AddendumChange,
+    CandidateResult,
+    ExtractResult,
+    PermitResult,
+    PermitSkip,
+    RejectedRecord,
+    VerifyReport,
     Block,
     Brief,
     BriefItem,
@@ -112,7 +118,25 @@ VALID: dict[type[BaseModel], dict[str, Any]] = {
                          blocks_unassigned=0, removed_header_footer_lines=300, sections_total=20,
                          sections_kept=15, pages_in_kept_sections=90, unparsed_addendum_items=0,
                          unresolved_xrefs=1, silent_drops=0),
+    CandidateResult: dict(package_id="lakeview", candidates=[dict(candidate_id="s1:c1", section_id="s1",
+                          paragraph_path="2.03.B", page=57, sentence="Gaskets shall be EPDM.", triggers=["shall"])]),
+    RejectedRecord: dict(group_id="s1:g1", source_text="Membranes shall be ceramic.", reason="quote",
+                         detail="not found in group text", candidate_ids=["s1:c1"]),
+    ExtractResult: dict(package_id="lakeview", requirements=[REQ],
+                        dispositions=[dict(candidate_id="c2", outcome="needs_engineer",
+                                           reason="no disposition from model")],
+                        rejected=[dict(group_id="s1:g1", source_text="", reason="call_failed", detail="timeout")]),
+    VerifyReport: dict(package_id="lakeview", records_total=10, quote_passed=9, number_passed=10,
+                       quote_pass_rate=0.9, number_pass_rate=1.0, citation_ok=9, unit_flags=["r3"],
+                       low_confidence=["r4"], records_without_candidate=1, candidates_total=12,
+                       dispositions={"requirement": 9, "not_requirement": 2, "needs_engineer": 1},
+                       groups_total=3, groups_failed=0),
+    PermitSkip: dict(doc_id="permit", page=3, source_text="Flow; Monthly Average: Report", reason="no numeric limit (Report)"),
+    PermitResult: dict(package_id="lakeview", limits=[PERMIT],
+                       skipped=[dict(doc_id=None, page=None, source_text="Flow: Report", reason="no numeric limit (Report)")]),
 }
+
+COVERAGE_1A = VALID[CoverageReport]
 
 
 def test_vocabularies_match_spec() -> None:
@@ -214,3 +238,23 @@ def test_section_decision_needs_a_reason() -> None:
 def test_page_info_rejects_negative_chars() -> None:
     with pytest.raises(ValidationError):
         PageInfo(doc_id="specs", page=1, status="text", char_count=-1)
+
+
+def test_needs_engineer_disposition_needs_a_reason() -> None:
+    with pytest.raises(ValidationError):
+        CandidateDisposition(candidate_id="c1", outcome="needs_engineer")
+    with pytest.raises(ValidationError):
+        CandidateDisposition(candidate_id="c1", outcome="needs_engineer", reason="x", req_ids=["r1"])
+    assert CandidateDisposition(candidate_id="c1", outcome="needs_engineer", reason="no disposition from model")
+
+
+def test_brief_item_superseded_defaults_none() -> None:
+    assert BriefItem(text="Bids due", doc_id="rfp", page=3).superseded_by is None
+
+
+def test_coverage_candidate_counts_default_zero() -> None:
+    assert CoverageReport(**COVERAGE_1A).candidates_without_disposition == 0
+
+
+def test_structural_is_a_trigger() -> None:
+    assert Candidate(**{**VALID[Candidate], "triggers": ["structural"]}).triggers == ["structural"]

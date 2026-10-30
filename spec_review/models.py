@@ -27,12 +27,13 @@ BlockKind = Literal["paragraph", "heading", "table_row", "list_item"]
 NumberingStyle = Literal["csi", "legacy", "front_end"]
 Part = Literal["general", "products", "execution", "none"]
 Trigger = Literal["shall", "must", "required", "minimum", "maximum", "not_less_than",
-                  "not_more_than", "number_with_unit", "preferred", "imperative"]
+                  "not_more_than", "number_with_unit", "preferred", "imperative", "structural"]
 Category = Literal["performance", "effluent_limit", "design_basis", "material", "certification",
                    "testing_piloting", "warranty", "commercial", "submittal", "schedule",
                    "domestic_content", "qualification"]
 Operator = Literal["=", "<", "<=", ">", ">=", "range"]
-DispositionOutcome = Literal["requirement", "not_requirement"]
+DispositionOutcome = Literal["requirement", "not_requirement", "needs_engineer"]
+RejectReason = Literal["quote", "number", "schema", "call_failed"]
 LimitType = Literal["monthly_avg", "weekly_avg", "daily_max", "annual_load"]
 CapabilityBasis = Literal["guaranteed", "typical", "claim"]
 EvidenceSource = Literal["capability", "product_doc", "past_exception"]
@@ -132,11 +133,11 @@ class CandidateDisposition(ContractModel):
     def _outcome_is_explained(self) -> Self:
         if self.outcome == "requirement" and not self.req_ids:
             raise ValueError("outcome 'requirement' needs at least one req_id")
-        if self.outcome == "not_requirement":
+        if self.outcome in ("not_requirement", "needs_engineer"):
             if not (self.reason and self.reason.strip()):
-                raise ValueError("outcome 'not_requirement' needs a reason")
+                raise ValueError(f"outcome '{self.outcome}' needs a reason")
             if self.req_ids:
-                raise ValueError("outcome 'not_requirement' must not list req_ids")
+                raise ValueError(f"outcome '{self.outcome}' must not list req_ids")
         return self
 
 
@@ -224,6 +225,7 @@ class BriefItem(ContractModel):
     page: Page
     section_number: str | None = None
     req_id: str | None = None
+    superseded_by: str | None = None  # "Addendum 1" when a later addendum replaced this item
 
 
 class RedFlag(BriefItem):
@@ -332,3 +334,60 @@ class CoverageReport(ContractModel):
     unparsed_addendum_items: Count
     unresolved_xrefs: Count
     silent_drops: Count  # blocks_unassigned; must be 0
+    # Filled in after verification; every candidate ends with exactly one disposition.
+    candidates_total: Count = 0
+    candidates_requirement: Count = 0
+    candidates_not_requirement: Count = 0
+    candidates_needs_engineer: Count = 0
+    candidates_without_disposition: Count = 0  # must be 0
+
+
+class CandidateResult(ContractModel):
+    package_id: NonBlankStr
+    candidates: list[Candidate] = []
+
+
+class RejectedRecord(ContractModel):
+    group_id: NonBlankStr
+    source_text: str  # empty when the whole call failed
+    reason: RejectReason
+    detail: str
+    candidate_ids: list[str] = []
+
+
+class ExtractResult(ContractModel):
+    package_id: NonBlankStr
+    requirements: list[Requirement] = []
+    dispositions: list[CandidateDisposition] = []
+    rejected: list[RejectedRecord] = []
+
+
+class VerifyReport(ContractModel):
+    package_id: NonBlankStr
+    records_total: Count
+    quote_passed: Count
+    number_passed: Count
+    quote_pass_rate: float | None  # None when records_total is 0
+    number_pass_rate: float | None
+    citation_ok: Count  # accepted records whose cited page contains source_text
+    unit_flags: list[str] = []  # req_ids whose unit is not in source_text
+    low_confidence: list[str] = []  # req_ids below CONFIDENCE_THRESHOLD
+    records_without_candidate: Count
+    candidates_total: Count
+    dispositions: dict[DispositionOutcome, int] = {}
+    groups_total: Count
+    groups_failed: Count
+
+
+class PermitSkip(ContractModel):
+    doc_id: str | None  # None when the model's row could not be located
+    page: Page | None
+    source_text: str
+    reason: NonBlankStr
+
+
+class PermitResult(ContractModel):
+    package_id: NonBlankStr
+    limits: list[PermitLimit] = []
+    skipped: list[PermitSkip] = []
+    rejected: list[RejectedRecord] = []

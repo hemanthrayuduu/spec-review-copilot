@@ -5,11 +5,14 @@ description = "Reads municipal water and wastewater bid packages and drafts comp
 requires-python = ">=3.11,<3.12"
 dependencies = [
     "httpx>=0.27",
+    "openai>=1.99",
+    "openpyxl>=3.1",
     "pdfplumber>=0.11",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "pymupdf>=1.26",
     "pyyaml>=6.0",
+    "rapidfuzz>=3.9",
     "typer>=0.12",
 ]
 

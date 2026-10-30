@@ -56,3 +56,18 @@ def test_dotenv_is_read_outside_tests(tmp_path: Path, monkeypatch: pytest.Monkey
     env.write_text("PROVIDER_LLM=azure\n")
     monkeypatch.setattr(config, "ENV_FILE", env)
     assert get_settings().provider_llm == "azure"
+
+
+def test_env_file_is_anchored_to_repo_root() -> None:
+    assert config.DEFAULT_ENV_FILE == REPO / ".env" and config.DEFAULT_ENV_FILE.is_absolute()
+
+
+def test_reasoning_effort_rejects_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AZURE_OPENAI_REASONING_EFFORT", "extreme")
+    with pytest.raises(ValidationError):
+        get_settings()
+
+
+def test_llm_defaults() -> None:
+    s = get_settings()
+    assert (s.azure_openai_reasoning_effort, s.llm_max_concurrency, s.llm_cache_dir) == (None, 4, Path(".cache/llm"))
