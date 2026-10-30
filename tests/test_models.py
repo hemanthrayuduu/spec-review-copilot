@@ -71,7 +71,7 @@ CAPABILITY = dict(product_line="biological", parameter="total phosphorus", max_v
 VALID: dict[type[BaseModel], dict[str, Any]] = {
     Block: BLOCK,
     Section: SECTION,
-    Candidate: dict(candidate_id="c1", section_id="s1", paragraph_path="2.03.B", page=57,
+    Candidate: dict(candidate_id="c1", section_id="s1", doc_id="specs", paragraph_path="2.03.B", page=57,
                     sentence="Effluent total phosphorus shall not exceed 0.1 mg/L.",
                     triggers=["shall", "number_with_unit"]),
     Requirement: REQ,
@@ -119,7 +119,7 @@ VALID: dict[type[BaseModel], dict[str, Any]] = {
                          sections_kept=15, pages_in_kept_sections=90, unparsed_addendum_items=0,
                          unresolved_xrefs=1, silent_drops=0),
     CandidateResult: dict(package_id="lakeview", candidates=[dict(candidate_id="s1:c1", section_id="s1",
-                          paragraph_path="2.03.B", page=57, sentence="Gaskets shall be EPDM.", triggers=["shall"])]),
+                          doc_id="specs", paragraph_path="2.03.B", page=57, sentence="Gaskets shall be EPDM.", triggers=["shall"])]),
     RejectedRecord: dict(group_id="s1:g1", source_text="Membranes shall be ceramic.", reason="quote",
                          detail="not found in group text", candidate_ids=["s1:c1"]),
     ExtractResult: dict(package_id="lakeview", requirements=[REQ],
@@ -258,3 +258,8 @@ def test_coverage_candidate_counts_default_zero() -> None:
 
 def test_structural_is_a_trigger() -> None:
     assert Candidate(**{**VALID[Candidate], "triggers": ["structural"]}).triggers == ["structural"]
+
+
+def test_candidate_cites_its_document() -> None:
+    with pytest.raises(ValidationError):
+        Candidate(**{k: v for k, v in VALID[Candidate].items() if k != "doc_id"})

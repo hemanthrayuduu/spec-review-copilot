@@ -9,6 +9,7 @@ from spec_review.config import Settings
 if TYPE_CHECKING:
     from spec_review.eval.golden import GoldenPackage
     from spec_review.models import CrossRef, Section
+    from spec_review.pipeline import ReadOutputs
 
 
 @pytest.fixture(autouse=True)
@@ -54,3 +55,12 @@ def lakeview_segmented(lakeview_pdfs: Path) -> "tuple[list[Section], list[CrossR
         changes, secs = changes + found, secs + attached
     secs, _ = apply_addenda(secs, changes, blocks)
     return secs, find_xrefs(secs)
+
+
+@pytest.fixture(scope="session")
+def lakeview_read(lakeview_pdfs: Path, tmp_path_factory: pytest.TempPathFactory) -> "ReadOutputs":
+    """Lakeview through the read stages (with addenda records and filter decisions), built once per session."""
+    from spec_review.pipeline import run_read
+    from spec_review.runs import RunWriter
+
+    return run_read(lakeview_pdfs, RunWriter("read", root=tmp_path_factory.mktemp("runs")), Settings(), cache_dir=None)

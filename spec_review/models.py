@@ -88,6 +88,7 @@ class Section(ContractModel):
 class Candidate(ContractModel):
     candidate_id: NonBlankStr
     section_id: NonBlankStr
+    doc_id: NonBlankStr  # the block's document; addendum text inside a spec section cites the addendum
     paragraph_path: str
     page: Page
     sentence: NonBlankStr

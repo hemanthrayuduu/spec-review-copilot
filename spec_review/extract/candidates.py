@@ -68,7 +68,7 @@ def section_candidates(section: Section) -> list[tuple[int, Candidate]]:
             triggers = find_triggers(sentence, b.kind)
             if triggers:
                 cid = f"{section.section_id}:c{len(out) + 1}"
-                out.append((i, Candidate(candidate_id=cid, section_id=section.section_id,
+                out.append((i, Candidate(candidate_id=cid, section_id=section.section_id, doc_id=b.doc_id,
                                          paragraph_path=b.paragraph_path or "", page=b.page, sentence=sentence,
                                          triggers=triggers)))
         i = j + 1

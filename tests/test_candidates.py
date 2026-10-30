@@ -64,6 +64,14 @@ def test_superseded_block_is_not_a_candidate() -> None:
     assert [c.sentence for _, c in section_candidates(s)] == ["Screen panels shall have perforations of 2 mm."]
 
 
+def test_candidate_doc_id_comes_from_its_block() -> None:
+    s = section_of([blk("A. Gaskets shall be EPDM.", 3, path="2.01.A"),
+                    Block(doc_id="addendum_1", page=1, bbox=(72, 100, 540, 112), kind="paragraph",
+                          text="Screen panels shall have perforations of 2 mm.", paragraph_path="2.01.C",
+                          from_addendum="Addendum 1")])
+    assert [(c.doc_id, c.page) for _, c in section_candidates(s)] == [("rfp", 3), ("addendum_1", 1)]
+
+
 def test_sentence_across_page_break_cites_first_page() -> None:
     s = section_of([blk("7.2 The selected Supplier shall furnish a performance bond in the amount of 100 percent of the",
                         3, path="7.2"),
