@@ -123,6 +123,8 @@ def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path
         return _Document(pages, lines, {int(k): tuple(v) for k, v in data["sizes"].items()},  # type: ignore[misc]
                          TableExtraction(rows, regions))  # type: ignore[arg-type]
     doc = _read(path, doc_id, tessdata, docintel)
+    if docintel is not None and any(p.status == "needs_ocr" for p in doc.pages):
+        return doc  # a Document Intelligence failure may be transient: read again next run (its good pages are cached)
     cache_dir.mkdir(parents=True, exist_ok=True)
     tmp = cache.with_suffix(".tmp")
     tmp.write_text(json.dumps({

@@ -56,6 +56,15 @@ def _package_lines(out: PackageOutputs) -> list[str]:
     return lines + (["provider: mock (counts are not accuracy)"] if out.provider == "mock" else [])
 
 
+def _llm_failure(out: PackageOutputs) -> str | None:
+    """Every LLM call failed (a bad key or deployment): the run produced no model output at all."""
+    calls = out.llm_calls
+    if not calls or any(c.ok for c in calls):
+        return None
+    return (f"every LLM call failed ({len(calls)} calls); first error: {calls[0].error}. "
+            "Check .env and run: uv run specreview azure-check")
+
+
 def _summary(out: ReadOutputs, writer: RunWriter, extra: list[str] = []) -> None:
     c = out.coverage
     typer.echo(f"pages: {c.pages_total} (text {c.pages_text}, OCR {c.pages_ocr}, blank {c.pages_blank}, "
@@ -82,6 +91,8 @@ def run(package_dir: Path, run_id: str | None = None) -> None:
     except LLMConfigError as e:
         _fail(str(e))
     _summary(out.read, writer, _package_lines(out))
+    if failure := _llm_failure(out):
+        _fail(failure)
 
 
 @app.command("eval")
@@ -109,7 +120,7 @@ def eval_cmd(split: Split) -> None:
              (card.deadline_recall < 1.0, f"deadline recall {card.deadline_recall:.3f}"),
              (card.form_recall < 1.0, f"required form recall {card.form_recall:.3f}"),
              (card.red_flag_recall < 1.0, f"red flag recall {card.red_flag_recall:.3f}")]
-    failed = [msg for bad, msg in gates if bad]
+    failed = [msg for bad, msg in gates if bad] + ([f] if (f := _llm_failure(out)) else [])
     if failed:
         _fail(f"Phase 1 offline gates not met: {'; '.join(failed)}")
 

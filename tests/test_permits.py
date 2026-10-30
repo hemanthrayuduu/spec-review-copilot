@@ -73,3 +73,9 @@ def test_numeric_value_json_coerced() -> None:
 def test_mock_mode_finds_no_limits(lakeview_segmented: tuple[list[Section], list[CrossRef]]) -> None:
     res = extract_permits("lakeview", permit_of(lakeview_segmented), get_client())
     assert res.limits == [] and res.rejected == []
+
+
+def test_permit_quote_with_changed_number_is_rejected() -> None:  # final review I2
+    altered = TP.replace("Monthly Average: 0.1", "Monthly Average: 0.2")
+    res = run(small_permit(), PermitReply(limits=[row(value="0.2", source_text=altered)], skipped=[]))
+    assert res.limits == [] and [r.reason for r in res.rejected] == ["quote"]

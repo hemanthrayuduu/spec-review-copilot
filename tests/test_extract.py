@@ -189,3 +189,24 @@ def test_mock_default_fixture_yields_needs_engineer(lakeview_segmented: Segmente
     assert res.requirements == [] and stats.groups_failed == 0
     assert len(res.dispositions) == len(cands.candidates)
     assert {(d.outcome, d.reason) for d in res.dispositions} == {("needs_engineer", "no disposition from model")}
+
+
+def test_changed_digit_in_quote_is_rejected() -> None:  # final review I2
+    g = small_group(("A. Membranes shall have a nominal pore size of 0.04 micron or smaller.", 134, "2.03.A"))
+    res, stats = extract_groups("p", [g], LLMClient(ScriptedProvider([reply(
+        [rec("r1", "Membranes shall have a nominal pore size of 0.4 micron or smaller.", ["specs#8:c1"],
+             operator="<=", value="0.4", unit="micron")], [disp("specs#8:c1", "requirement", ["r1"])])])))
+    assert res.requirements == [] and [x.reason for x in res.rejected] == ["quote"]
+    assert stats.quote_passed == 0 and outcomes(res)["specs#8:c1"][0] == "needs_engineer"
+
+
+def test_repeated_local_ids_get_unique_req_ids_and_links() -> None:  # final review I6
+    g = small_group(("A. Membranes shall be PVDF.", 134, "2.03.A"), ("B. Modules shall be removable.", 134, "2.03.B"),
+                    ("C. Frames shall be stainless steel.", 134, "2.03.C"))
+    res, _ = extract_groups("p", [g], LLMClient(ScriptedProvider([reply(
+        [rec("r1", "Membranes shall be PVDF.", ["specs#8:c1"]), rec("r1", "Modules shall be removable.", ["specs#8:c2"]),
+         rec("r1", "Frames shall be stainless steel.", ["specs#8:c3"])], [])])))
+    ids = [r.req_id for r in res.requirements]
+    assert len(ids) == 3 and len(set(ids)) == 3
+    assert {o for o, _ in outcomes(res).values()} == {"requirement"}
+    assert len({tuple(d.req_ids) for d in res.dispositions}) == 3

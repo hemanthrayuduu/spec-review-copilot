@@ -64,3 +64,12 @@ def test_render_lines() -> None:
     (g,) = groups_of([blk("B. Membrane modules shall be PVDF.", path="2.03.B")])
     assert render_text(g).splitlines()[0] == "[p134] 2.03.B B. Membrane modules shall be PVDF."
     assert render_candidates(g) == "specs#8:c1: Membrane modules shall be PVDF."
+
+
+def test_superseded_blocks_are_not_shown_to_the_model() -> None:  # final review I3
+    old = Block(doc_id="specs", page=130, bbox=(72, 100, 540, 112), text="C. Screen panels shall have 3 mm holes.",
+                kind="list_item", paragraph_path="2.01.C", superseded_by="Addendum 1")
+    gs = groups_of([blk("B. Screens shall be stainless steel.", path="2.01.B"), old,
+                    blk("D. Frames shall be welded.", path="2.01.D")])
+    assert all(b.superseded_by is None for g in gs for b in g.blocks)
+    assert all("3 mm" not in render_text(g) for g in gs)

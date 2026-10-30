@@ -62,6 +62,12 @@ def locate(quote: str, blocks: Sequence[Block], *, prefer: Collection[int] = ())
     return (i, i + 1)
 
 
+def numbers_in_cited(quote: str, cited: Sequence[Block]) -> bool:
+    """Every number in the quote also appears in the cited blocks: fuzzy matching must not let "0.4" stand for "0.04"."""
+    found = set(numbers_in(norm_text(" ".join(b.text for b in cited))))
+    return all(n in found for n in numbers_in(norm_text(quote)))
+
+
 def number_check(value: str | None, source_text: str) -> bool:
     """Every number in value appears in source_text. A value with no number passes."""
     if value is None:

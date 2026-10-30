@@ -90,3 +90,15 @@ def test_azure_check_names_missing_docintel_keys(monkeypatch: pytest.MonkeyPatch
     monkeypatch.setenv("PROVIDER_OCR", "azure")
     result = CliRunner().invoke(app, ["azure-check"])
     assert result.exit_code == 1 and "AZURE_DOCINTEL_ENDPOINT" in result.output
+
+
+def test_run_fails_when_every_llm_call_failed(tmp_path: Path, lakeview_pdfs: Path,
+                                              monkeypatch: pytest.MonkeyPatch) -> None:  # final review I5
+    from spec_review import pipeline
+    from spec_review.llm.client import LLMClient
+    from tests.llm_fakes import RaisingProvider
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(pipeline, "get_client", lambda *a, **k: LLMClient(RaisingProvider(PermissionError("401 bad key"))))
+    result = CliRunner().invoke(app, ["run", str(lakeview_pdfs), "--run-id", "bad"])
+    assert result.exit_code == 1 and "every LLM call failed" in result.output and "401 bad key" in result.output
+    assert (tmp_path / "runs/bad/requirements.xlsx").exists()  # outputs are still written for inspection

@@ -79,3 +79,13 @@ def test_from_settings() -> None:
         docintel_from_settings(Settings(_env_file=None, provider_ocr="azure", azure_docintel_endpoint=ENDPOINT))
     assert docintel_from_settings(Settings(_env_file=None, provider_ocr="azure", azure_docintel_endpoint=ENDPOINT,
                                            azure_docintel_key="k")) is not None
+
+
+def test_auth_failure_stops_further_requests() -> None:  # final review I4
+    seen: list[httpx.Request] = []
+    di = fake_di([httpx.Response(401, json={"error": {"message": "Access denied"}})], seen)
+    with pytest.raises(DocIntelError, match="AZURE_DOCINTEL_KEY"):
+        di.read_page(b"a")
+    with pytest.raises(DocIntelError, match="AZURE_DOCINTEL_KEY"):
+        di.read_page(b"b")
+    assert len(seen) == 1

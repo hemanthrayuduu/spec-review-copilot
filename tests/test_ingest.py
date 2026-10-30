@@ -158,3 +158,13 @@ def test_ingest_cache_key_names_the_ocr_engine(tmp_path: Path) -> None:
         "docintel.json"]
     ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=tmp_path / "c")
     assert sorted(p.name.split("-")[-1] for p in (tmp_path / "c").glob("*.json")) == ["docintel.json", "noocr.json"]
+
+
+def test_failed_docintel_page_is_not_cached(tmp_path: Path) -> None:  # final review I4
+    from spec_review.ingest.azure_docintel import DocIntelError
+    make_scanned_pdf(tmp_path / "pkg/permit.pdf", "Total Phosphorus 0.1 mg/L")
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=tmp_path / "c",
+                         docintel=StubDI(error=DocIntelError("429 too many requests")))
+    assert res.pages[0].status == "needs_ocr" and not list((tmp_path / "c").glob("*.json"))
+    good = StubDI([("Total Phosphorus 0.1 mg/L monthly average for the permit term", (72, 144, 288, 162))])
+    assert ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=tmp_path / "c", docintel=good).pages[0].status == "ocr"

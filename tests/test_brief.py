@@ -5,7 +5,7 @@ from spec_review.brief.render import render_brief_md
 from spec_review.eval.golden import GoldenPackage
 from spec_review.extract.candidates import build_candidates, extraction_sections
 from spec_review.extract.text import numbers_in
-from spec_review.models import Brief, ExtractResult, PermitResult, RedFlag, Requirement
+from spec_review.models import Brief, CandidateResult, ExtractResult, PermitResult, RedFlag, Requirement
 from spec_review.pipeline import ReadOutputs
 
 
@@ -100,3 +100,19 @@ def test_experience_flag_needs_a_count_of_installations_not_days() -> None:
 def test_addendum_deadline_drops_its_item_number(lakeview_read: ReadOutputs) -> None:
     new = [d for d in lakeview_brief(lakeview_read).deadlines if d.doc_id == "addendum_1"]
     assert [d.text for d in new] == ["Revise the proposal due date to December 15, 2026 at 2:00 PM."]
+
+
+def test_trigger_free_deadline_and_red_flag_still_reach_the_brief() -> None:  # final review C1
+    from spec_review.models import Block, FilterResult, Section, SectionDecision, SegmentResult
+    texts = ["Sealed bids will be received until 2:00 p.m., local time, on March 4, 2026.",
+             "Liquidated damages are assessed daily for late delivery."]
+    blocks = [Block(doc_id="bid", page=7, bbox=(72, 100 + 14 * i, 540, 112 + 14 * i), text=t, kind="paragraph")
+              for i, t in enumerate(texts)]
+    s = Section(section_id="bid#1", number="00 11 13", title="ADVERTISEMENT FOR BIDS", numbering_style="csi",
+                doc_id="bid", page_start=7, page_end=7, blocks=blocks)
+    filt = FilterResult(package_id="p", decisions=[SectionDecision(section_id="bid#1", number="00 11 13",
+                        title="ADVERTISEMENT FOR BIDS", keep=True, reasons=["front end"], method="rule")])
+    b = build_brief("p", SegmentResult(package_id="p", sections=[s]), filt, CandidateResult(package_id="p"),
+                    ExtractResult(package_id="p"), PermitResult(package_id="p"))
+    assert [(d.text, d.page) for d in b.deadlines] == [(texts[0], 7)]
+    assert [(r.flag_type, r.page) for r in b.red_flags] == [("liquidated_damages", 7)]

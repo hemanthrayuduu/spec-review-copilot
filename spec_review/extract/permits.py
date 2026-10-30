@@ -7,7 +7,7 @@ from pydantic import ValidationError, field_validator
 
 from spec_review.extract.groups import GROUP_CHARS, Group, render_text
 from spec_review.extract.text import numbers_in
-from spec_review.extract.verify import clean_quote, locate, number_check
+from spec_review.extract.verify import clean_quote, locate, number_check, numbers_in_cited
 from spec_review.llm.client import LLMClient, LLMError, LLMProviderError
 from spec_review.models import (
     ContractModel,
@@ -87,9 +87,9 @@ def extract_permits(package_id: str, sections: list[Section], client: LLMClient)
 def _limit(chunk: Group, row: PermitRow, result: PermitResult) -> None:
     quote = clean_quote(row.source_text)
     loc = locate(quote, chunk.blocks)
-    if loc is None:
+    if loc is None or not numbers_in_cited(quote, chunk.blocks[loc[0]:loc[1] + 1]):
         result.rejected.append(RejectedRecord(group_id=chunk.group_id, source_text=row.source_text, reason="quote",
-                                              detail="source_text not found in the permit text"))
+                                              detail="source_text (with its numbers) not found in the permit text"))
         return
     b = chunk.blocks[loc[0]]
     numbers = numbers_in(row.value)

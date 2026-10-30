@@ -1,6 +1,7 @@
 """Candidate sentences flagged by rules (spec 8.6, design 7.2), and which sections each stage reads."""
 
 import re
+from collections.abc import Iterator
 
 from spec_review.extract.text import split_sentences, strip_marker
 from spec_review.models import Block, BlockKind, Candidate, CandidateResult, Section, SectionDecision, Trigger
@@ -51,9 +52,9 @@ def _continues(prev: Block, nxt: Block) -> bool:
             and nxt.kind not in ("heading", "table_row") and strip_marker(nxt.text) == nxt.text.strip())
 
 
-def section_candidates(section: Section) -> list[tuple[int, Candidate]]:
-    """Each candidate with the index of its first block in section.blocks."""
-    blocks, out, i = section.blocks, [], 0
+def section_sentences(section: Section) -> Iterator[tuple[int, Block, str]]:
+    """Every sentence of the section's current text, with its first block's index. Table rows stay whole."""
+    blocks, i = section.blocks, 0
     while i < len(blocks):
         b = blocks[i]
         if b.superseded_by is not None:
@@ -63,15 +64,21 @@ def section_candidates(section: Section) -> list[tuple[int, Candidate]]:
         while j + 1 < len(blocks) and _continues(blocks[j], blocks[j + 1]):
             j += 1
             text = f"{text} {blocks[j].text}"
-        sentences = [" ".join(text.split())] if b.kind == "table_row" else split_sentences(strip_marker(text))
-        for sentence in sentences:
-            triggers = find_triggers(sentence, b.kind)
-            if triggers:
-                cid = f"{section.section_id}:c{len(out) + 1}"
-                out.append((i, Candidate(candidate_id=cid, section_id=section.section_id, doc_id=b.doc_id,
-                                         paragraph_path=b.paragraph_path or "", page=b.page, sentence=sentence,
-                                         triggers=triggers)))
+        for sentence in [" ".join(text.split())] if b.kind == "table_row" else split_sentences(strip_marker(text)):
+            yield i, b, sentence
         i = j + 1
+
+
+def section_candidates(section: Section) -> list[tuple[int, Candidate]]:
+    """Each candidate with the index of its first block in section.blocks."""
+    out: list[tuple[int, Candidate]] = []
+    for i, b, sentence in section_sentences(section):
+        triggers = find_triggers(sentence, b.kind)
+        if triggers:
+            out.append((i, Candidate(candidate_id=f"{section.section_id}:c{len(out) + 1}",
+                                     section_id=section.section_id, doc_id=b.doc_id,
+                                     paragraph_path=b.paragraph_path or "", page=b.page, sentence=sentence,
+                                     triggers=triggers)))
     return out
 
 

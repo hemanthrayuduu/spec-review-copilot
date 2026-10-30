@@ -8,7 +8,7 @@ from typing import Any, Literal
 from pydantic import Field, ValidationError, field_validator
 
 from spec_review.extract.groups import Group, article_of, render_candidates, render_text
-from spec_review.extract.verify import clean_quote, locate, number_check, settle_dispositions
+from spec_review.extract.verify import clean_quote, locate, number_check, numbers_in_cited, settle_dispositions
 from spec_review.llm.client import LLMClient, LLMError, LLMProviderError, LLMResponseError, LLMTruncatedError
 from spec_review.models import (
     CandidateDisposition,
@@ -140,7 +140,22 @@ def extract_groups(package_id: str, groups: list[Group], client: LLMClient) -> t
     return result, stats
 
 
+def _unique_local_ids(reply: ExtractionReply) -> ExtractionReply:
+    """A repeated local_id gets a suffix, so every record keeps its own req_id and its own candidate links."""
+    seen: set[str] = set()
+    records = []
+    for rec in reply.records:
+        local_id, n = rec.local_id, 1
+        while local_id in seen:
+            n += 1
+            local_id = f"{rec.local_id}-{n}"
+        seen.add(local_id)
+        records.append(rec if local_id == rec.local_id else rec.model_copy(update={"local_id": local_id}))
+    return reply.model_copy(update={"records": records})
+
+
 def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: ExtractStats) -> list[CandidateDisposition]:
+    reply = _unique_local_ids(reply)
     known = {c.candidate_id: c for c in g.candidates}
     accepted: dict[str, str] = {}
     rejected: dict[str, str] = {}
@@ -150,12 +165,14 @@ def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: Ext
         wanted = {(known[c].page, known[c].paragraph_path) for c in rec.candidate_ids if c in known}
         prefer = {i for i, b in enumerate(g.blocks) if (b.page, b.paragraph_path or "") in wanted}
         loc = locate(quote, g.blocks, prefer=prefer)
+        if loc is not None and not numbers_in_cited(quote, g.blocks[loc[0]:loc[1] + 1]):
+            loc = None  # the quote is close to the text but one of its numbers is not in it
         numbers_ok = number_check(rec.value, quote)
         stats.quote_passed += loc is not None
         stats.number_passed += numbers_ok
         if loc is None or not numbers_ok:
             reason: Literal["quote", "number"] = "quote" if loc is None else "number"
-            detail = "source_text not found in the group's text" if loc is None else \
+            detail = "source_text (with its numbers) not found in the group's text" if loc is None else \
                 f"value {rec.value!r} has a number missing from source_text"
             rejected[rec.local_id] = reason
             result.rejected.append(RejectedRecord(group_id=g.group_id, source_text=rec.source_text, reason=reason,
@@ -167,8 +184,6 @@ def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: Ext
         i, j = loc
         b = g.blocks[i]
         req_id = f"{g.group_id}:{rec.local_id}"
-        while req_id in accepted.values():
-            req_id += "x"  # a repeated local_id still gets its own record
         try:
             req = Requirement(
                 req_id=req_id, doc_id=b.doc_id, section_number=g.section.number, section_title=g.section.title,
@@ -186,5 +201,5 @@ def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: Ext
         if j != i and g.blocks[j].page != b.page:
             stats.crosses_page.add(req_id)
         result.requirements.append(req)
-        accepted.setdefault(rec.local_id, req_id)
+        accepted[rec.local_id] = req_id
     return settle_dispositions(g, reply, accepted, rejected, None)

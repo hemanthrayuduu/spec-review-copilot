@@ -3,14 +3,13 @@
 import re
 from collections.abc import Iterator
 
-from spec_review.extract.candidates import extraction_sections, section_candidates
+from spec_review.extract.candidates import extraction_sections, section_sentences
 from spec_review.extract.text import strip_marker
 from spec_review.models import (
     Block,
     Brief,
     BriefItem,
     BriefSection,
-    Candidate,
     CandidateResult,
     ExtractResult,
     FilterResult,
@@ -66,17 +65,18 @@ def _kept_sections(segment: SegmentResult, filt: FilterResult) -> list[Section]:
     return [s for s in segment.sections if s.section_id in kept and s.superseded_by is None]
 
 
-def _cited_candidates(segment: SegmentResult, filt: FilterResult) -> Iterator[tuple[Section, Candidate]]:
+def _sentences(segment: SegmentResult, filt: FilterResult) -> Iterator[tuple[Section, Block, str]]:
+    """Every current sentence of the kept sections, trigger or not: a deadline needs no "shall"."""
     for s in extraction_sections(segment.sections, filt.decisions):
-        for _, c in section_candidates(s):
-            yield s, c
+        for _, b, sentence in section_sentences(s):
+            yield s, b, sentence
 
 
 def _deadlines(segment: SegmentResult, filt: FilterResult) -> list[BriefItem]:
-    items = [BriefItem(text=c.sentence, doc_id=c.doc_id, page=c.page, section_number=s.number)
-             for s, c in _cited_candidates(segment, filt)
-             if is_front_end_like(s) and (CALENDAR_DATE.search(c.sentence) or CLOCK_TIME.search(c.sentence)
-                                         or RELATIVE.search(c.sentence))]
+    items = [BriefItem(text=sentence, doc_id=b.doc_id, page=b.page, section_number=s.number)
+             for s, b, sentence in _sentences(segment, filt)
+             if is_front_end_like(s) and (CALENDAR_DATE.search(sentence) or CLOCK_TIME.search(sentence)
+                                         or RELATIVE.search(sentence))]
     for change in segment.addenda:
         if change.action != "revise_date" or not change.applied:
             continue
@@ -117,12 +117,12 @@ def _forms(segment: SegmentResult, filt: FilterResult) -> list[BriefItem]:
 def _red_flags(segment: SegmentResult, filt: FilterResult) -> list[RedFlag]:
     seen: set[tuple[str, int, str, str]] = set()
     out: list[RedFlag] = []
-    for s, c in _cited_candidates(segment, filt):
+    for s, b, sentence in _sentences(segment, filt):
         for flag, rx in FLAG_PATTERNS:
-            key = (c.doc_id, c.page, c.sentence, flag)
-            if rx.search(c.sentence) and key not in seen:
+            key = (b.doc_id, b.page, sentence, flag)
+            if rx.search(sentence) and key not in seen:
                 seen.add(key)
-                out.append(RedFlag(text=c.sentence, doc_id=c.doc_id, page=c.page, section_number=s.number,
+                out.append(RedFlag(text=sentence, doc_id=b.doc_id, page=b.page, section_number=s.number,
                                    flag_type=flag))
     return out
 
@@ -153,7 +153,7 @@ def key_requirements(requirements: list[Requirement]) -> list[BriefItem]:
 
 def build_brief(package_id: str, segment: SegmentResult, filt: FilterResult, candidates: CandidateResult,
                 extract: ExtractResult, permits: PermitResult) -> Brief:
-    """candidates is the run's CandidateResult; the brief re-derives each candidate's block for its citation."""
+    """Deadlines and red flags come from every current sentence of the kept sections, not only the candidates."""
     decisions = {d.section_id: d for d in filt.decisions}
     sections = [BriefSection(number=s.number, title=s.title, doc_id=s.doc_id, page_start=s.page_start,
                              page_end=s.page_end,

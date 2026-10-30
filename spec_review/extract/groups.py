@@ -23,9 +23,14 @@ def article_of(path: str | None, style: NumberingStyle) -> str | None:
 
 
 def _units(blocks: list[Block]) -> list[list[int]]:
-    """Block indices that must stay together: each block alone, except a table run with the block before it."""
+    """Block indices that must stay together: each block alone, except a table run with the block before it.
+
+    Superseded blocks are left out, so the model never sees text an addendum replaced.
+    """
     units: list[list[int]] = []
     for i, b in enumerate(blocks):
+        if b.superseded_by is not None:
+            continue
         if b.kind == "table_row" and units:
             units[-1].append(i)  # the next row of the run, or the first row joining its lead-in block
         else:

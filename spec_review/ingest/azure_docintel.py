@@ -42,12 +42,15 @@ class DocIntelClient:
         self.cache_dir = cache_dir
         self.poll_seconds = poll_seconds
         self.timeout_seconds = timeout_seconds
+        self.auth_error: str | None = None  # set on 401/403: every later page fails at once, with no request
 
     def read_page(self, pdf_bytes: bytes) -> list[tuple[str, BBox]]:
         """One-page PDF in; its text lines with bounding boxes in PDF points out."""
         cache = self.cache_dir / f"{hashlib.sha256(pdf_bytes).hexdigest()}.json" if self.cache_dir else None
         if cache is not None and cache.is_file():
             return [(t, tuple(b)) for t, b in json.loads(cache.read_text())]  # type: ignore[misc]
+        if self.auth_error:
+            raise DocIntelError(self.auth_error)
         lines = self._lines(self._analyze(pdf_bytes))
         if cache is not None:
             cache.parent.mkdir(parents=True, exist_ok=True)
@@ -65,6 +68,10 @@ class DocIntelClient:
             if resp.status_code != 429:
                 break
             self._sleep(min(float(resp.headers.get("Retry-After", "1")), 30.0))
+        if resp.status_code in (401, 403):
+            self.auth_error = (f"Document Intelligence refused the key (HTTP {resp.status_code}); "
+                               "check AZURE_DOCINTEL_KEY and AZURE_DOCINTEL_ENDPOINT")
+            raise DocIntelError(self.auth_error)
         if resp.status_code != 202 or "Operation-Location" not in resp.headers:
             raise DocIntelError(f"analyze request failed: HTTP {resp.status_code}: {resp.text[:200]}")
         operation = resp.headers["Operation-Location"]
