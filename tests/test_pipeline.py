@@ -8,9 +8,11 @@ from spec_review.eval.scorecard import build_scorecard
 from spec_review.filter.relevance import decide, load_product_map
 from spec_review.ingest import ingest_package
 from spec_review.models import FilterResult, SegmentResult
-from spec_review.pipeline import build_coverage, run_read
+from spec_review.llm.client import LLMClient
+from spec_review.pipeline import build_coverage, run_package, run_read
 from spec_review.runs import RunWriter
 from spec_review.segment.sections import split_sections
+from tests.llm_fakes import EchoProvider
 from tests.pdf_fixtures import make_pdf, make_scanned_pdf
 
 
@@ -98,3 +100,32 @@ def test_reissued_section_in_an_addendum_pdf_reaches_the_filter(tmp_path: Path) 
     assert any("10 years" in b.text for b in live[0].blocks)
     kept = {d.section_id: d.keep for d in out.filter.decisions}
     assert kept[live[0].section_id] and not kept["specs#1"]
+
+
+def test_run_package_with_echo_settles_every_candidate(tmp_path: Path, lakeview_pdfs: Path) -> None:
+    import openpyxl
+    out = run_package(lakeview_pdfs, RunWriter("p1", root=tmp_path), Settings(_env_file=None),
+                      client=LLMClient(EchoProvider()), cache_dir=None)
+    cov = out.read.coverage
+    assert cov.candidates_without_disposition == 0 and cov.silent_drops == 0
+    assert cov.candidates_total == len(out.candidates.candidates) > 0
+    assert cov.candidates_requirement + cov.candidates_not_requirement + cov.candidates_needs_engineer == \
+        cov.candidates_total
+    for name in ("candidates", "extract", "verify", "permits", "brief", "coverage"):
+        assert (tmp_path / "p1" / f"{name}.json").exists(), name
+    assert (tmp_path / "p1/brief.md").exists() and (tmp_path / "p1/requirements.xlsx").exists()
+    assert openpyxl.load_workbook(tmp_path / "p1/requirements.xlsx")["Requirements"].max_row == \
+        len(out.extract.requirements) + 1
+    assert out.provider == "echo" and out.llm_calls and out.permit_only == ["NPDES DISCHARGE PERMIT EXCERPT"]
+    assert (tmp_path / "latest").resolve() == (tmp_path / "p1").resolve()
+
+
+def test_package_without_candidates_completes(tmp_path: Path) -> None:
+    import openpyxl
+    pkg = tmp_path / "pkg"
+    make_pdf(pkg / "drawings.pdf", ["<p>SHEET M-101</p>", "<p>PLAN VIEW</p>"])
+    out = run_package(pkg, RunWriter("p2", root=tmp_path), Settings(_env_file=None),
+                      client=LLMClient(EchoProvider()), cache_dir=None)
+    assert out.candidates.candidates == [] and out.llm_calls == [] and out.extract.requirements == []
+    assert openpyxl.load_workbook(tmp_path / "p2/requirements.xlsx")["Requirements"].max_row == 1
+    assert (tmp_path / "p2/brief.md").read_text().startswith("# Triage brief: pkg")

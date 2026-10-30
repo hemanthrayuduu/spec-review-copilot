@@ -1,0 +1,64 @@
+from pathlib import Path
+from typing import Any
+
+import openpyxl
+
+from spec_review.models import (
+    Brief,
+    BriefItem,
+    Candidate,
+    CandidateDisposition,
+    CandidateResult,
+    CoverageReport,
+    ExtractResult,
+    RedFlag,
+    Requirement,
+    VerifyReport,
+)
+from spec_review.outputs.matrix_xlsx import write_requirements_xlsx
+
+
+def small_outputs() -> dict[str, Any]:
+    cands = [Candidate(candidate_id=f"s1:c{i}", section_id="s1", doc_id="specs", paragraph_path="2.01.A", page=5,
+                       sentence=f"Sentence {i} shall apply.", triggers=["shall"]) for i in (1, 2, 3, 4)]
+    reqs = [Requirement(req_id=f"s1:g1:r{i}", doc_id="specs", section_number="46 61 00", section_title="MEMBRANES",
+                        paragraph_path="2.01.A", page=5, source_text=f"Sentence {i} shall apply.", category="material",
+                        mandatory=True, confidence=0.5 if i == 2 else 0.9,
+                        candidate_ids=[f"s1:c{i}"] if i == 1 else []) for i in (1, 2)]
+    disps = [CandidateDisposition(candidate_id="s1:c1", outcome="requirement", req_ids=["s1:g1:r1"]),
+             CandidateDisposition(candidate_id="s1:c2", outcome="not_requirement", reason="heading"),
+             CandidateDisposition(candidate_id="s1:c3", outcome="needs_engineer", reason="no disposition from model"),
+             CandidateDisposition(candidate_id="s1:c4", outcome="not_requirement", reason="reference")]
+    brief = Brief(package_id="p", deadlines=[BriefItem(text="Bids due May 1, 2026", doc_id="rfp", page=3,
+                                                       superseded_by="Addendum 1")],
+                  red_flags=[RedFlag(text="Brand X or equal.", doc_id="specs", page=9, flag_type="named_manufacturer")])
+    cov = CoverageReport(package_id="p", pages_total=10, pages_text=10, pages_ocr=0, pages_blank=0, blocks_total=50,
+                         blocks_unassigned=0, removed_header_footer_lines=0, sections_total=2, sections_kept=1,
+                         pages_in_kept_sections=5, unparsed_addendum_items=0, unresolved_xrefs=0, silent_drops=0)
+    ver = VerifyReport(package_id="p", records_total=2, quote_passed=2, number_passed=2, quote_pass_rate=1.0,
+                       number_pass_rate=1.0, citation_ok=2, records_without_candidate=1, candidates_total=4,
+                       dispositions={"requirement": 1, "not_requirement": 2, "needs_engineer": 1},
+                       groups_total=1, groups_failed=0)
+    return dict(extract=ExtractResult(package_id="p", requirements=reqs, dispositions=disps),
+                candidates=CandidateResult(package_id="p", candidates=cands), brief=brief, verify=ver, coverage=cov,
+                threshold=0.6)
+
+
+def test_workbook_sheets_and_rows(tmp_path: Path) -> None:
+    path = write_requirements_xlsx(tmp_path / "r.xlsx", **small_outputs())
+    wb = openpyxl.load_workbook(path)
+    assert wb.sheetnames == ["Requirements", "Needs engineer", "Not requirements", "Brief", "Coverage"]
+    reqs = wb["Requirements"]
+    assert reqs.max_row == 3 and reqs.freeze_panes == "A2" and reqs.auto_filter.ref
+    header = [c.value for c in reqs[1]]
+    assert header[0] == "req_id" and header[-1] == "source text" and "low confidence" in header
+    rows = {r[0]: dict(zip(header, r)) for r in reqs.iter_rows(min_row=2, values_only=True)}
+    assert rows["s1:g1:r2"]["low confidence"] == "yes" and rows["s1:g1:r2"]["note"] == "found by model, no rule trigger"
+    assert rows["s1:g1:r1"]["note"] in ("", None)
+    assert wb["Needs engineer"].max_row == 2 and wb["Not requirements"].max_row == 3
+    ne = [c.value for c in wb["Needs engineer"][2]]
+    assert ne[:3] == ["s1:c3", "specs", 5] and ne[-1] == "no disposition from model"
+    kinds = [r[0] for r in wb["Brief"].iter_rows(min_row=2, values_only=True)]
+    assert kinds == ["deadline", "red flag:named_manufacturer"]
+    metrics = {r[0]: r[1] for r in wb["Coverage"].iter_rows(min_row=2, values_only=True)}
+    assert metrics["silent_drops"] == 0 and metrics["verify.quote_pass_rate"] == 1.0

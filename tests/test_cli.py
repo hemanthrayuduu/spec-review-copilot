@@ -62,3 +62,22 @@ def test_azure_check_names_missing_keys(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setenv("PROVIDER_LLM", "azure")
     result = CliRunner().invoke(app, ["azure-check"])
     assert result.exit_code == 1 and "AZURE_OPENAI_KEY" in result.output
+
+
+def test_run_writes_outputs_in_mock_mode(tmp_path: Path, lakeview_pdfs: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = CliRunner().invoke(app, ["run", str(lakeview_pdfs), "--run-id", "cli2"])
+    assert result.exit_code == 0, result.output
+    assert "provider: mock" in result.output and "needs engineer" in result.output
+    assert "permit-only sections: NPDES DISCHARGE PERMIT EXCERPT" in result.output
+    assert (tmp_path / "runs/cli2/brief.md").exists() and (tmp_path / "runs/cli2/requirements.xlsx").exists()
+    assert "Mock provider" in (tmp_path / "runs/cli2/brief.md").read_text()
+
+
+def test_run_fails_fast_on_incomplete_azure_settings(tmp_path: Path, lakeview_pdfs: Path,
+                                                     monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("PROVIDER_LLM", "azure")
+    result = CliRunner().invoke(app, ["run", str(lakeview_pdfs)])
+    assert result.exit_code == 1 and "AZURE_OPENAI_ENDPOINT" in result.output
+    assert not list(tmp_path.rglob("ingest.json"))
