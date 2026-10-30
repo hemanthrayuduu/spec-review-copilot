@@ -11,7 +11,7 @@ from spec_review.eval.metrics import pages_kept_ratio
 from spec_review.eval.scorecard import build_scorecard
 from spec_review.llm.check import check_chat
 from spec_review.llm.client import LLMConfigError, LLMError, get_client
-from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package, run_read
+from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package
 from spec_review.runs import RunWriter, new_run_id
 
 app = typer.Typer(
@@ -90,14 +90,27 @@ def eval_cmd(split: Split) -> None:
         _fail("specreview eval test is not available until Phase 4 (owner request only)")
     if not DEV_PACKAGE.is_dir():
         _fail(f"{DEV_PACKAGE} is missing; run: uv run python scripts/make_lakeview.py")
+    settings = get_settings()
     writer = RunWriter(new_run_id())
-    out = run_read(DEV_PACKAGE, writer, get_settings())
-    card = build_scorecard(load_golden(DEV_GOLDEN), out)
+    try:
+        out = run_package(DEV_PACKAGE, writer, settings)
+    except LLMConfigError as e:
+        _fail(str(e))
+    card = build_scorecard(load_golden(DEV_GOLDEN), out, settings)
     writer.write("scorecard", card)
-    _summary(out, writer)
+    _summary(out.read, writer, _package_lines(out))
     typer.echo(card.model_dump_json(indent=2))
-    if card.section_recall < 1.0 or card.silent_drops > 0:
-        _fail(f"Phase 1 targets not met: section recall {card.section_recall:.3f}, silent drops {card.silent_drops}")
+    gates = [(card.section_recall < 1.0, f"section recall {card.section_recall:.3f}"),
+             (card.silent_drops > 0, f"silent drops {card.silent_drops}"),
+             (card.candidates_without_disposition > 0,
+              f"candidates without disposition {card.candidates_without_disposition}"),
+             (card.candidate_recall < 1.0, f"candidate recall {card.candidate_recall:.3f}"),
+             (card.deadline_recall < 1.0, f"deadline recall {card.deadline_recall:.3f}"),
+             (card.form_recall < 1.0, f"required form recall {card.form_recall:.3f}"),
+             (card.red_flag_recall < 1.0, f"red flag recall {card.red_flag_recall:.3f}")]
+    failed = [msg for bad, msg in gates if bad]
+    if failed:
+        _fail(f"Phase 1 offline gates not met: {'; '.join(failed)}")
 
 
 @app.command("azure-check")

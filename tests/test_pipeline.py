@@ -27,8 +27,8 @@ def test_run_writes_every_stage(tmp_path: Path, lakeview_pdfs: Path) -> None:
 
 
 def test_lakeview_scorecard_meets_phase_1a(tmp_path: Path, lakeview_pdfs: Path, lakeview_golden: GoldenPackage) -> None:
-    out = run_read(lakeview_pdfs, RunWriter("t2", root=tmp_path), Settings(_env_file=None), cache_dir=tmp_path / "c")
-    card = build_scorecard(lakeview_golden, out)
+    pkg = run_package(lakeview_pdfs, RunWriter("t2", root=tmp_path), Settings(_env_file=None), cache_dir=tmp_path / "c")
+    card, out = build_scorecard(lakeview_golden, pkg, Settings(_env_file=None)), pkg.read
     assert card.section_recall == 1.0 and card.silent_drops == 0 and card.sections_missed == []
     assert card.pages_blank == 1 and (card.pages_ocr == 1 or card.needs_ocr_pages == 1)
     assert card.addenda_applied == 3 and card.addenda_unparsed == 0

@@ -36,6 +36,9 @@ def test_eval_dev_scores_lakeview(tmp_path: Path, lakeview_pdfs: Path, lakeview_
     assert result.exit_code == 0, result.output
     card = json.loads((tmp_path / "runs/latest/scorecard.json").read_text())
     assert card["section_recall"] == 1.0 and card["silent_drops"] == 0
+    assert card["candidate_recall"] == 1.0 and card["requirement_recall"] is None
+    assert card["red_flag_recall"] == 1.0 and card["deadline_recall"] == 1.0 and card["form_recall"] == 1.0
+    assert "provider: mock" in result.output
 
 
 def test_eval_dev_without_package_says_how_to_build_it(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
