@@ -15,6 +15,20 @@ from spec_review.llm.client import LLMClient, LLMConfigError
 from test_knowledge import cap
 
 
+class AzureNamedEmbedder:
+    """The fake embedder under the Azure provider's name, as a real Azure client would report."""
+
+    name = "azure"
+    model_id = "fake-azure"
+
+    def __init__(self) -> None:
+        from spec_review.llm.mock import FakeEmbedder
+        self.inner = FakeEmbedder(dim=3)
+
+    def embed(self, texts: list[str]) -> Any:
+        return self.inner.embed(texts)
+
+
 def fake(handler: Any) -> AzureSearchIndex:
     return AzureSearchIndex("https://srch.example.net/", "k", "idx-knowledge", dims=3,
                             http_client=httpx.Client(transport=httpx.MockTransport(handler)))
@@ -28,6 +42,8 @@ def test_index_definition_has_exhaustive_cosine_vector_field() -> None:
     seen: dict[str, Any] = {}
 
     def handler(r: httpx.Request) -> httpx.Response:
+        if r.method == "GET":
+            return httpx.Response(404, json={"error": {"message": "not found"}})  # no index yet
         seen.update(method=r.method, path=r.url.path, version=r.url.params["api-version"], key=r.headers["api-key"],
                     body=json.loads(r.content))
         return httpx.Response(201, json={})
@@ -90,8 +106,9 @@ def test_azure_search_without_keys_is_a_config_error(tmp_path: Path) -> None:
     from spec_review.knowledge.index import load_knowledge
     from spec_review.llm.mock import FakeEmbedder, MockProvider
     with pytest.raises(LLMConfigError, match="AZURE_SEARCH_ENDPOINT"):
-        load_knowledge(_azure_settings(tmp_path), LLMClient(MockProvider(tmp_path), embedder=FakeEmbedder()),
+        load_knowledge(_azure_settings(tmp_path), LLMClient(MockProvider(tmp_path), embedder=AzureNamedEmbedder()),
                        sources_path=_no_sources(tmp_path))
+    assert FakeEmbedder
 
 
 def test_stale_index_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -101,8 +118,9 @@ def test_stale_index_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setattr(index_module, "AzureSearchIndex",
                         lambda *a, **kw: fake(lambda r: httpx.Response(200, text="3")))
     with pytest.raises(SearchError, match="knowledge build"):
-        index_module.load_knowledge(settings, LLMClient(MockProvider(tmp_path), embedder=FakeEmbedder()),
+        index_module.load_knowledge(settings, LLMClient(MockProvider(tmp_path), embedder=AzureNamedEmbedder()),
                                     sources_path=_no_sources(tmp_path))
+    assert FakeEmbedder
 
 
 def _no_sources(tmp_path: Path) -> Path:
@@ -117,3 +135,46 @@ def test_check_lines_for_embeddings_and_search() -> None:
     line = check_embeddings(LLMClient(MockProvider(Path(".")), embedder=FakeEmbedder(dim=8)))
     assert line.startswith("embeddings ok:") and "dims=8" in line
     assert check_search(fake(lambda r: httpx.Response(200, text="272"))) == "search ok: idx-knowledge holds 272 items"
+
+
+def test_mock_embeddings_search_in_memory_with_a_note(tmp_path: Path) -> None:
+    from spec_review.knowledge.index import MemoryIndex, load_knowledge
+    from spec_review.llm.mock import FakeEmbedder, MockProvider
+    settings = _azure_settings(tmp_path, azure_search_endpoint="https://srch.example.net", azure_search_key="k")
+    kb = load_knowledge(settings, LLMClient(MockProvider(tmp_path), embedder=FakeEmbedder()),
+                        sources_path=_no_sources(tmp_path))
+    assert isinstance(kb.vectors, MemoryIndex) and any("in memory" in n for n in kb.notes)
+
+
+def test_build_refuses_to_fill_azure_search_with_mock_embeddings(tmp_path: Path) -> None:
+    from spec_review.knowledge.capabilities import KnowledgeError
+    from spec_review.knowledge.index import load_knowledge
+    from spec_review.llm.mock import FakeEmbedder, MockProvider
+    settings = _azure_settings(tmp_path, azure_search_endpoint="https://srch.example.net", azure_search_key="k")
+    with pytest.raises(KnowledgeError, match="PROVIDER_LLM=azure"):
+        load_knowledge(settings, LLMClient(MockProvider(tmp_path), embedder=FakeEmbedder()),
+                       sources_path=_no_sources(tmp_path), upload=True)
+
+
+def test_ensure_index_recreates_an_index_with_other_dimensions() -> None:
+    calls: list[str] = []
+
+    def handler(r: httpx.Request) -> httpx.Response:
+        calls.append(r.method)
+        if r.method == "GET":
+            return httpx.Response(200, json={"fields": [{"name": "vector", "dimensions": 64}]})
+        return httpx.Response(204 if r.method == "DELETE" else 201, json={})
+    fake(handler).ensure_index()
+    assert calls == ["GET", "DELETE", "PUT"]
+
+
+def test_ensure_index_keeps_an_index_with_the_same_dimensions() -> None:
+    calls: list[str] = []
+
+    def handler(r: httpx.Request) -> httpx.Response:
+        calls.append(r.method)
+        if r.method == "GET":
+            return httpx.Response(200, json={"fields": [{"name": "vector", "dimensions": 3}]})
+        return httpx.Response(201, json={})
+    fake(handler).ensure_index()
+    assert calls == ["GET", "PUT"]

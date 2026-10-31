@@ -33,13 +33,14 @@ class AzureSearchIndex:
         self._headers = {"api-key": key, "Content-Type": "application/json"}
         self._http = http_client or httpx.Client(timeout=60.0)
 
-    def _call(self, method: str, path: str, body: dict[str, Any] | None = None) -> httpx.Response:
+    def _call(self, method: str, path: str, body: dict[str, Any] | None = None, *,
+              allow: tuple[int, ...] = ()) -> httpx.Response:
         try:
             r = self._http.request(method, f"{self.base}{path}", params={"api-version": SEARCH_API_VERSION},
                                    headers=self._headers, json=body)
         except httpx.HTTPError as exc:
             raise SearchError(f"{method} {path}: {type(exc).__name__}: {exc}") from exc
-        if r.status_code >= 400:
+        if r.status_code >= 400 and r.status_code not in allow:
             raise SearchError(f"{method} {path}: HTTP {r.status_code} {r.text[:200]}")
         return r
 
@@ -56,6 +57,12 @@ class AzureSearchIndex:
         vector_search = {"algorithms": [{"name": "exhaustive", "kind": "exhaustiveKnn",
                                          "exhaustiveKnnParameters": {"metric": "cosine"}}],
                          "profiles": [{"name": "exhaustive-cosine", "algorithm": "exhaustive"}]}
+        existing = self._call("GET", f"/indexes/{self.index}", allow=(404,))
+        if existing.status_code != 404 and existing.content:
+            dims = next((f.get("dimensions") for f in existing.json().get("fields", []) if f.get("name") == "vector"),
+                        None)
+            if dims is not None and dims != self.dims:  # a vector field can't change size: start the index over
+                self._call("DELETE", f"/indexes/{self.index}")
         self._call("PUT", f"/indexes/{self.index}", {"name": self.index, "fields": fields,
                                                      "vectorSearch": vector_search})
 

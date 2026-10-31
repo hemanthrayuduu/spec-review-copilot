@@ -99,7 +99,13 @@ def load_knowledge(settings: Settings, client: LLMClient, *, sources_path: Path 
     if not items:
         raise KnowledgeError(f"the knowledge base in {settings.knowledge_dir} is empty")
     ids = [e.evidence_id for e in items]
-    vectors: VectorIndex = _azure_index(settings, items, client, upload) if settings.provider_search == "azure" \
+    azure = settings.provider_search == "azure"
+    if azure and getattr(client.embedder, "name", None) != "azure":  # the index holds Azure embeddings only
+        if upload:
+            raise KnowledgeError("knowledge build for Azure AI Search needs real embeddings: set PROVIDER_LLM=azure")
+        notes.append("PROVIDER_SEARCH=azure needs Azure embeddings; this run searched in memory with mock embeddings")
+        azure = False
+    vectors: VectorIndex = _azure_index(settings, items, client, upload) if azure \
         else MemoryIndex(ids, client.embed([e.text for e in items]))
     return KnowledgeBase(items=dict(zip(ids, items)), capabilities=caps, keyword=KeywordIndex(items),
                          vectors=vectors, notes=notes)
