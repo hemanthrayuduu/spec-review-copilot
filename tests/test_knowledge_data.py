@@ -37,3 +37,27 @@ def test_twenty_fictional_past_exceptions() -> None:
 
 def test_readme_says_synthetic_content_is_fictional() -> None:
     assert "fictional" in (KNOW / "README.md").read_text().lower()
+
+
+def test_rule_decisions_on_the_lakeview_text_agree_with_the_labels() -> None:
+    """A rule decides alone, so a loose match term shows up here first (design-input rows must never match)."""
+    import json
+
+    from spec_review.match.rules import rule_check
+    from spec_review.models import Requirement
+    caps = load_capabilities(KNOW / "capabilities.csv")
+    golden = json.loads((ROOT / "data/golden/dev/lakeview.json").read_text())
+    lines = {"46 21 00": ["screens"], "46 43 00": ["clarifiers"], "46 61 00": ["membranes"]}
+    wrong = []
+    for i, r in enumerate(golden["requirements"]):
+        if not (r["operator"] and r["value"]):
+            continue
+        q = Requirement(req_id=f"s#1:g1:r{i}", doc_id=r["doc_id"], section_number=r["section_number"],
+                        section_title="-", paragraph_path=r["paragraph_path"], page=r["page"],
+                        source_text=r["source_text"], category=r["category"], parameter=r["parameter"],
+                        operator=r["operator"], value=r["value"], unit=r["unit"], mandatory=r["mandatory"],
+                        confidence=0.9)
+        m = rule_check(q, lines.get(r["section_number"], ["general"]), caps)
+        if m is not None and m.status != r["expected_status"]:
+            wrong.append((r["source_text"][:60], m.status, r["expected_status"]))
+    assert wrong == []
