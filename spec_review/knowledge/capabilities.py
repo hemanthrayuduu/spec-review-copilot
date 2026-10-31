@@ -16,6 +16,8 @@ from spec_review.models import Capability, PastException
 CAPABILITY_COLUMNS = ("capability_id", "product_line", "parameter", "match_terms", "min_value", "max_value", "unit",
                       "value_text", "basis", "origin", "source_id", "source_url", "source_page", "source_text", "note")
 SYNTHETIC_DOC_ID = "synthetic_product_data"
+# The synthetic document has one page per product line in this order, so rows can cite pages before rendering.
+SYNTHETIC_PAGES = ("screens", "clarifiers", "aeration", "biological", "membranes", "pfas", "general")
 PRODUCT_LINES = (*load_product_map().product_lines, "general")  # general: terms that apply to every line
 NUTRIENTS = re.compile(r"\b(phosphorus|nitrogen|ammonia|tp|tn|nh3)\b", re.IGNORECASE)
 
@@ -59,6 +61,10 @@ def load_past_exceptions(path: Path) -> list[PastException]:
     return _load(path, PastException, lambda row: {k: v.strip() for k, v in row.items()})
 
 
+def synthetic_page(product_line: str) -> int | None:
+    return SYNTHETIC_PAGES.index(product_line) + 1 if product_line in SYNTHETIC_PAGES else None
+
+
 def guard_problems(caps: list[Capability]) -> list[str]:
     """Rules every committed row must keep (design 7.2, guards 1 to 3)."""
     problems: list[str] = []
@@ -79,6 +85,9 @@ def guard_problems(caps: list[Capability]) -> list[str]:
             problems.append(f"{c.capability_id}: synthetic rows may not cover nutrient effluent ({c.parameter})")
         if c.source_id != SYNTHETIC_DOC_ID:
             problems.append(f"{c.capability_id}: synthetic row must cite {SYNTHETIC_DOC_ID}, not {c.source_id}")
+        if (page := synthetic_page(c.product_line)) is not None and c.source_page != page:
+            problems.append(f"{c.capability_id}: synthetic row cites page {c.source_page}, but {c.product_line} "
+                            f"is on page {page} of {SYNTHETIC_DOC_ID}")
     return problems
 
 
