@@ -105,3 +105,15 @@ def test_a_match_failure_is_a_note_not_a_crash() -> None:  # final review: Phase
     rep = match_package("p", ExtractResult(package_id="p", requirements=reqs), [], Settings(_env_file=None),  # type: ignore[call-arg]
                         LLMClient(ScriptedProvider([]), embedder=DownEmbedder()), LLMClient(ScriptedProvider([])))
     assert rep.skipped and rep.results == [] and rep.notes[0].startswith("matching failed:")
+
+
+def test_the_evidence_the_judge_saw_is_saved() -> None:  # final review: explain wrong items from the run files
+    kb, embed_client = kb_with([cap("screens", "opening", 2, 6, "mm", terms=["opening"], cid="A"),
+                                cap("screens", "wash water", 20, 30, "gpm", terms=[], cid="B")])
+    judged = in_section("specs#4", req_id="specs#4:g2:r1", parameter="wash water", unit="gpm", value="40",
+                        operator=">=", source_text="Each booster pump shall deliver not less than 40 gpm.")
+    reply = json.dumps({"status": "needs_engineer", "reason": "unsure", "evidence_ids": [], "confidence": 0.5})
+    rep = run_match("p", [in_section("specs#4", value="1"), judged], {"specs#4": decision("specs#4", ["screens"])},
+                    kb, embed_client, LLMClient(ScriptedProvider([reply])), 0.6)
+    assert set(rep.shown) == {judged.req_id} and sorted(rep.shown[judged.req_id]) == ["cap:A", "cap:B"]
+    assert all(i in rep.evidence for ids in rep.shown.values() for i in ids)

@@ -44,8 +44,10 @@ def run_match(package_id: str, reqs: list[Requirement], decisions: dict[str, Sec
     judged, gated = apply_gate(judged, threshold)
     results.update({m.req_id: m for m in judged})
     ordered = [results[r.req_id] for r in reqs]
-    cited = {i: kb.items[i] for m in ordered for i in m.evidence_ids if i in kb.items}
-    return MatchReport(package_id=package_id, results=ordered, evidence=cited,
+    shown = {req_id: [e.evidence_id for e in items] for req_id, items in evidence.items()}
+    ids = {i for m in ordered for i in m.evidence_ids} | {i for seen in shown.values() for i in seen}
+    return MatchReport(package_id=package_id, results=ordered, evidence={i: kb.items[i] for i in sorted(ids)
+                                                                          if i in kb.items}, shown=shown,
                        counts=dict(Counter(m.status for m in ordered)), methods=dict(Counter(m.method for m in ordered)),
                        judge_calls=calls, judge_failed=failed, gated=gated, notes=list(kb.notes))
 

@@ -222,7 +222,8 @@ class MatchReport(ContractModel):
 
     package_id: NonBlankStr
     results: list[MatchResult] = []
-    evidence: dict[str, Evidence] = {}
+    evidence: dict[str, Evidence] = {}  # every item cited or shown to the judge, keyed by id
+    shown: dict[str, list[str]] = {}  # req_id -> evidence ids the judge saw, best first (judged requirements only)
     counts: dict[str, int] = {}  # by status
     methods: dict[str, int] = {}
     judge_calls: Count = 0
