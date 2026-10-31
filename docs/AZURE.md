@@ -134,7 +134,7 @@ These are estimates from measured call counts and prompt sizes, using gpt-5-mini
 
 ## Quota
 
-The tokens-per-minute quota, not money, is the real limit.
+The `gpt-5-mini` deployment was created on 2026-10-31 with capacity 500, which gives **500,000 tokens and 500 requests per minute** (`azure-check` confirms the limit). At that rate even Mountain Regional takes minutes. The figures below matter only for a smaller quota.
 
 - **Mountain Regional:** about 1.7–2.2M tokens. That takes about 40 minutes at 50K tokens per minute, 3–4 hours at 10K, and more than a day at 1K.
 - **Lakeview:** a few minutes at any quota.
