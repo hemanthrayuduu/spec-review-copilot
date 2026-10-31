@@ -5,6 +5,7 @@ because Search keys may only hold letters, digits, "_", "-" and "=".
 """
 
 import base64
+import time
 from typing import Any
 
 import httpx
@@ -14,6 +15,9 @@ from spec_review.models import Evidence
 SEARCH_API_VERSION = "2024-07-01"
 BATCH = 500
 PAGE = 1000
+ATTEMPTS = 4
+RETRY_WAIT = 2.0  # seconds, doubled after each failed attempt
+TRANSIENT = (429, 500, 502, 503, 504)
 
 
 class SearchError(Exception):
@@ -35,11 +39,17 @@ class AzureSearchIndex:
 
     def _call(self, method: str, path: str, body: dict[str, Any] | None = None, *,
               allow: tuple[int, ...] = ()) -> httpx.Response:
-        try:
-            r = self._http.request(method, f"{self.base}{path}", params={"api-version": SEARCH_API_VERSION},
-                                   headers=self._headers, json=body)
-        except httpx.HTTPError as exc:
-            raise SearchError(f"{method} {path}: {type(exc).__name__}: {exc}") from exc
+        for attempt in range(ATTEMPTS):  # connection resets and throttling are retried with backoff
+            try:
+                r = self._http.request(method, f"{self.base}{path}", params={"api-version": SEARCH_API_VERSION},
+                                       headers=self._headers, json=body)
+            except httpx.TransportError as exc:
+                if attempt == ATTEMPTS - 1:
+                    raise SearchError(f"{method} {path}: {type(exc).__name__}: {exc}") from exc
+            else:
+                if r.status_code not in TRANSIENT or attempt == ATTEMPTS - 1:
+                    break
+            time.sleep(RETRY_WAIT * 2 ** attempt)
         if r.status_code >= 400 and r.status_code not in allow:
             raise SearchError(f"{method} {path}: HTTP {r.status_code} {r.text[:200]}")
         return r

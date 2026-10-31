@@ -178,3 +178,25 @@ def test_ensure_index_keeps_an_index_with_the_same_dimensions() -> None:
         return httpx.Response(201, json={})
     fake(handler).ensure_index()
     assert calls == ["GET", "PUT"]
+
+
+def test_transient_failures_are_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    from spec_review.knowledge import azure_search
+    monkeypatch.setattr(azure_search, "RETRY_WAIT", 0.0)
+    attempts = {"n": 0}
+
+    def handler(r: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            raise httpx.ReadError("Connection reset by peer")
+        if attempts["n"] == 2:
+            return httpx.Response(503, text="busy")
+        return httpx.Response(200, text="5")
+    assert fake(handler).count() == 5 and attempts["n"] == 3
+
+
+def test_retries_give_up_with_a_search_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    from spec_review.knowledge import azure_search
+    monkeypatch.setattr(azure_search, "RETRY_WAIT", 0.0)
+    with pytest.raises(SearchError, match="HTTP 503"):
+        fake(lambda r: httpx.Response(503, text="busy")).count()
