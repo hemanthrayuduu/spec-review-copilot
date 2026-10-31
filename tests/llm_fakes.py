@@ -64,3 +64,19 @@ class RaisingProvider:
 
     def complete(self, prompt_id: str, prompt: str, json_schema: dict[str, Any]) -> ProviderResponse:
         raise self.exc
+
+
+class CountingEmbedder:
+    """Wraps the mock FakeEmbedder and records every text it is asked to embed."""
+
+    name = "counting-embed"
+    model_id = "counting-embed"
+
+    def __init__(self) -> None:
+        from spec_review.llm.mock import FakeEmbedder
+        self.inner = FakeEmbedder()
+        self.sent: list[str] = []
+
+    def embed(self, texts: list[str]) -> "Any":
+        self.sent += texts
+        return self.inner.embed(texts)

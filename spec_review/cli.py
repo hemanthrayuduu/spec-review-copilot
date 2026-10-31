@@ -18,6 +18,7 @@ from spec_review.knowledge.capabilities import (
     load_past_exceptions,
     quote_problems,
 )
+from spec_review.knowledge.index import load_knowledge
 from spec_review.llm.check import check_chat, check_docintel
 from spec_review.llm.client import LLMConfigError, LLMError, get_client
 from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package
@@ -164,6 +165,16 @@ def azure_check() -> None:
             _fail(f"docintel failed: {e}")
 
 
+def _knowledge_problems() -> list[str]:
+    settings = get_settings()
+    try:
+        caps = load_capabilities(settings.knowledge_dir / "capabilities.csv")
+        load_past_exceptions(settings.knowledge_dir / "past_exceptions.csv")
+    except (KnowledgeError, OSError) as e:
+        return [str(e)]
+    return guard_problems(caps) + quote_problems(caps, settings.raw_dir)[0]
+
+
 @knowledge_app.command("check")
 def knowledge_check() -> None:
     """Validate capabilities.csv and past_exceptions.csv, and find every quote on its cited page."""
@@ -185,3 +196,25 @@ def knowledge_check() -> None:
     if problems or quotes:
         _fail(f"knowledge check found {len(problems) + len(quotes)} problems")
     typer.echo(f"Knowledge check passed ({len(unchecked)} rows unchecked: source not downloaded).")
+
+
+@knowledge_app.command("build")
+def knowledge_build() -> None:
+    """Check the knowledge base, then embed every item (cached) and build the search index."""
+    if problems := _knowledge_problems():
+        _fail("knowledge check failed; run specreview knowledge check:\n" + "\n".join(problems[:10]))
+    settings = get_settings()
+    try:
+        client = get_client(settings)
+        kb = load_knowledge(settings, client)
+    except (LLMConfigError, KnowledgeError) as e:
+        _fail(str(e))
+    except LLMError as e:
+        _fail(f"embedding failed: {e}")
+    by = Counter(e.source for e in kb.items.values())
+    calls = [c for c in client.calls if c.prompt_id == "embed"]
+    typer.echo(f"Knowledge items: {len(kb.items)} ({', '.join(f'{k} {v}' for k, v in sorted(by.items()))})")
+    typer.echo(f"Embeddings: {sum(c.input_tokens for c in calls)} tokens in {len(calls)} calls, "
+               f"${sum(c.cost_usd for c in calls):.4f} (cached items cost nothing)")
+    for note in kb.notes:
+        typer.echo(f"note       {note}")

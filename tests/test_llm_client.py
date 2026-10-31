@@ -178,3 +178,35 @@ def test_truncated_reply_raises_truncated() -> None:
     with pytest.raises(LLMTruncatedError):
         client.complete("smoke", "ping", Answer)
     assert client.calls[0].ok is False
+
+
+def test_embed_caches_each_text(tmp_path: Path) -> None:
+    from llm_fakes import CountingEmbedder, EchoProvider
+    emb = CountingEmbedder()
+    client = LLMClient(EchoProvider(), embedder=emb, price_embed_per_mtok=0.02, cache_dir=tmp_path)
+    first = client.embed(["a b", "c d"])
+    second = client.embed(["a b", "e f"])
+    assert emb.sent == ["a b", "c d", "e f"] and first[0] == second[0]
+    assert [c.prompt_id for c in client.calls] == ["embed", "embed"] and all(c.output_tokens == 0 for c in client.calls)
+
+
+def test_embed_repeats_in_one_call_are_sent_once() -> None:
+    from llm_fakes import CountingEmbedder, EchoProvider
+    emb = CountingEmbedder()
+    vectors = LLMClient(EchoProvider(), embedder=emb).embed(["x y", "x y"])
+    assert emb.sent == ["x y"] and vectors[0] == vectors[1]
+
+
+def test_embed_without_an_embedder_is_a_config_error() -> None:
+    from llm_fakes import EchoProvider
+    with pytest.raises(LLMConfigError, match="AZURE_OPENAI_EMBED_DEPLOYMENT"):
+        LLMClient(EchoProvider()).embed(["x"])
+
+
+def test_fake_embedder_is_deterministic_and_sees_shared_words() -> None:
+    from spec_review.llm.mock import FakeEmbedder
+    e = FakeEmbedder()
+    a, b, c = e.embed(["membrane warranty years", "membrane warranty", "drive torque rating"]).vectors
+    dot = lambda x, y: sum(p * q for p, q in zip(x, y))  # noqa: E731
+    assert e.embed(["membrane warranty years"]).vectors[0] == a
+    assert dot(a, b) > dot(a, c) and abs(dot(a, a) - 1.0) < 1e-9

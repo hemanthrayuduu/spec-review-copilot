@@ -94,3 +94,26 @@ def test_check_chat_reports_model_tokens_and_limit() -> None:
     out = check_chat(LLMClient(p, price_input_per_mtok=0.25, price_output_per_mtok=2.0))
     assert out.startswith("chat ok: model=gpt-5-mini-2025-08-07 in=11 out=7 cost=$")
     assert out.endswith("tokens/min limit=30000")
+
+
+def test_azure_embedder_returns_vectors_in_input_order() -> None:
+    from spec_review.llm.azure import AzureEmbedder
+    seen: dict[str, Any] = {}
+
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        seen.update(path=request.url.path, body=json.loads(request.content))
+        return httpx2.Response(200, json={"object": "list", "model": "text-embedding-3-small",
+                                          "data": [{"object": "embedding", "index": 1, "embedding": [0.0, 1.0]},
+                                                   {"object": "embedding", "index": 0, "embedding": [1.0, 0.0]}],
+                                          "usage": {"prompt_tokens": 6, "total_tokens": 6}})
+    s = Settings(provider_llm="azure", azure_openai_endpoint="https://x.openai.azure.com/", azure_openai_key="k",
+                 azure_openai_chat_deployment="gpt-5-mini", azure_openai_embed_deployment="text-embedding-3-small")
+    r = AzureEmbedder(s, http_client=httpx2.Client(transport=httpx2.MockTransport(handler))).embed(["first", "second"])
+    assert r.vectors == [[1.0, 0.0], [0.0, 1.0]] and r.input_tokens == 6
+    assert seen["path"].endswith("/openai/v1/embeddings") and seen["body"]["model"] == "text-embedding-3-small"
+
+
+def test_azure_embedder_names_missing_settings() -> None:
+    from spec_review.llm.azure import AzureEmbedder
+    with pytest.raises(LLMConfigError, match="AZURE_OPENAI_EMBED_DEPLOYMENT"):
+        AzureEmbedder(Settings(azure_openai_endpoint="https://x", azure_openai_key="k"))

@@ -96,7 +96,8 @@ def source_file(raw_dir: Path, source_id: str) -> Path | None:
     return next((p for p in (folder / f"{source_id}.pdf", folder / f"{source_id}.txt") if p.is_file()), None)
 
 
-def _pages(path: Path) -> list[str]:
+def read_pages(path: Path) -> list[str]:
+    """Page texts of a PDF, or a .txt source as its one page."""
     if path.suffix == ".txt":
         return [path.read_text(encoding="utf-8")]
     with pymupdf.open(path) as doc:
@@ -111,7 +112,7 @@ def quote_problems(caps: list[Capability], raw_dir: Path) -> tuple[list[str], li
     for c in caps:
         if c.source_id not in cache:
             path = source_file(raw_dir, c.source_id)
-            cache[c.source_id] = _pages(path) if path else None
+            cache[c.source_id] = read_pages(path) if path else None
         pages = cache[c.source_id]
         if pages is None:
             unchecked.append(f"{c.capability_id}: {c.source_id} is not downloaded")

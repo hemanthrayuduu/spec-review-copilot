@@ -6,7 +6,13 @@ import httpx2
 import openai
 
 from spec_review.config import Settings
-from spec_review.llm.client import LLMConfigError, LLMResponseError, ProviderResponse, strict_schema
+from spec_review.llm.client import (
+    EmbedResponse,
+    LLMConfigError,
+    LLMResponseError,
+    ProviderResponse,
+    strict_schema,
+)
 
 MAX_COMPLETION_TOKENS = 16000  # reasoning tokens count against this too
 RATE_LIMIT_HEADERS = ("x-ratelimit-limit-tokens", "x-ratelimit-remaining-tokens")
@@ -53,3 +59,28 @@ class AzureOpenAIProvider:
                                 input_tokens=usage.prompt_tokens if usage else 0,
                                 output_tokens=usage.completion_tokens if usage else 0,
                                 model=resp.model, finish_reason=choice.finish_reason or "stop")
+
+
+class AzureEmbedder:
+    """Azure OpenAI embeddings on the same v1 endpoint as chat (design 7.7)."""
+
+    name = "azure"
+
+    def __init__(self, settings: Settings, *, http_client: httpx2.Client | None = None) -> None:
+        key = settings.azure_openai_key.get_secret_value()
+        missing = [env for env, value in (("AZURE_OPENAI_ENDPOINT", settings.azure_openai_endpoint),
+                                          ("AZURE_OPENAI_KEY", key),
+                                          ("AZURE_OPENAI_EMBED_DEPLOYMENT", settings.azure_openai_embed_deployment))
+                   if not value.strip()]
+        if missing:
+            raise LLMConfigError(missing)
+        self.deployment = settings.azure_openai_embed_deployment
+        self.model_id = self.deployment
+        self._client = openai.OpenAI(base_url=f"{settings.azure_openai_endpoint.rstrip('/')}/openai/v1/",
+                                     api_key=key, max_retries=6, timeout=120.0, http_client=http_client)
+
+    def embed(self, texts: list[str]) -> EmbedResponse:
+        response = self._client.embeddings.create(model=self.deployment, input=texts)
+        data = sorted(response.data, key=lambda d: d.index)
+        return EmbedResponse(vectors=[list(d.embedding) for d in data], input_tokens=response.usage.prompt_tokens,
+                             model=response.model)

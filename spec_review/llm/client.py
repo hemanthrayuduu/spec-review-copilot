@@ -77,6 +77,22 @@ class ProviderResponse(BaseModel):
     finish_reason: str = "stop"
 
 
+class EmbedResponse(BaseModel):
+    vectors: list[list[float]]
+    input_tokens: int
+    model: str
+
+
+class Embedder(Protocol):
+    name: str
+    model_id: str  # part of the embedding cache key
+
+    def embed(self, texts: list[str]) -> EmbedResponse: ...
+
+
+EMBED_BATCH = 64
+
+
 class LLMProvider(Protocol):
     name: str
     model_id: str  # everything about the provider that changes replies; part of the cache key
@@ -128,8 +144,11 @@ def strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
 class LLMClient:
     def __init__(self, provider: LLMProvider, *, price_input_per_mtok: float = 0.0,
                  price_output_per_mtok: float = 0.0, log_path: Path | None = None,
-                 cache_dir: Path | None = None, max_concurrency: int = 1) -> None:
+                 cache_dir: Path | None = None, max_concurrency: int = 1, embedder: Embedder | None = None,
+                 price_embed_per_mtok: float = 0.0) -> None:
         self.provider = provider
+        self.embedder = embedder
+        self.price_embed_per_mtok = price_embed_per_mtok
         self.price_input_per_mtok = price_input_per_mtok
         self.price_output_per_mtok = price_output_per_mtok
         self.log_path = log_path
@@ -189,6 +208,60 @@ class LLMClient:
         with ThreadPoolExecutor(max_workers=self.max_concurrency) as pool:
             return list(pool.map(one, prompts))
 
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        """One vector per text, in order. Each text is cached on its own; uncached texts go in batches of 64."""
+        if self.embedder is None:
+            raise LLMConfigError(["AZURE_OPENAI_EMBED_DEPLOYMENT"])
+        out: list[list[float] | None] = [None] * len(texts)
+        todo: dict[str, list[int]] = {}
+        for i, text in enumerate(texts):
+            if (hit := self._embed_get(text)) is not None:
+                out[i] = hit
+            else:
+                todo.setdefault(text, []).append(i)
+        pending = list(todo)
+        for start in range(0, len(pending), EMBED_BATCH):
+            batch = pending[start:start + EMBED_BATCH]
+            t0 = time.perf_counter()
+            try:
+                response = self.embedder.embed(batch)
+            except LLMConfigError:
+                raise
+            except Exception as exc:
+                detail = f"{type(exc).__name__}: {exc}"
+                self._record_failure("embed", (time.perf_counter() - t0) * 1000, detail)
+                raise LLMProviderError("embed", detail) from exc
+            if len(response.vectors) != len(batch):
+                raise LLMResponseError("embed", "", f"{len(response.vectors)} vectors for {len(batch)} texts")
+            self._log(LLMCall(prompt_id="embed", provider=self.embedder.name, model=response.model,
+                              input_tokens=response.input_tokens, output_tokens=0,
+                              latency_ms=(time.perf_counter() - t0) * 1000,
+                              cost_usd=response.input_tokens * self.price_embed_per_mtok / 1_000_000, ok=True,
+                              timestamp=datetime.now(UTC)))
+            for text, vector in zip(batch, response.vectors):
+                self._embed_put(text, vector)
+                for i in todo[text]:
+                    out[i] = vector
+        return [v for v in out if v is not None]
+
+    def _embed_path(self, text: str) -> Path | None:
+        if self.cache_dir is None or self.embedder is None:
+            return None
+        material = json.dumps(["embed", self.embedder.name, self.embedder.model_id, text])
+        return self.cache_dir / "embed" / f"{hashlib.sha256(material.encode('utf-8')).hexdigest()}.json"
+
+    def _embed_get(self, text: str) -> list[float] | None:
+        path = self._embed_path(text)
+        return json.loads(path.read_text()) if path is not None and path.is_file() else None
+
+    def _embed_put(self, text: str, vector: list[float]) -> None:
+        if (path := self._embed_path(text)) is None:
+            return
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f"{path.stem}.{uuid.uuid4().hex}.tmp")
+        tmp.write_text(json.dumps(vector))
+        tmp.replace(path)
+
     def _cache_key(self, prompt_id: str, prompt: str, schema: dict[str, Any]) -> str | None:
         if self.cache_dir is None:
             return None
@@ -242,15 +315,20 @@ def get_client(settings: Settings | None = None, *, log_path: Path | None = None
     """
     settings = settings or get_settings()
     provider: LLMProvider
+    embedder: Embedder | None
     cache_dir: Path | None = None
     # Imported here because both provider modules import ProviderResponse from this one.
     if settings.provider_llm == "azure":
-        from spec_review.llm.azure import AzureOpenAIProvider
+        from spec_review.llm.azure import AzureEmbedder, AzureOpenAIProvider
         provider = AzureOpenAIProvider(settings)
+        # No embedding deployment is fine until something embeds: embed() then names the missing setting.
+        embedder = AzureEmbedder(settings) if settings.azure_openai_embed_deployment.strip() else None
         cache_dir = settings.llm_cache_dir if cache else None
     else:
-        from spec_review.llm.mock import MockProvider
+        from spec_review.llm.mock import FakeEmbedder, MockProvider
         provider = MockProvider(settings.mock_fixtures_dir)
+        embedder = FakeEmbedder()
     return LLMClient(provider, price_input_per_mtok=settings.llm_price_input_per_mtok,
                      price_output_per_mtok=settings.llm_price_output_per_mtok, log_path=log_path,
-                     cache_dir=cache_dir, max_concurrency=settings.llm_max_concurrency)
+                     cache_dir=cache_dir, max_concurrency=settings.llm_max_concurrency, embedder=embedder,
+                     price_embed_per_mtok=settings.embed_price_per_mtok)
