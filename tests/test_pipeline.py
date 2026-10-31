@@ -143,3 +143,14 @@ def test_run_package_writes_match_json_with_one_result_per_requirement(tmp_path:
     assert [r.req_id for r in report.results] == [r.req_id for r in out.extract.requirements]
     assert report.results and all(r.reason and r.method for r in report.results)
     assert report == out.match and not report.skipped and report.judge_failed == 0
+
+
+def test_a_broken_knowledge_base_still_writes_the_phase1_outputs(tmp_path: Path, lakeview_pdfs: Path) -> None:
+    from spec_review.models import MatchReport
+    settings = Settings(_env_file=None, knowledge_dir=tmp_path / "no-knowledge")  # type: ignore[call-arg]
+    run_package(lakeview_pdfs, RunWriter("k1", root=tmp_path), settings, cache_dir=None,
+                client=LLMClient(EchoProvider(), embedder=FakeEmbedder()))
+    report = MatchReport.model_validate_json((tmp_path / "k1/match.json").read_text())
+    assert report.skipped and "matching failed" in report.notes[0]
+    assert (tmp_path / "k1/brief.md").exists() and (tmp_path / "k1/requirements.xlsx").exists()
+    assert (tmp_path / "k1/coverage.json").exists()

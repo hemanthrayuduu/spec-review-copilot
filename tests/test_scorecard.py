@@ -129,3 +129,13 @@ def test_eval_gates_fail_on_the_phosphorus_trap_and_on_uncited_results(mock_out:
                           synthetic=0)
     failed = eval_gates(card.model_copy(update={"status": status, "uncited_results": 2}))
     assert "phosphorus trap is deviation" in failed and "uncited comply, clarification or deviation results: 2" in failed
+
+
+def test_eval_gates_fail_when_judge_calls_fail_or_matching_did_not_run(mock_out: PackageOutputs,
+                                                                         lakeview_golden: GoldenPackage) -> None:
+    from spec_review.eval.scorecard import eval_gates
+    card = build_scorecard(lakeview_golden, mock_out, Settings(_env_file=None))
+    assert "judge calls failed: 3" in eval_gates(card.model_copy(update={"judge_failed": 3}))
+    real = card.model_copy(update={"match_skipped": True, "llm": card.llm.model_copy(update={"provider": "azure"})})
+    assert any(m.startswith("matching did not run") for m in eval_gates(real))
+    assert not any(m.startswith("matching did not run") for m in eval_gates(card.model_copy(update={"match_skipped": True})))

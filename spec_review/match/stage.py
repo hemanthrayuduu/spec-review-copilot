@@ -1,18 +1,22 @@
 """The match stage (design 7.4): route, rules, evidence, judge, gate. Writes runs/<run_id>/match.json."""
 
+import logging
 import re
 from collections import Counter
 from pathlib import Path
 
 from spec_review.config import Settings
+from spec_review.knowledge.azure_search import SearchError
+from spec_review.knowledge.capabilities import KnowledgeError
 from spec_review.knowledge.index import KnowledgeBase, load_knowledge
-from spec_review.llm.client import LLMClient, get_client
+from spec_review.llm.client import LLMClient, LLMError, get_client
 from spec_review.match.evidence import find_evidence
 from spec_review.match.gate import apply_gate
 from spec_review.match.judge import judge_requirements
 from spec_review.match.rules import rule_check
 from spec_review.models import ExtractResult, MatchReport, MatchResult, Requirement, SectionDecision
 
+logger = logging.getLogger("spec_review.match")
 _REQ_ID = re.compile(r"^(.*):g\d+[ab]*:[^:]+$")  # <section_id>:g<n>[a|b...]:<local_id>
 COST_PER_1000 = 0.75  # rough Azure cost of judging 1,000 requirements with gpt-5-mini
 
@@ -61,6 +65,11 @@ def match_package(package_id: str, extract: ExtractResult, decisions: list[Secti
         return MatchReport(package_id=package_id, skipped=True, notes=[
             f"{len(reqs)} requirements is more than MATCH_MAX_REQUIREMENTS={settings.match_max_requirements}, so "
             f"matching was skipped. Raise it to match them (about ${COST_PER_1000:.2f} per 1,000 requirements)."])
-    kb = knowledge or load_knowledge(settings, client)
-    return run_match(package_id, reqs, {d.section_id: d for d in decisions}, kb, client, judge_client,
-                     settings.confidence_threshold)
+    try:
+        kb = knowledge or load_knowledge(settings, client)
+        return run_match(package_id, reqs, {d.section_id: d for d in decisions}, kb, client, judge_client,
+                         settings.confidence_threshold)
+    except (KnowledgeError, LLMError, SearchError, OSError) as exc:  # keep the Phase 1 outputs of the run
+        logger.error("matching failed: %s", exc)
+        return MatchReport(package_id=package_id, skipped=True,
+                           notes=[f"matching failed: {type(exc).__name__}: {exc}"])

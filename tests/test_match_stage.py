@@ -91,3 +91,17 @@ def test_large_package_skips_matching_with_a_note() -> None:
                         Settings(_env_file=None, match_max_requirements=1),  # type: ignore[call-arg]
                         LLMClient(ScriptedProvider([])), LLMClient(ScriptedProvider([])))
     assert rep.skipped and rep.results == [] and "MATCH_MAX_REQUIREMENTS" in rep.notes[0]
+
+
+def test_a_match_failure_is_a_note_not_a_crash() -> None:  # final review: Phase 1 outputs must survive
+    from spec_review.llm.client import LLMProviderError
+
+    class DownEmbedder:
+        name, model_id = "down", "down"
+
+        def embed(self, texts: list[str]) -> Any:
+            raise LLMProviderError("embed", "service unavailable")
+    reqs = [in_section("specs#4")]
+    rep = match_package("p", ExtractResult(package_id="p", requirements=reqs), [], Settings(_env_file=None),  # type: ignore[call-arg]
+                        LLMClient(ScriptedProvider([]), embedder=DownEmbedder()), LLMClient(ScriptedProvider([])))
+    assert rep.skipped and rep.results == [] and rep.notes[0].startswith("matching failed:")

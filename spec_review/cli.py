@@ -58,8 +58,8 @@ def _status_line(out: PackageOutputs) -> str:
         return f"status: matching skipped. {m.notes[0]}"
     counts = ", ".join(f"{s} {m.counts.get(s, 0)}" for s in STATUSES)
     synthetic = sum(r.uses_synthetic for r in m.results)
-    return (f"status: {counts} (rule {m.methods.get('rule', 0)}, judge {m.methods.get('llm', 0)}, gated {m.gated}, "
-            f"synthetic evidence {synthetic})")
+    return (f"status: {counts} (rule {m.methods.get('rule', 0)}, judge {m.methods.get('llm', 0)}, "
+            f"judge failed {m.judge_failed}, gated {m.gated}, synthetic evidence {synthetic})")
 
 
 def _package_lines(out: PackageOutputs) -> list[str]:
@@ -113,7 +113,7 @@ def run(package_dir: Path, run_id: str | None = None) -> None:
     writer = RunWriter(run_id or new_run_id())
     try:
         out = run_package(package_dir, writer, get_settings())
-    except (LLMConfigError, SearchError) as e:
+    except (LLMConfigError, SearchError, KnowledgeError) as e:
         _fail(str(e))
     _summary(out.read, writer, _package_lines(out))
     if failure := _llm_failure(out):
@@ -131,7 +131,7 @@ def eval_cmd(split: Split) -> None:
     writer = RunWriter(new_run_id())
     try:
         out = run_package(DEV_PACKAGE, writer, settings)
-    except (LLMConfigError, SearchError) as e:
+    except (LLMConfigError, SearchError, KnowledgeError) as e:
         _fail(str(e))
     card = build_scorecard(load_golden(DEV_GOLDEN), out, settings)
     writer.write("scorecard", card)

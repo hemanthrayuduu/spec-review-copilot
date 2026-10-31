@@ -76,6 +76,8 @@ class Scorecard(ContractModel):
     notes: list[str]
     status: StatusReport | None = None  # None in mock mode or when matching was skipped
     uncited_results: int = 0  # comply, clarification, or deviation results with no evidence id (must be 0)
+    judge_failed: int = 0  # requirements whose judge call failed even after the retry
+    match_skipped: bool = False  # matching skipped or failed; see notes
 
 
 def _usage(out: PackageOutputs, settings: Settings) -> LLMUsage:
@@ -130,7 +132,8 @@ def build_scorecard(golden: GoldenPackage, out: PackageOutputs, settings: Settin
         traps=[] if match is None else trap_report(golden, match, reqs),
         dispositions=dict(v.dispositions), llm=usage, notes=notes + out.match.notes,
         status=None if match is None or out.match.skipped else status_report(golden, match, reqs, out.match),
-        uncited_results=sum(r.status in DECISIVE and not r.evidence_ids for r in out.match.results))
+        uncited_results=sum(r.status in DECISIVE and not r.evidence_ids for r in out.match.results),
+        judge_failed=out.match.judge_failed, match_skipped=out.match.skipped)
 
 
 def eval_gates(card: Scorecard) -> list[str]:
@@ -146,5 +149,8 @@ def eval_gates(card: Scorecard) -> list[str]:
              (card.red_flag_recall < 1.0, f"red flag recall {card.red_flag_recall:.3f}"),
              (status is not None and status.trap5 != "needs_engineer",
               f"phosphorus trap is {status.trap5 if status else None}"),
-             (card.uncited_results > 0, f"uncited comply, clarification or deviation results: {card.uncited_results}")]
+             (card.uncited_results > 0, f"uncited comply, clarification or deviation results: {card.uncited_results}"),
+             (card.judge_failed > 0, f"judge calls failed: {card.judge_failed}"),
+             (card.match_skipped and card.llm.provider != "mock",
+              f"matching did not run: {next((n for n in card.notes if n.startswith('match')), 'see match.json')}")]
     return [msg for bad, msg in gates if bad]
