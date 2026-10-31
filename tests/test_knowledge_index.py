@@ -34,14 +34,15 @@ def test_missing_document_files_become_notes(tmp_path: Path) -> None:  # Review 
     assert docs == [] and any("ovivo_x" in n for n in notes)
 
 
-def test_only_evidence_sources_and_the_synthetic_document_load(tmp_path: Path) -> None:
+def test_only_evidence_sources_load_and_the_synthetic_document_is_not_searched(tmp_path: Path) -> None:
+    # The synthetic document only renders the synthetic capability rows; searching it would duplicate them.
     make_pdf(tmp_path / "knowledge/a/a.pdf", ["<p>Alpha.</p>"])
     make_pdf(tmp_path / "knowledge/b/b.pdf", ["<p>Beta.</p>"])
     make_pdf(tmp_path / "knowledge/synthetic_product_data/synthetic_product_data.pdf", ["<p>Gamma.</p>"])
     sources = [Source(id="a", role="knowledge", kind="file", url="https://example.org/a.pdf", evidence=True),
                Source(id="b", role="knowledge", kind="file", url="https://example.org/b.pdf", evidence=False)]
-    docs, _ = load_doc_pages(sources, tmp_path)
-    assert [(d.source_id, d.origin) for d in docs] == [("a", "public"), ("synthetic_product_data", "synthetic")]
+    docs, notes = load_doc_pages(sources, tmp_path)
+    assert [(d.source_id, d.origin) for d in docs] == [("a", "public")] and notes == []
 
 
 def test_chunk_page_respects_max_chars() -> None:

@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from spec_review.knowledge.capabilities import SYNTHETIC_DOC_ID, read_pages, source_file
+from spec_review.knowledge.capabilities import read_pages, source_file
 from spec_review.models import Capability, Evidence, Origin, PastException
 from spec_review.sources import Source
 
@@ -18,7 +18,11 @@ class DocPages:
 
 
 def load_doc_pages(sources: list[Source], raw_dir: Path) -> tuple[list[DocPages], list[str]]:
-    """The evidence: true documents plus the synthetic document. A missing file is a note, not an error."""
+    """The evidence: true documents. A missing file is a note, not an error.
+
+    The synthetic document is not searched: it only renders the synthetic capability rows, which are in the corpus
+    themselves, and its pages crowded those rows out of the evidence (round 0, 2026-10-31).
+    """
     docs: list[DocPages] = []
     notes: list[str] = []
     for s in sources:
@@ -28,10 +32,6 @@ def load_doc_pages(sources: list[Source], raw_dir: Path) -> tuple[list[DocPages]
             notes.append(f"{s.id}: product document not found under {raw_dir / 'knowledge'}; not searched")
             continue
         docs.append(DocPages(s.id, str(s.url), "public", read_pages(path)))
-    if (path := source_file(raw_dir, SYNTHETIC_DOC_ID)) is None:
-        notes.append(f"{SYNTHETIC_DOC_ID}: not rendered (run scripts/make_knowledge.py); not searched")
-    else:
-        docs.append(DocPages(SYNTHETIC_DOC_ID, f"synthetic:{SYNTHETIC_DOC_ID}", "synthetic", read_pages(path)))
     return docs, notes
 
 

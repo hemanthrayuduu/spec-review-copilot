@@ -98,3 +98,10 @@ def test_valid_reply_after_a_retry_is_kept() -> None:
 def test_mock_fixture_reply_parses_to_needs_engineer() -> None:
     text = (ROOT / "spec_review/llm/fixtures/judge_v1/default.json").read_text()
     assert JudgeReply.model_validate_json(text).status == "needs_engineer"
+
+
+def test_judge_v2_defines_every_status_and_keeps_the_placeholders() -> None:
+    v2 = (ROOT / "spec_review/match/prompts/judge_v2.md").read_text()
+    assert "{requirement_json}" in v2 and "{evidence}" in v2
+    for status in ("comply:", "comply_with_clarification:", "deviation:", "needs_engineer:", "not_applicable:"):
+        assert status in v2
