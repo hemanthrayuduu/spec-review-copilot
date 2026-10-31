@@ -1,12 +1,24 @@
 """Scores for the read stages (spec 9)."""
 
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 
 from spec_review.brief.build import FORM_MENTION
 from spec_review.eval.golden import GoldenPackage
 from spec_review.eval.match import RequirementMatch, similarity
 from spec_review.extract.text import norm_text, numbers_in
-from spec_review.models import Brief, CandidateResult, ContractModel, CoverageReport, FilterResult, Requirement, SegmentResult
+from spec_review.models import (
+    Brief,
+    CandidateResult,
+    ContractModel,
+    CoverageReport,
+    FilterResult,
+    MatchMethod,
+    MatchReport,
+    MatchStatus,
+    Requirement,
+    SegmentResult,
+)
 from spec_review.segment.paths import section_key
 
 
@@ -102,3 +114,76 @@ def trap_report(golden: GoldenPackage, match: RequirementMatch, preds: list[Requ
         out.append(TrapResult(trap=t.trap, description=t.description, golden=len(idx), matched=len(hits),
                               req_ids=hits))
     return out
+
+
+GROUP = {"comply_with_clarification": "comply"}  # the grouped figure counts these two as one
+
+
+class WrongStatus(ContractModel):
+    doc_id: str
+    page: int
+    section_number: str | None
+    paragraph_path: str
+    text: str
+    expected: MatchStatus
+    predicted: MatchStatus | None  # None: the requirement was not extracted
+    method: MatchMethod | None = None
+    reason: str | None = None
+    evidence_ids: list[str] = []
+    gated_from: MatchStatus | None = None
+    req_id: str | None = None
+
+
+class StatusReport(ContractModel):
+    labeled: int
+    matched: int
+    correct: int
+    accuracy_matched: float | None  # judges the judge
+    accuracy_all: float | None  # an unextracted requirement counts as wrong
+    accuracy_grouped: float | None  # over matched, comply_with_clarification counted as comply
+    confusion: dict[str, dict[str, int]]  # expected -> predicted ("missing" when not extracted)
+    wrong: list[WrongStatus]
+    trap5: MatchStatus | None
+    rule: int
+    judge: int
+    gated: int
+    synthetic: int
+
+
+def status_report(golden: GoldenPackage, match: RequirementMatch, reqs: list[Requirement],
+                  report: MatchReport) -> StatusReport:
+    """Status accuracy on the labeled golden requirements (spec 9, Lakeview only)."""
+    results = {m.req_id: m for m in report.results}
+    pred = {gi: reqs[pi] for gi, pi, _ in match.pairs}
+    confusion: defaultdict[str, Counter[str]] = defaultdict(Counter)
+    wrong: list[WrongStatus] = []
+    labeled = matched = correct = grouped = 0
+    trap5: MatchStatus | None = None
+    for gi, g in enumerate(golden.requirements):
+        if g.expected_status is None:
+            continue
+        labeled += 1
+        p = pred.get(gi)
+        m = results.get(p.req_id) if p is not None else None
+        predicted = m.status if m is not None else None
+        if g.trap == 5:
+            trap5 = predicted
+        confusion[g.expected_status][predicted or "missing"] += 1
+        if m is not None:
+            matched += 1
+            grouped += GROUP.get(m.status, m.status) == GROUP.get(g.expected_status, g.expected_status)
+        if predicted == g.expected_status:
+            correct += 1
+            continue
+        wrong.append(WrongStatus(doc_id=g.doc_id, page=g.page, section_number=g.section_number,
+                                 paragraph_path=g.paragraph_path, text=g.source_text[:120], expected=g.expected_status,
+                                 predicted=predicted, method=m.method if m else None, reason=m.reason if m else None,
+                                 evidence_ids=m.evidence_ids if m else [], gated_from=m.gated_from if m else None,
+                                 req_id=m.req_id if m else None))
+    return StatusReport(labeled=labeled, matched=matched, correct=correct,
+                        accuracy_matched=round(correct / matched, 4) if matched else None,
+                        accuracy_all=round(correct / labeled, 4) if labeled else None,
+                        accuracy_grouped=round(grouped / matched, 4) if matched else None,
+                        confusion={k: dict(v) for k, v in confusion.items()}, wrong=wrong, trap5=trap5,
+                        rule=report.methods.get("rule", 0), judge=report.methods.get("llm", 0), gated=report.gated,
+                        synthetic=sum(r.uses_synthetic for r in report.results))

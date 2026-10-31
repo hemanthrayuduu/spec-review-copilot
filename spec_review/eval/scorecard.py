@@ -7,6 +7,8 @@ from spec_review.config import Settings
 from spec_review.eval.golden import GoldenPackage
 from spec_review.eval.match import match_requirements
 from spec_review.eval.metrics import (
+    StatusReport,
+    status_report,
     TrapResult,
     brief_recall,
     candidate_recall,
@@ -16,6 +18,8 @@ from spec_review.eval.metrics import (
 )
 from spec_review.extract.permits import PROMPT_ID as PERMIT_PROMPT
 from spec_review.extract.requirements import PROMPT_ID as EXTRACT_PROMPT
+from spec_review.match.judge import DECISIVE
+from spec_review.match.judge import PROMPT_ID as JUDGE_PROMPT
 from spec_review.models import ContractModel
 from spec_review.pipeline import PackageOutputs
 
@@ -27,6 +31,7 @@ class LLMUsage(ContractModel):
     deployment: str | None
     model: str | None
     reasoning_effort: str | None
+    judge_reasoning_effort: str | None = None
     prompt_versions: list[str]
     calls: int
     cached: int
@@ -69,16 +74,20 @@ class Scorecard(ContractModel):
     dispositions: dict[str, int]
     llm: LLMUsage
     notes: list[str]
+    status: StatusReport | None = None  # None in mock mode or when matching was skipped
+    uncited_results: int = 0  # comply, clarification, or deviation results with no evidence id (must be 0)
 
 
 def _usage(out: PackageOutputs, settings: Settings) -> LLMUsage:
     calls = out.llm_calls
-    models = Counter(c.model for c in calls if c.ok)
+    models = Counter(c.model for c in calls if c.ok and c.prompt_id != "embed")
     azure = out.provider == "azure"
     return LLMUsage(provider=out.provider, deployment=settings.azure_openai_chat_deployment or None if azure else None,
                     model=models.most_common(1)[0][0] if models else None,
                     reasoning_effort=settings.azure_openai_reasoning_effort if azure else None,
-                    prompt_versions=[EXTRACT_PROMPT, PERMIT_PROMPT], calls=len(calls),
+                    judge_reasoning_effort=(settings.azure_openai_judge_reasoning_effort
+                                            or settings.azure_openai_reasoning_effort) if azure else None,
+                    prompt_versions=[EXTRACT_PROMPT, PERMIT_PROMPT, JUDGE_PROMPT], calls=len(calls),
                     cached=sum(c.cached for c in calls), failed=sum(not c.ok for c in calls),
                     input_tokens=sum(c.input_tokens for c in calls), output_tokens=sum(c.output_tokens for c in calls),
                     cost_usd=round(sum(c.cost_usd for c in calls), 6),
@@ -119,4 +128,23 @@ def build_scorecard(golden: GoldenPackage, out: PackageOutputs, settings: Settin
         permit_limit_recall=None if mock else brief["permit_limits"].value,
         brief_missed=[f"{k}: {m}" for k in ("deadlines", "required_forms", "red_flags") for m in brief[k].missed],
         traps=[] if match is None else trap_report(golden, match, reqs),
-        dispositions=dict(v.dispositions), llm=usage, notes=notes)
+        dispositions=dict(v.dispositions), llm=usage, notes=notes + out.match.notes,
+        status=None if match is None or out.match.skipped else status_report(golden, match, reqs, out.match),
+        uncited_results=sum(r.status in DECISIVE and not r.evidence_ids for r in out.match.results))
+
+
+def eval_gates(card: Scorecard) -> list[str]:
+    """The checks `specreview eval dev` fails on (Phase 1 offline gates plus the Phase 2 gates)."""
+    status = card.status
+    gates = [(card.section_recall < 1.0, f"section recall {card.section_recall:.3f}"),
+             (card.silent_drops > 0, f"silent drops {card.silent_drops}"),
+             (card.candidates_without_disposition > 0,
+              f"candidates without disposition {card.candidates_without_disposition}"),
+             (card.candidate_recall < 1.0, f"candidate recall {card.candidate_recall:.3f}"),
+             (card.deadline_recall < 1.0, f"deadline recall {card.deadline_recall:.3f}"),
+             (card.form_recall < 1.0, f"required form recall {card.form_recall:.3f}"),
+             (card.red_flag_recall < 1.0, f"red flag recall {card.red_flag_recall:.3f}"),
+             (status is not None and status.trap5 != "needs_engineer",
+              f"phosphorus trap is {status.trap5 if status else None}"),
+             (card.uncited_results > 0, f"uncited comply, clarification or deviation results: {card.uncited_results}")]
+    return [msg for bad, msg in gates if bad]

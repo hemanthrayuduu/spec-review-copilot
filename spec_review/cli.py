@@ -9,7 +9,7 @@ import typer
 from spec_review.config import get_settings
 from spec_review.eval.golden import load_golden
 from spec_review.eval.metrics import pages_kept_ratio
-from spec_review.eval.scorecard import build_scorecard
+from spec_review.eval.scorecard import build_scorecard, eval_gates
 from spec_review.ingest.azure_docintel import DocIntelClient, DocIntelError, docintel_from_settings
 from spec_review.knowledge.capabilities import (
     KnowledgeError,
@@ -136,17 +136,16 @@ def eval_cmd(split: Split) -> None:
     writer.write("scorecard", card)
     _summary(out.read, writer, _package_lines(out))
     typer.echo(card.model_dump_json(indent=2))
-    gates = [(card.section_recall < 1.0, f"section recall {card.section_recall:.3f}"),
-             (card.silent_drops > 0, f"silent drops {card.silent_drops}"),
-             (card.candidates_without_disposition > 0,
-              f"candidates without disposition {card.candidates_without_disposition}"),
-             (card.candidate_recall < 1.0, f"candidate recall {card.candidate_recall:.3f}"),
-             (card.deadline_recall < 1.0, f"deadline recall {card.deadline_recall:.3f}"),
-             (card.form_recall < 1.0, f"required form recall {card.form_recall:.3f}"),
-             (card.red_flag_recall < 1.0, f"red flag recall {card.red_flag_recall:.3f}")]
-    failed = [msg for bad, msg in gates if bad] + ([f] if (f := _llm_failure(out)) else [])
+    if card.status is not None:
+        typer.echo(f"Status accuracy: {card.status.accuracy_matched} over {card.status.matched} matched, "
+                   f"{card.status.accuracy_all} over all {card.status.labeled}, grouped {card.status.accuracy_grouped}")
+        for w in card.status.wrong:
+            typer.echo(f"wrong  {w.expected} -> {w.predicted or 'not extracted'} | {w.method or '-'} | "
+                       f"{w.doc_id} p.{w.page} | {w.text[:80]}")
+        typer.echo(f"Explained in {writer.run_dir}/match.json and llm_calls.jsonl")
+    failed = eval_gates(card) + ([f] if (f := _llm_failure(out)) else [])
     if failed:
-        _fail(f"Phase 1 offline gates not met: {'; '.join(failed)}")
+        _fail(f"eval gates not met: {'; '.join(failed)}")
 
 
 @app.command("azure-check")
