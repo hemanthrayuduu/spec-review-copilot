@@ -55,7 +55,7 @@ EPA Lake Champlain phosphorus study (plant list with target total phosphorus lim
 
 ### Knowledge base
 
-The manufacturer's public product literature: screens, clarifiers, aeration, biological systems, SiC membranes, PFAS. The project owner builds data/knowledge/capabilities.csv by hand from these documents, one row per product line and parameter, with source URL, page, and basis (guaranteed, typical, or claim) for every value. Exclude anything from the divested electronics business.
+The manufacturer's public product literature: screens, clarifiers, aeration, biological systems, SiC membranes, PFAS. The builder drafts data/knowledge/capabilities.csv from these documents and the project owner checks it: one row per product line and parameter, with source URL, page, the words copied from that page, and basis (guaranteed, typical, or claim) for every value. Public literature states no performance guarantees, so the gaps are filled by rows marked origin=synthetic: fictional values from typical industry practice that cite a fictional synthetic product data document. Standard terms of sale are synthetic rows under product line general. A synthetic row never replaces a public one and never covers nutrient effluent (decided 2026-10-31; see docs/superpowers/specs/2026-10-31-phase-2-design.md). Exclude anything from the divested electronics business.
 
 Synthetic and clearly labeled fictional: data/knowledge/past_exceptions.csv (past bid exceptions and clarifications) and standard terms.
 
@@ -163,11 +163,11 @@ Categories: performance, effluent_limit, design_basis, material, certification, 
 
 **PermitLimit:** parameter, limit_type (monthly_avg, weekly_avg, daily_max, annual_load), value, unit, season, doc_id, page, source_text
 
-**Capability:** product_line, parameter, min_value, max_value, unit, value_text, basis (guaranteed, typical, claim), source_url, source_page
+**Capability:** capability_id, product_line, parameter, match_terms, min_value, max_value, unit, value_text, basis (guaranteed, typical, claim), origin (public, synthetic), source_id, source_url, source_page, source_text, note
 
-**Evidence:** evidence_id, source (capability, product_doc, past_exception), ref, page, text, score
+**Evidence:** evidence_id, source (capability, product_doc, past_exception), ref, page, text, score, origin, basis, product_line
 
-**MatchResult:** req_id, status (comply, comply_with_clarification, deviation, needs_engineer, not_applicable), method (rule, llm), reason, evidence_ids, confidence
+**MatchResult:** req_id, status (comply, comply_with_clarification, deviation, needs_engineer, not_applicable), method (rule, llm), reason, evidence_ids, confidence, gated_from, uses_synthetic
 
 **ReviewDecision:** req_id, final_status, note, reviewer, timestamp
 
@@ -200,9 +200,9 @@ Categories: performance, effluent_limit, design_basis, material, certification, 
 
 **8.10 Brief.** One page markdown plus Excel: relevant sections with pages, key requirements, deadlines, required forms, red flags (named manufacturers, pilot testing, bonds, liquidated damages, domestic content, experience minimums), permit limits, and addenda changes. Every line links to its page.
 
-**8.11 Rule checks.** Unit conversion with pint. Numeric ranges against capabilities, certification sets, material lists. When a rule is decisive, skip the LLM and record method = rule. A rule may decide on its own only against capabilities with basis = guaranteed. Typical and claim values never decide; they go to the judge as evidence.
+**8.11 Rule checks.** Unit conversion with pint. Numeric ranges against capabilities: a rule decides only when every value the capability allows meets the requirement (comply) or none does (deviation), and otherwise abstains. Material and certification sets go to the judge as evidence (Phase 2 decision). When a rule is decisive, skip the LLM and record method = rule. A rule may decide on its own only against capabilities with basis = guaranteed. Typical and claim values never decide; they go to the judge as evidence.
 
-**8.12 Evidence search.** Hybrid keyword search (rank_bm25) plus vector search (Azure AI Search, free tier) over capabilities, product docs, and past exceptions. Return the top results with scores.
+**8.12 Evidence search.** Hybrid keyword search (rank_bm25) plus vector search (Azure AI Search, free tier) over capabilities, product docs, and past exceptions, merged by reciprocal rank fusion, with no product-line filter (section prefixes vary by engineer). Return the top results with scores.
 
 **8.13 Judge.** The LLM receives the requirement and its evidence and returns status, reason, evidence ids, and confidence. Enforced in code: comply or comply_with_clarification without a supporting evidence id becomes needs_engineer. Prompt template: Appendix B.
 
@@ -246,6 +246,8 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 * Deadline and required form recall: 100%
 * Citation accuracy: at least 98%
 * Silent coverage drops: zero
+
+**Status definitions** (Lakeview labels and the judge use the same words): comply, the knowledge base shows the product or standard terms meet the requirement as written; comply_with_clarification, it meets it with a condition the bid must state; deviation, the knowledge base shows the product or terms do not meet it; needs_engineer, the knowledge base does not settle it; not_applicable, it puts no obligation on the manufacturer's equipment, services, or terms. Only guaranteed or typical capability rows settle a status; claims, brochure pages, and past exceptions support but never settle one. The builder writes the Lakeview expected_status labels before the first real judge run, and the owner reviews them.
 
 **Rules:** build on the dev set. The test set is labeled by hand by the project owner, never by the model. `specreview eval test` runs only in Phase 4, and results are reported as they are.
 

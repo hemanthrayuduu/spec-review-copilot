@@ -98,59 +98,124 @@ sources:
   ovivo_cf100_band_screen:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20260814092022id_/https://ovivo.getbynder.com/m/156b5204fdb7b4dd/original/CF100-Band-Screen.pdf
     notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_reactor_clarifier:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20260814084014id_/https://ovivo.getbynder.com/m/4c5bd7cb07a22211/original/Reactor-Clarifier-Solids-Contact-Clarifiers.pdf
     notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_gravity_clarifier:
     role: knowledge
     kind: file
+    evidence: true
     url: https://industrial.ovivowater.com/wp-content/uploads/2024/01/Technology-Highlight-Ovivo-industrial-GRAVITY-CLARIFIER-web.pdf
 
   ovivo_ringstrip:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20260814085406id_/https://ovivo.getbynder.com/m/7b1e442522964f80/original/RingStrip-Systems.pdf
     notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_ifas:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20260814101837id_/https://ovivo.getbynder.com/m/323a08695a1c77f7/original/Ovivo-IFAS_04-2022.pdf
     notes: Internet Archive copy. The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_carrousel_brochure:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20220624215644id_/https://ovivo.getbynder.com/m/56d907ea2c275950/original/Carrousel-Brochure-0219-WEB.pdf
     notes: Internet Archive copy (June 2022; the April 2024 capture is cut off at 1 MiB). The original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_carrousel_retrofits:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20260814085553id_/https://ovivo.getbynder.com/m/66ee637c5cbb79af/original/Carrousel-Retrofits.pdf
     notes: Claims TP below 0.2 mg/L at many plants. Basis for the Lakeview phosphorus trap. Internet Archive copy; the original ovivo.getbynder.com host stopped resolving in October 2026.
 
   ovivo_sic_mbr_brochure:
     role: knowledge
     kind: file
+    evidence: true
     url: https://web.archive.org/web/20260405193905id_/https://www.chathamcountync.gov/home/showpublisheddocument/56841/637641221802170000
     notes: SiC MBR brochure found in a county public document. Internet Archive copy; the county site returns 403 to non-browser clients.
 
   ovivo_sic_case_southern_jackson:
     role: knowledge
     kind: file
+    evidence: true
     url: https://www.ovivowater.com/app/uploads/2026/09/SiC-Southern-Jackson.pdf
 
   ovivo_pfas_highlight:
     role: knowledge
     kind: file
+    evidence: true
     url: https://industrial.ovivowater.com/wp-content/uploads/2024/01/Technology-Highlight-Ovivo-industrial-PFAS.pdf
+
+  ovivo_cf100_cf200_2010:
+    role: knowledge
+    kind: file
+    evidence: true
+    url: https://www.enviropro.co.uk/Docs/Ovivo_CF100CF200_ML/preview/CF100-and-CF200-band-screens.pdf
+    notes: CF100 and CF200 band screens brochure, 2010 edition, hosted by Enviropro. Older, but states perforation sizes, capacity per model, and typical headloss.
+
+  ovivo_cf100_page:
+    role: knowledge
+    kind: web_page
+    evidence: true
+    url: https://www.ovivowater.com/en/product/brackett-bosker-cf100-band-screen/
+    notes: Ovivo CF100 product page (aperture range, frame material). Saved as text and cited as page 1.
+
+  ovivo_cf200_page:
+    role: knowledge
+    kind: web_page
+    evidence: true
+    url: https://www.ovivowater.com/en/product/brackett-green-cf200-band-screen/
+    notes: Ovivo CF200 product page (aperture range, capture claim). Saved as text and cited as page 1.
+
+  ovivo_sic_fsm_datasheet_2017:
+    role: knowledge
+    kind: file
+    evidence: true
+    url: https://www.messe.de/apollo/surface_technology_2020/obs/Binary/A1045116/1045116_02324618.pdf
+    notes: Ovivo SiC-FSM filter rack datasheet (2017), an older plate generation. Sheet and module area, pore size, pH and temperature limits, air scour.
+
+  ecoblox_title22_report_2025:
+    role: knowledge
+    kind: file
+    evidence: false
+    url: https://files.ceqanet.lci.ca.gov/286629-2/attachment/sm52WBZkDkEuSbY-wVSXaZE_dapzsUSAwETpVV5p-3Rg2Ts8ouNvvT7l9TiQ3QkBXQJwpWvUgAAq9ZfS0
+    notes: Title 22 engineering report for Prologis IPC II (Kier+Wright, 2025) with an Ovivo ecoBLOX-micro narrative. Third-party design values only; not indexed as a product document because its project limits read like capabilities.
+
+  ovivo_carrousel_bnr_2025:
+    role: knowledge
+    kind: file
+    evidence: true
+    url: https://municipal.ovivowater.com/app/uploads/2025/05/Ovivo-CARROUSEL-aeration-v250829-0940-DIGITAL-HIGH-1.pdf
+    notes: Carrousel BNR brochure, v250829. Effluent figures are marketing claims.
+
+  ovivo_sic_advanced_reuse:
+    role: knowledge
+    kind: file
+    evidence: true
+    url: https://www.ovivowater.com/app/uploads/2026/09/SiC-Advanced-Reuse.pdf
+
+  ovivo_filterboxx_sic_mbr:
+    role: knowledge
+    kind: file
+    evidence: true
+    url: https://www.ovivowater.com/app/uploads/2026/09/FBFilterBoxxSiCMBR-11-2020-WEB.pdf
+    notes: FilterBoxx SiC MBR profile; effluent values are labeled typical.
 
   ten_states_wastewater_2014:
     role: reference

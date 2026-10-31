@@ -50,6 +50,8 @@ Plan first. Stop when the Phase 1 acceptance criteria pass. Report the dev score
 Build matching from spec sections 8.11 to 8.14.
 
 1. I will provide data/knowledge/capabilities.csv built from public product literature. Until then, create a small example with the same columns, clearly labeled fictional.
+
+> 2026-10-31: the builder drafts capabilities.csv from public literature plus clearly labeled synthetic rows, and the owner checks it (Phase 2 design).
 2. Create data/knowledge/past_exceptions.csv with 20 past exceptions and clarifications, clearly labeled fictional.
 3. Rule checks first, with pint for units. Skip the LLM only when a rule is decisive against a guaranteed capability, and record method = rule.
 4. Hybrid evidence search (rank_bm25 plus ChromaDB, with a local Ollama embedding model) over capabilities, product docs, and past exceptions. Tests use a fake embedder, never a model download.

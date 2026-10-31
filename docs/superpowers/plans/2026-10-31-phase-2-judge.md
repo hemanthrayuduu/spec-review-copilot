@@ -736,7 +736,7 @@ git commit -m "feat: cached embeddings through the client, knowledge corpus, BM2
   - `render_judge_prompt(req: Requirement, lines: list[str], evidence: list[Evidence]) -> str`:
     - `{requirement_json}` is `json.dumps` with indent 2 of `section_number`, `section_title`, `product_lines`, `doc_id`, `page`, `source_text`, `category`, `parameter`, `operator`, `value`, `unit` and `mandatory`.
     - `{evidence}` is one line per item: `[{evidence_id}] ({source}, {origin}, {basis or '-'}; {ref} p.{page or '-'}) {text}`.
-  - `settles(e: Evidence) -> bool` is True for a capability with basis `guaranteed` or `typical`, and for a past exception. It is False for everything else: claim rows and document chunks (design §7.3).
+  - `settles(e: Evidence) -> bool` is True only for a capability with basis `guaranteed` or `typical`. It is False for everything else: claim rows, past exceptions and document chunks (design §7.3, as changed by the Task 4 ruling).
   - `enforce(req_id: str, reply: JudgeReply, evidence: list[Evidence]) -> MatchResult`, in this order:
     1. Drop cited ids that aren't in `evidence`, and repeated ids, keeping the first.
     2. If the status is comply, comply_with_clarification or deviation, check what is left:

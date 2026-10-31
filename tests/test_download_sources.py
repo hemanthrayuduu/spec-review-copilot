@@ -46,7 +46,7 @@ def write_yaml(path: Path, body: str) -> Path:
 def test_repo_sources_yaml_is_valid() -> None:
     sources = load_sources(REPO / "data" / "sources.yaml")
     assert len({s.id for s in sources}) == len(sources) > 0
-    assert {s.kind for s in sources} == {"file", "landing_page"}
+    assert {s.kind for s in sources} == {"file", "landing_page", "web_page"}
 
 
 def test_duplicate_source_id_is_rejected(tmp_path: Path) -> None:

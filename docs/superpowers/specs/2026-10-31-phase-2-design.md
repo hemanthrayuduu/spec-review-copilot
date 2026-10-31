@@ -172,8 +172,10 @@ The labels and the judge from v2 on use the same words.
 | Capability row, `guaranteed` | Yes | Yes |
 | Capability row, `typical`: a stated spec, the standard construction, or a design value | Yes, for features and dimensions such as materials, sizes, openings and the ranges offered. No, for performance outcomes and effluent quality, which need a guarantee. | Yes. It shows the standard product differs, for example a 304L frame against a requirement for Type 316. |
 | Capability row, `claim` | No | No |
-| Past exception | It supports comply_with_clarification | Yes, on terms |
+| Past exception | No. It supports a status, alongside a capability row that settles it. | No |
 | Brochure or product-page chunk | No. It is context only. | No |
+
+Changed during the build (Task 4 ruling, 2026-10-31): past exceptions are free text that could be cited for anything, the phosphorus trap included, so they support a status but never settle one. Effluent tables in brochures count as claims.
 
 The phosphorus trap is therefore needs_engineer by design, not by luck. Its only evidence is a claim ("many plants achieve TP < 0.2 mg/L") and brochure pages, and no synthetic nutrient guarantee may exist (guard 3).
 
