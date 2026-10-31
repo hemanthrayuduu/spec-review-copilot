@@ -105,3 +105,17 @@ def test_judge_v2_defines_every_status_and_keeps_the_placeholders() -> None:
     assert "{requirement_json}" in v2 and "{evidence}" in v2
     for status in ("comply:", "comply_with_clarification:", "deviation:", "needs_engineer:", "not_applicable:"):
         assert status in v2
+
+
+def test_judge_v3_decides_applicability_first() -> None:
+    v3 = (ROOT / "spec_review/match/prompts/judge_v3.md").read_text()
+    assert "{requirement_json}" in v3 and "{evidence}" in v3
+    assert v3.index("not_applicable") < v3.index("comply_with_clarification")
+    for status in ("comply:", "comply_with_clarification:", "deviation:", "needs_engineer:"):
+        assert status in v3
+
+
+def test_prompt_id_points_at_an_existing_prompt_file() -> None:
+    from spec_review.match.judge import PROMPT_ID
+    assert (ROOT / f"spec_review/match/prompts/{PROMPT_ID}.md").is_file()
+    assert (ROOT / f"spec_review/llm/fixtures/{PROMPT_ID}/default.json").is_file()
