@@ -6,7 +6,7 @@ from pathlib import Path
 from spec_review.llm.client import LLMClient, LLMError, LLMResponseError
 from spec_review.models import ContractModel, Evidence, MatchResult, MatchStatus, Requirement
 
-PROMPT_ID = "judge_v3"  # v3 decides applicability first, then the specific row (round 2); v1 is Appendix B verbatim
+PROMPT_ID = "judge_v4"  # v4 adds capacity caps, design-input wording, and deadline direction (round 3); v1 is Appendix B verbatim
 PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_ID}.md").read_text(encoding="utf-8")
 RETRY_NOTE = "\n\nYour previous reply was invalid: {detail}\nReturn JSON that matches the schema."
 DECISIVE = ("comply", "comply_with_clarification", "deviation")

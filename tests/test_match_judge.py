@@ -119,3 +119,10 @@ def test_prompt_id_points_at_an_existing_prompt_file() -> None:
     from spec_review.match.judge import PROMPT_ID
     assert (ROOT / f"spec_review/match/prompts/{PROMPT_ID}.md").is_file()
     assert (ROOT / f"spec_review/llm/fixtures/{PROMPT_ID}/default.json").is_file()
+
+
+def test_judge_v4_keeps_v3_and_adds_the_reading_rules() -> None:
+    v3 = (ROOT / "spec_review/match/prompts/judge_v3.md").read_text()
+    v4 = (ROOT / "spec_review/match/prompts/judge_v4.md").read_text()
+    assert v3 != v4 and "caps how hard the product is worked" in v4 and "{requirement_json}" in v4
+    assert "caps how hard" not in v3  # v3 is never edited
