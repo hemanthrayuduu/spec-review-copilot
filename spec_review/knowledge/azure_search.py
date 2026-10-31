@@ -90,9 +90,16 @@ class AzureSearchIndex:
                 return keys
             skip += PAGE
 
+    def keys(self) -> set[str]:
+        return self._keys()
+
     def _index_docs(self, docs: list[dict[str, Any]]) -> None:
         for start in range(0, len(docs), BATCH):
-            self._call("POST", f"/indexes/{self.index}/docs/index", {"value": docs[start:start + BATCH]})
+            r = self._call("POST", f"/indexes/{self.index}/docs/index", {"value": docs[start:start + BATCH]})
+            failed = [d for d in r.json().get("value", []) if not d.get("status", True)]  # 207: some documents failed
+            if failed:
+                raise SearchError(f"{len(failed)} documents failed to index, first: {failed[0].get('key')}: "
+                                  f"{failed[0].get('errorMessage')}")
 
     def upsert(self, items: list[Evidence], vectors: list[list[float]]) -> None:
         """Make the index hold exactly these items: merge or upload each, then delete the rest."""

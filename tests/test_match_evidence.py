@@ -50,3 +50,18 @@ def test_capability_rows_keep_their_reserved_slots() -> None:
     r = req("<=", "6", "mm", "screen opening", text="Screen opening shall not exceed 6 mm.")
     found = find_evidence([r], kb, client)[r.req_id]
     assert len(found) == TOP_K and sum(e.source == "capability" for e in found) == CAPABILITY_SLOTS
+
+
+def test_find_evidence_skips_ids_missing_from_the_corpus() -> None:
+    from llm_fakes import EchoProvider
+    caps = [cap(capability_id="A", parameter="screen opening", source_text="Openings of 2 mm.")]
+    items = build_corpus(caps, [], [])
+
+    class StaleIndex:
+        def search(self, vector: list[float], k: int) -> list[tuple[str, float]]:
+            return [("cap:GONE", 0.9), ("cap:A", 0.8)]
+    client = LLMClient(EchoProvider(), embedder=FakeEmbedder())
+    kb = KnowledgeBase(items={e.evidence_id: e for e in items}, capabilities=caps, keyword=KeywordIndex(items),
+                       vectors=StaleIndex(), notes=[])
+    r = req("<=", "6", "mm", "screen opening")
+    assert [e.evidence_id for e in find_evidence([r], kb, client)[r.req_id]] == ["cap:A"]

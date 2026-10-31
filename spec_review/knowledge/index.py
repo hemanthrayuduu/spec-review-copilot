@@ -9,7 +9,7 @@ import numpy as np
 from rank_bm25 import BM25Plus
 
 from spec_review.config import SOURCES_FILE, Settings
-from spec_review.knowledge.azure_search import AzureSearchIndex, SearchError
+from spec_review.knowledge.azure_search import AzureSearchIndex, SearchError, doc_key
 from spec_review.knowledge.capabilities import KnowledgeError, load_capabilities, load_past_exceptions
 from spec_review.knowledge.corpus import build_corpus, load_doc_pages
 from spec_review.llm.client import LLMClient, LLMConfigError
@@ -77,8 +77,10 @@ def _azure_index(settings: Settings, items: list[Evidence], client: LLMClient, u
         raise LLMConfigError(missing)
     if not upload:
         index = AzureSearchIndex(settings.azure_search_endpoint, key, settings.azure_search_index)
-        if (n := index.count()) != len(items):
-            raise SearchError(f"index {settings.azure_search_index} has {n} items but the corpus has {len(items)}: "
+        held, wanted = index.keys(), {doc_key(e.evidence_id) for e in items}
+        if held != wanted:  # ids, not just the count: a renamed row keeps the count the same
+            raise SearchError(f"index {settings.azure_search_index} holds {len(held)} items, {len(wanted - held)} of "
+                              f"the corpus's {len(wanted)} missing and {len(held - wanted)} extra: "
                               "run specreview knowledge build")
         return index
     vectors = client.embed([e.text for e in items])

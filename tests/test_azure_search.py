@@ -115,8 +115,9 @@ def test_stale_index_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     from spec_review.knowledge import index as index_module
     from spec_review.llm.mock import FakeEmbedder, MockProvider
     settings = _azure_settings(tmp_path, azure_search_endpoint="https://srch.example.net", azure_search_key="k")
+    keys = [{"key": doc_key(i)} for i in ("cap:A", "cap:B", "cap:C")]
     monkeypatch.setattr(index_module, "AzureSearchIndex",
-                        lambda *a, **kw: fake(lambda r: httpx.Response(200, text="3")))
+                        lambda *a, **kw: fake(lambda r: httpx.Response(200, json={"value": keys})))
     with pytest.raises(SearchError, match="knowledge build"):
         index_module.load_knowledge(settings, LLMClient(MockProvider(tmp_path), embedder=AzureNamedEmbedder()),
                                     sources_path=_no_sources(tmp_path))
@@ -200,3 +201,24 @@ def test_retries_give_up_with_a_search_error(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(azure_search, "RETRY_WAIT", 0.0)
     with pytest.raises(SearchError, match="HTTP 503"):
         fake(lambda r: httpx.Response(503, text="busy")).count()
+
+
+def test_index_with_the_same_count_but_other_ids_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from spec_review.knowledge import index as index_module
+    from spec_review.llm.mock import MockProvider
+    settings = _azure_settings(tmp_path, azure_search_endpoint="https://srch.example.net", azure_search_key="k")
+    renamed = [{"key": doc_key("cap:OLD-ID")}]  # the corpus has one item, cap:SCR-01
+    monkeypatch.setattr(index_module, "AzureSearchIndex",
+                        lambda *a, **kw: fake(lambda r: httpx.Response(200, json={"value": renamed})))
+    with pytest.raises(SearchError, match="knowledge build"):
+        index_module.load_knowledge(settings, LLMClient(MockProvider(tmp_path), embedder=AzureNamedEmbedder()),
+                                    sources_path=_no_sources(tmp_path))
+
+
+def test_partial_upload_failure_raises() -> None:
+    def handler(r: httpx.Request) -> httpx.Response:
+        if r.url.path.endswith("/docs/index"):
+            return httpx.Response(207, json={"value": [{"key": "x", "status": False, "errorMessage": "too big"}]})
+        return httpx.Response(200, json={"value": []})
+    with pytest.raises(SearchError, match="too big"):
+        fake(handler).upsert(build_corpus([cap(capability_id="SCR-01")], [], []), [[1.0, 0.0, 0.0]])

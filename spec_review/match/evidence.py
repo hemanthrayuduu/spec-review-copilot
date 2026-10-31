@@ -1,8 +1,12 @@
 """Evidence search (spec 8.12, design 7.4): BM25 and vector results merged by reciprocal rank fusion."""
 
+import logging
+
 from spec_review.knowledge.index import KnowledgeBase
 from spec_review.llm.client import LLMClient
 from spec_review.models import Evidence, Requirement
+
+logger = logging.getLogger("spec_review.match")
 
 KEYWORD_K = 20
 VECTOR_K = 20
@@ -31,7 +35,10 @@ def find_evidence(reqs: list[Requirement], kb: KnowledgeBase, client: LLMClient)
     vectors = client.embed(queries)
     out: dict[str, list[Evidence]] = {}
     for r, q, v in zip(reqs, queries, vectors):
-        fused = rrf([kb.keyword.search(q, KEYWORD_K), kb.vectors.search(v, VECTOR_K)])
+        hits = kb.vectors.search(v, VECTOR_K)
+        if stale := [i for i, _ in hits if i not in kb.items]:
+            logger.warning("vector index returned ids the corpus no longer has: %s", stale)
+        fused = rrf([kb.keyword.search(q, KEYWORD_K), [h for h in hits if h[0] in kb.items]])
         chosen = [p for p in fused if kb.items[p[0]].source == "capability"][:CAPABILITY_SLOTS]
         chosen += [p for p in fused if p not in chosen][:TOP_K - len(chosen)]
         chosen.sort(key=lambda p: (-p[1], p[0]))
