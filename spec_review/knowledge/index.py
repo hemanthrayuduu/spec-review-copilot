@@ -9,9 +9,10 @@ import numpy as np
 from rank_bm25 import BM25Plus
 
 from spec_review.config import SOURCES_FILE, Settings
+from spec_review.knowledge.azure_search import AzureSearchIndex, SearchError
 from spec_review.knowledge.capabilities import KnowledgeError, load_capabilities, load_past_exceptions
 from spec_review.knowledge.corpus import build_corpus, load_doc_pages
-from spec_review.llm.client import LLMClient
+from spec_review.llm.client import LLMClient, LLMConfigError
 from spec_review.models import Capability, Evidence
 from spec_review.sources import load_sources
 
@@ -68,9 +69,29 @@ class KnowledgeBase:
     notes: list[str]
 
 
-def load_knowledge(settings: Settings, client: LLMClient, *,
-                   sources_path: Path = SOURCES_FILE) -> KnowledgeBase:
-    """Load the CSVs and documents, embed every item (cached), and build both indexes."""
+def _azure_index(settings: Settings, items: list[Evidence], client: LLMClient, upload: bool) -> AzureSearchIndex:
+    key = settings.azure_search_key.get_secret_value()
+    missing = [env for env, value in (("AZURE_SEARCH_ENDPOINT", settings.azure_search_endpoint),
+                                      ("AZURE_SEARCH_KEY", key)) if not value.strip()]
+    if missing:
+        raise LLMConfigError(missing)
+    if not upload:
+        index = AzureSearchIndex(settings.azure_search_endpoint, key, settings.azure_search_index)
+        if (n := index.count()) != len(items):
+            raise SearchError(f"index {settings.azure_search_index} has {n} items but the corpus has {len(items)}: "
+                              "run specreview knowledge build")
+        return index
+    vectors = client.embed([e.text for e in items])
+    index = AzureSearchIndex(settings.azure_search_endpoint, key, settings.azure_search_index, dims=len(vectors[0]))
+    index.ensure_index()
+    index.upsert(items, vectors)
+    return index
+
+
+def load_knowledge(settings: Settings, client: LLMClient, *, sources_path: Path = SOURCES_FILE,
+                   upload: bool = False) -> KnowledgeBase:
+    """Load the CSVs and documents and build both indexes. Memory: embed every item (cached).
+    Azure: check the index matches the corpus, or with upload=True (knowledge build) refill it."""
     caps = load_capabilities(settings.knowledge_dir / "capabilities.csv")
     exceptions = load_past_exceptions(settings.knowledge_dir / "past_exceptions.csv")
     docs, notes = load_doc_pages(load_sources(sources_path), settings.raw_dir)
@@ -78,6 +99,7 @@ def load_knowledge(settings: Settings, client: LLMClient, *,
     if not items:
         raise KnowledgeError(f"the knowledge base in {settings.knowledge_dir} is empty")
     ids = [e.evidence_id for e in items]
-    vectors: VectorIndex = MemoryIndex(ids, client.embed([e.text for e in items]))
+    vectors: VectorIndex = _azure_index(settings, items, client, upload) if settings.provider_search == "azure" \
+        else MemoryIndex(ids, client.embed([e.text for e in items]))
     return KnowledgeBase(items=dict(zip(ids, items)), capabilities=caps, keyword=KeywordIndex(items),
                          vectors=vectors, notes=notes)

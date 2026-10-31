@@ -18,8 +18,9 @@ from spec_review.knowledge.capabilities import (
     load_past_exceptions,
     quote_problems,
 )
+from spec_review.knowledge.azure_search import AzureSearchIndex, SearchError
 from spec_review.knowledge.index import load_knowledge
-from spec_review.llm.check import check_chat, check_docintel
+from spec_review.llm.check import check_chat, check_docintel, check_embeddings, check_search
 from spec_review.llm.client import LLMConfigError, LLMError, get_client
 from spec_review.outputs.matrix_xlsx import STATUSES
 from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package
@@ -112,7 +113,7 @@ def run(package_dir: Path, run_id: str | None = None) -> None:
     writer = RunWriter(run_id or new_run_id())
     try:
         out = run_package(package_dir, writer, get_settings())
-    except LLMConfigError as e:
+    except (LLMConfigError, SearchError) as e:
         _fail(str(e))
     _summary(out.read, writer, _package_lines(out))
     if failure := _llm_failure(out):
@@ -130,7 +131,7 @@ def eval_cmd(split: Split) -> None:
     writer = RunWriter(new_run_id())
     try:
         out = run_package(DEV_PACKAGE, writer, settings)
-    except LLMConfigError as e:
+    except (LLMConfigError, SearchError) as e:
         _fail(str(e))
     card = build_scorecard(load_golden(DEV_GOLDEN), out, settings)
     writer.write("scorecard", card)
@@ -163,6 +164,18 @@ def azure_check() -> None:
             typer.echo(check_chat(client))
         except LLMError as e:
             _fail(f"chat failed: {e}")
+        if settings.azure_openai_embed_deployment.strip():
+            try:
+                typer.echo(check_embeddings(client))
+            except LLMError as e:
+                _fail(f"embeddings failed: {e}")
+    if settings.provider_search == "azure":
+        try:
+            typer.echo(check_search(AzureSearchIndex(settings.azure_search_endpoint,
+                                                     settings.azure_search_key.get_secret_value(),
+                                                     settings.azure_search_index)))
+        except SearchError as e:
+            _fail(f"search failed: {e}")
     if settings.provider_ocr == "azure":
         try:
             di = docintel_from_settings(settings)
@@ -217,8 +230,8 @@ def knowledge_build() -> None:
     settings = get_settings()
     try:
         client = get_client(settings)
-        kb = load_knowledge(settings, client)
-    except (LLMConfigError, KnowledgeError) as e:
+        kb = load_knowledge(settings, client, upload=True)
+    except (LLMConfigError, KnowledgeError, SearchError) as e:
         _fail(str(e))
     except LLMError as e:
         _fail(f"embedding failed: {e}")
@@ -227,5 +240,7 @@ def knowledge_build() -> None:
     typer.echo(f"Knowledge items: {len(kb.items)} ({', '.join(f'{k} {v}' for k, v in sorted(by.items()))})")
     typer.echo(f"Embeddings: {sum(c.input_tokens for c in calls)} tokens in {len(calls)} calls, "
                f"${sum(c.cost_usd for c in calls):.4f} (cached items cost nothing)")
+    if settings.provider_search == "azure":
+        typer.echo(f"Azure AI Search index {settings.azure_search_index}: uploaded {len(kb.items)} items")
     for note in kb.notes:
         typer.echo(f"note       {note}")

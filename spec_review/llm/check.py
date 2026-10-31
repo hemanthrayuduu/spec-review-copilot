@@ -5,6 +5,7 @@ from pathlib import Path
 import pymupdf
 
 from spec_review.ingest.azure_docintel import PageReader
+from spec_review.knowledge.azure_search import AzureSearchIndex
 from spec_review.llm.client import LLMClient
 from spec_review.models import ContractModel
 
@@ -29,3 +30,14 @@ def check_docintel(reader: PageReader) -> str:
         doc.new_page().insert_text((72, 72), "azure check", fontsize=14)
         data = doc.tobytes()
     return f"docintel ok: {len(reader.read_page(data))} lines"
+
+
+def check_embeddings(client: LLMClient) -> str:
+    [vector] = client.embed(["azure check"])
+    call = client.calls[-1] if client.calls else None
+    tokens = call.input_tokens if call else 0
+    return f"embeddings ok: dims={len(vector)} in={tokens} cost=${call.cost_usd if call else 0:.6f}"
+
+
+def check_search(index: AzureSearchIndex) -> str:
+    return f"search ok: {index.index} holds {index.count()} items"
