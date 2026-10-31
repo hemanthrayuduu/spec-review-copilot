@@ -1,6 +1,6 @@
 # Phase 1b execution log
 
-Plan: docs/superpowers/plans/2026-10-29-phase-1b-extract-verify-brief.md. Executed natively on branch phase-1b, 2026-10-30. Copied from the executing-plans ledger; Task 11 (the real-model run) appends its scorecard here.
+Plan: docs/superpowers/plans/2026-10-29-phase-1b-extract-verify-brief.md. Executed natively on branch phase-1b (merged to main 2026-10-31), then Task 11 on main. Copied from the executing-plans ledger.
 
 
 Spec: docs/superpowers/specs/2026-10-29-phase-1b-design.md (authority: docs/PROJECT_SPEC.md, CLAUDE.md). Branch phase-1b off main bb7a3ca. Executor: native (owner choice 2026-10-30).
@@ -73,3 +73,75 @@ Final: Ruling: extract_v1/permit_v1 quality on a real model is Task 11's job, no
 Final: Ruling: requirement precision follows spec 9 even though golden may be incomplete — the spec fixes the rule — cost if wrong: precision reads low on unlabeled true requirements.
 Final: Ruling: cross-group duplicate requirements are left for Phase 2 dedupe — groups partition blocks and split halves partition candidates, so a duplicate needs the model to quote outside its own candidates — cost if wrong: a few duplicate rows in requirements.xlsx.
 Final: Ruling: the plan workspace (ledger) is kept, not deleted, because Task 11 is still open and resumes from it; the ledger is also committed as docs/superpowers/plans/2026-10-29-phase-1b-execution-log.md — cost if wrong: one stale gitignored folder.
+Task 11: owner decision 2026-10-31 — Lakeview freeze held until Phase 2 (expected_status labels need capabilities.csv). Azure resources created and azure-check passed (gpt-5-mini, 500K TPM). Task 11 step 1's tag gate is waived by that decision.
+Task 11: merged phase-1b into main (ff to 1709fca, 362 passed), set LLM_MAX_CONCURRENCY=8, smoke calls ok (specs#8:g3 8 not_requirement, /bin/zsh.0009; specs#8:g11 43/43 requirements, quote/number 43/43, $0.011, 35 s). Starting eval dev (round 0, locks the model).
+Task 11: round 0 (locks the model) — runs/20261031T060227Z, gpt-5-mini-2025-08-07, effort minimal, extract_v1/permit_v1: requirement recall 0.875 (203/232), precision 0.644, mandatory recall 0.873, citation 1.0, quote 1.0, number 1.0, deadline/form/red flag/permit 1.0, section 1.0, silent drops 0; traps 1,4,5,6,7 found, trap 2 missed, trap 3 38/39; 78 calls, $0.107, 70 s. Misses by cause (t11-misses-r0.txt): unit text differs 19 (13 unit left empty, 6 unit with extra context), value differs 7 (5 several values packed, 2 value empty), text split differently 2, may-statement called not a requirement 1.
+Task 11: Ruling: round 1 is extract_v2.md, skipping lever 1 (table group size) — the diagnosis shows no miss from table grouping (38/39 rows; the one row miss is a unit convention), while 26 of 29 misses are value/unit field conventions Appendix A never states; Phase 2 rule checks need those fields clean anyway — cost if wrong: one round spent on the prompt instead of group size.
+Task 11: note for the owner (Phase 2 golden update): golden units 'USD/day' (rfp 7.3) and 'USD' (rfp 7.7) don't appear in their source_text, which violates prompt rule 4; a model that follows the rule can't match them.
+Task 11: round 1 (extract_v2, f259a41) — runs/20261031T060626Z: recall 0.957 (222/232), precision 0.771, mandatory 0.955, all 7 traps found (trap 3 39/39), citation/quote/number 1.0, brief 1.0, permits 1.0; 78 calls, $0.107. 35 needs_engineer: 2 schema rejections (operator set, value empty) and 33 dispositions naming records the reply never returned (reference-standard lists).
+Task 11: Ruling: fixed both in code, not by another prompt round — targets are met, so the plan's tuning trigger no longer fires; these are verification-path robustness bugs (an otherwise verified record discarded over an inconsistent optional field; an inconsistent reply accepted without the one retry the design gives invalid replies). Tests: test_operator_without_value_keeps_the_record, test_empty_strings_become_missing_fields, test_dispositions_naming_missing_records_trigger_one_retry, test_still_dangling_after_retry_goes_to_needs_engineer, test_failed_consistency_retry_keeps_the_first_reply RED→GREEN, suite 369/369 — cost if wrong: a few extra retry calls per package.
+Task 11: round 1 re-scored after the fixes (49bf34b) — runs/20261031T061101Z: requirement recall 0.966 (224/232), mandatory 0.964, precision 0.702, needs_engineer 0, all 7 traps (trap 3 39/39), citation/quote/number 1.0, deadline/form/red flag/permit 1.0, section 1.0, candidate 1.0, silent drops 0; 81 calls (78 cached), $0.008. Remaining misses (t11-misses-r1b.txt): 5 unit wording vs golden conventions, 2 golden split of 1.05.A, 1 payment value. Targets met; tuning stops (2 rounds: extract_v2, then code fixes). Lakeview total spend about $0.23 including smoke calls. This is the scored dev configuration: gpt-5-mini-2025-08-07, effort minimal, extract_v2, permit_v1.
+Task 11: Mountain Regional real run 1 (runs/mr-real-1, extract_v2, 49bf34b) — exit 0 in 18 min 17 s, 772 calls (1 empty reply, retried), $2.74, 1.54M in / 1.18M out; silent drops 0; candidates 11,370 → requirement 8,230 / not requirement 2,899 / needs engineer 241; requirements 8,201; quote 8231/8235, number 8205/8235, citation 8201/8201; groups failed 0. Needs-engineer causes: 202 "no disposition from model" (the model shortened candidate ids in 5 large groups: 154 dispositions ignored, 100 records unlinked), 31 number-check rejections, 8 dangling record ids.
+Task 11: Ruling: fixed shortened candidate ids in code (resolve a short id to the one group candidate whose last id segment matches) instead of changing the prompt's id format — a prompt change would invalidate the locked Lakeview configuration and every cached reply — test_shortened_candidate_ids_are_resolved, test_unresolvable_short_id_is_still_ignored RED→GREEN, suite 371/371 — cost if wrong: an ambiguous short id stays unresolved (needs_engineer), never mislinked.
+Task 11: note (deferred minor): a provider-raised LLMResponseError (empty reply after 87 s) is logged with 0 tokens, so that call's real cost is not counted.
+Task 11: after c78d5c4, cached re-runs — Lakeview (runs/20261031T063212Z) unchanged at recall 0.966, $0; Mountain Regional (runs/mr-real-2) needs_engineer 241 → 119 (80 no disposition, 31 number-check rejections, 8 dangling record ids), records without candidate 100 → 0, 95 s, $0. Task 11 Azure spend about $2.97 in total (smoke $0.012, round 0 $0.107, round 1 $0.107, round 1 re-score $0.008, Mountain Regional $2.74).
+Task 11: note (deferred minor): the run summary rounds pass rates, so Mountain Regional's number check (8205/8235 = 99.6%) prints as 100%.
+Task 11: note (deferred minor): number check rejected "1.25 inches per hour (100-year, 1-hour rainfall)" because strip_marker removed the leading 1.25 — a real-data case of the deferred clean_quote/leading-decimal minor.
+Task 11: complete — Phase 1 acceptance criteria all met; report in docs/superpowers/plans/2026-10-29-phase-1b-execution-log.md.
+
+---
+
+## Phase 1 report (2026-10-31)
+
+Scored configuration, now locked: Azure OpenAI `gpt-5-mini-2025-08-07`, Global Standard, reasoning effort `minimal`, prompts `extract_v2` and `permit_v1`, deployment `gpt-5-mini` on `aif-specreview-demo-gwc` (Germany West Central).
+
+### Acceptance criteria (PROJECT_SPEC section 10, Phase 1)
+
+| Criterion | Result |
+|---|---|
+| Lakeview: section filter recall of 100% and zero silent coverage drops | **Met.** Section recall 1.0, silent drops 0, 0 candidates without a disposition. |
+| Quote and number checks run on every record, with pass rates reported | **Met.** Lakeview 319/319 and 319/319 (100%). Mountain Regional 8,231/8,235 quote (99.95%) and 8,205/8,235 number (99.64%). |
+| The Azure OpenAI chat provider works behind `client.py`, and the dev metrics come from a real-model run | **Met.** Every number here is from gpt-5-mini through `LLMClient`. |
+| Scanned pages are OCRed, and blank pages are reported as blank | **Met.** Lakeview's scanned permit page went to Document Intelligence (F0); 1 blank page reported (42 on Mountain Regional). |
+| The brief lists every planted deadline, required form, and red flag with its page | **Met.** Deadline, form, and red flag recall are all 1.0; permit limits 7/7. |
+| Requirement recall on Lakeview is reported | **Met.** 0.966 (224/232); mandatory 0.964 (target ≥ 0.95, a Phase 4 target). |
+| Mountain Regional runs end to end and produces `brief.md` and `requirements.xlsx` | **Met.** `runs/mr-real-2`: 8,201 requirements, 0 silent drops; 18 min and $2.74 for the first run, 95 s and $0 from the cache. |
+
+### Dev scorecard (Lakeview, `runs/20261031T063212Z`)
+
+| Metric | Round 0 (extract_v1) | Final (extract_v2 + fixes) |
+|---|---|---|
+| Requirement recall | 0.875 | **0.966** |
+| Mandatory recall | 0.873 | **0.964** |
+| Precision | 0.644 | 0.702 |
+| Citation accuracy | 1.0 | 1.0 |
+| Traps found | 6/7 (trap 2 missed, trap 3 38/39) | **7/7** (trap 3 39/39) |
+| Needs engineer | 0 | 0 |
+| Cost per run | $0.107 | $0.11 (cached re-score $0) |
+
+Remaining 8 Lakeview misses:
+- **5 unit wordings.** `installations` vs none; `USD/day` vs `$ per day`; `USD` vs `$`; `psi in 10 minutes` vs `psi`; `per week` vs `times per week`.
+- **2 split differently.** The golden splits 1.05.A into two records and the model keeps one.
+- **1 value.** Payment terms (`90` percent).
+
+### Coverage check
+
+| | Candidates | Requirement | Not requirement | Needs engineer | Silent drops |
+|---|---|---|---|---|---|
+| Lakeview | 349 | 318 | 31 | 0 | 0 |
+| Mountain Regional | 11,370 | 8,321 | 2,930 | 119 | 0 |
+
+Mountain Regional's 119 needs-engineer items break down as:
+- **80 with no disposition from the model.** It skipped candidates or used ids it can't be held to.
+- **31 number-check rejections.** Most are values the model invented, such as `"0"` for "at no cost" or `"4"` for a heading. One is a false rejection caused by the leading-decimal minor.
+- **8 dangling record ids** after the retry.
+
+### Three weakest areas
+
+1. **Precision (0.70).** The model accepts true statements that set no obligation: RFP background, reference-standard lists, and schedule rows. On Lakeview that adds 95 extra records; at Mountain Regional scale it makes 8,201 requirements an engineer has to triage. Next step: a not-a-requirement rule for facts, definitions, and reference lists (a new prompt version), weighed against recall, or Phase 2 ranking.
+2. **Value and unit conventions against the answer key.** 5 of the 8 Lakeview misses are unit wording. Two golden units (`USD/day`, `USD`) appear nowhere in their sentences, which breaks prompt rule 4. Fixing them is an owner decision for the Phase 2 golden update, possibly together with a unit-normalizing matcher.
+3. **Unsettled candidates in very large groups.** 80 Mountain Regional candidates got no disposition, concentrated in groups with 40+ candidates. Next step: a completeness retry for candidates missing from a reply, or smaller groups for long articles.
+
+### Spend
+
+Azure, Task 11: about $2.97 in total (smoke $0.012, Lakeview rounds $0.22, Mountain Regional $2.74). No hourly-billed resources.

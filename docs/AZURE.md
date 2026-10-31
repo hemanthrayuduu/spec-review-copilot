@@ -119,28 +119,38 @@ az cognitiveservices usage list --subscription "Azure for Students" --location g
 
 ## What a run costs
 
-These are estimates from measured call counts and prompt sizes, using gpt-5-mini prices. The output share is the least certain part.
+Measured on 2026-10-31 with gpt-5-mini (minimal reasoning) and the `extract_v2` prompt:
 
-| Package | LLM calls | Input tokens | Output tokens | Cost |
-|---|---|---|---|---|
-| Lakeview (dev, 154 pages) | about 78 | 40–65K | 40–60K | $0.10–0.15 |
-| Mountain Regional (577 pages) | about 734 | 0.85–1.1M | 0.8–1.1M | $1.50–2.50 |
+| Package | LLM calls | Input tokens | Output tokens | Time | Cost |
+|---|---|---|---|---|---|
+| Lakeview (dev, 154 pages) | 78–81 | 101–107K | 42–45K | about 70 s | $0.11 |
+| Mountain Regional (577 pages) | 772 | 1.54M | 1.18M | 18 min | $2.74 |
 
 - **Output dominates.** The model gives each of Mountain Regional's 11,370 flagged sentences a disposition, and writes a record for each requirement.
 - **Document Intelligence:** Lakeview has one scanned page and Mountain Regional none, so both are inside the free 500 pages a month ([pricing](https://azure.microsoft.com/en-gb/pricing/details/ai-document-intelligence/)).
-- **Phase 1b total**, with up to 3 tuning rounds on Lakeview and one or two Mountain Regional runs: under $10.
+- **Phase 1b actual spend:** about $3, covering smoke calls, two Lakeview tuning rounds, and one Mountain Regional run.
 - **Re-runs of unchanged input are free.** Replies are cached in `.cache/llm/`, and Document Intelligence results in `.cache/docintel/`.
 - **Later phases:** embeddings come to under $1, and AI Search Free costs $0. The Container Apps free grant covers about 100 hours a month of a small container ([billing](https://learn.microsoft.com/en-us/azure/container-apps/billing)). Blob storage costs cents.
 
 ## Quota
 
-The `gpt-5-mini` deployment was created on 2026-10-31 with capacity 500, which gives **500,000 tokens and 500 requests per minute** (`azure-check` confirms the limit). At that rate even Mountain Regional takes minutes. The figures below matter only for a smaller quota.
+Checked on 2026-10-31 in Germany West Central:
 
-- **Mountain Regional:** about 1.7–2.2M tokens. That takes about 40 minutes at 50K tokens per minute, 3–4 hours at 10K, and more than a day at 1K.
-- **Lakeview:** a few minutes at any quota.
-- **Rate limits are handled.** The SDK retries rate-limit errors (HTTP 429) on its own, honoring `Retry-After`, and at most 4 calls are in flight (`LLM_MAX_CONCURRENCY`).
-- **Interrupted runs resume.** An interrupted run picks up from the cache when you run it again.
-- **If the quota is too low,** request more in Foundry, or run Mountain Regional overnight.
+| Quota | Used / limit | Note |
+|---|---|---|
+| `gpt-5-mini` Global Standard | 500 / 500 | All of it is assigned to the `gpt-5-mini` deployment |
+| `text-embedding-3-small` Global Standard | 0 / 1000 | Phase 2 embeddings |
+| `gpt-5.4-mini` Global Standard | 0 / 0 | Needs a quota request before it can be deployed |
+| AI Services accounts | 1 / 100 | |
+| AI Search Free | 0 / 1 per subscription | Phase 2 |
+
+**Resource providers not yet registered:** `Microsoft.App` (Container Apps) and `Microsoft.OperationalInsights` (Log Analytics) are both needed in Phase 4, and `Microsoft.Quota` is needed for `az quota`. Registering is free: `az provider register -n <provider> --subscription <Azure for Students id>`.
+
+The `gpt-5-mini` deployment has capacity 500, which gives **500,000 tokens and 500 requests per minute**; `azure-check` confirms the limit. With that and 8 calls in flight (`LLM_MAX_CONCURRENCY=8` in `.env`), the limit on speed is response time, not quota. Mountain Regional's 2.7M tokens took 18 minutes. Most calls return in about 6 s, and the slowest took 82 s.
+
+- **Rate limits are handled.** The SDK retries rate-limit errors (HTTP 429) on its own, honoring `Retry-After`. Azure counts each request's maximum output tokens against the limit when the request arrives ([quota docs](https://learn.microsoft.com/azure/foundry/openai/how-to/quota)).
+- **Interrupted runs resume.** An interrupted run picks up from the cache when you run it again. A full re-run of Mountain Regional from the cache took 95 s and cost $0.
+- **On a smaller quota,** the floor on run time is total tokens divided by the per-minute limit. At 10K tokens per minute, Mountain Regional's 2.7M tokens would take about 4.5 hours; Lakeview's 150K, about 15 minutes.
 
 Azure reports the deployment's limit in the `x-ratelimit-limit-tokens` response header ([quota docs](https://learn.microsoft.com/en-us/azure/foundry-classic/openai/how-to/quota?tabs=rest)). `azure-check` prints it when the header is present.
 
