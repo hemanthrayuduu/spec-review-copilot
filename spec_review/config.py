@@ -23,8 +23,15 @@ class Settings(BaseSettings):
     azure_openai_chat_deployment: str = ""
     azure_openai_embed_deployment: str = ""
     azure_openai_reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None
+    azure_openai_judge_reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None  # None: as above
     azure_search_endpoint: str = ""
     azure_search_key: SecretStr = SecretStr("")
+    azure_search_index: str = "idx-knowledge"
+    provider_search: Literal["memory", "azure"] = "memory"
+    embed_price_per_mtok: float = Field(default=0.0, ge=0.0)
+    knowledge_dir: Path = Path("data/knowledge")
+    raw_dir: Path = Path("data/raw")
+    match_max_requirements: int = Field(default=1000, ge=0)  # bigger packages skip matching unless this is raised
     confidence_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
     llm_price_input_per_mtok: float = Field(default=0.0, ge=0.0)
     llm_price_output_per_mtok: float = Field(default=0.0, ge=0.0)

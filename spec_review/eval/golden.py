@@ -44,6 +44,7 @@ class GoldenRequirement(ContractModel):
     from_addendum: str | None = None
     trap: int | None = None
     expected_status: MatchStatus | None = None  # Lakeview only
+    status_reason: str | None = None  # why the label is what it is (Lakeview only)
 
 
 class GoldenTrap(ContractModel):

@@ -36,6 +36,7 @@ DispositionOutcome = Literal["requirement", "not_requirement", "needs_engineer"]
 RejectReason = Literal["quote", "number", "schema", "call_failed"]
 LimitType = Literal["monthly_avg", "weekly_avg", "daily_max", "annual_load"]
 CapabilityBasis = Literal["guaranteed", "typical", "claim"]
+Origin = Literal["public", "synthetic"]  # synthetic rows stand in for company data and are labeled everywhere
 EvidenceSource = Literal["capability", "product_doc", "past_exception"]
 MatchStatus = Literal["comply", "comply_with_clarification", "deviation", "needs_engineer",
                       "not_applicable"]
@@ -154,15 +155,21 @@ class PermitLimit(ContractModel):
 
 
 class Capability(ContractModel):
+    capability_id: NonBlankStr
     product_line: NonBlankStr
     parameter: NonBlankStr
+    match_terms: list[str] = []  # words that tie a requirement to this row for rules; empty means rules never use it
     min_value: float | None = None
     max_value: float | None = None
     unit: str | None = None
     value_text: str | None = None
     basis: CapabilityBasis  # only "guaranteed" lets a rule decide on its own (spec 8.11)
+    origin: Origin
+    source_id: NonBlankStr  # a sources.yaml id, or the synthetic document's id
     source_url: NonBlankStr
     source_page: Page
+    source_text: NonBlankStr  # words copied from the cited page
+    note: str = ""
 
     @model_validator(mode="after")
     def _has_a_value(self) -> Self:
@@ -180,6 +187,9 @@ class Evidence(ContractModel):
     page: Page | None = None
     text: NonBlankStr
     score: float
+    origin: Origin
+    basis: CapabilityBasis | None = None  # capabilities only
+    product_line: str | None = None
 
 
 class MatchResult(ContractModel):
@@ -189,6 +199,37 @@ class MatchResult(ContractModel):
     reason: NonBlankStr
     evidence_ids: list[str] = []
     confidence: Confidence
+    gated_from: MatchStatus | None = None  # the status before the gate or an evidence check changed it
+    uses_synthetic: bool = False  # some cited evidence is synthetic
+
+
+class PastException(ContractModel):
+    """A fictional past bid exception or clarification (spec section 4)."""
+
+    exception_id: NonBlankStr
+    year: int
+    project: NonBlankStr
+    product_line: NonBlankStr
+    category: Category
+    requirement: NonBlankStr
+    response_type: Literal["exception", "clarification"]
+    response: NonBlankStr
+    outcome: Literal["accepted", "rejected", "negotiated"]
+
+
+class MatchReport(ContractModel):
+    """runs/<run_id>/match.json: one result per requirement and the evidence they cite."""
+
+    package_id: NonBlankStr
+    results: list[MatchResult] = []
+    evidence: dict[str, Evidence] = {}
+    counts: dict[str, int] = {}  # by status
+    methods: dict[str, int] = {}
+    judge_calls: Count = 0
+    judge_failed: Count = 0
+    gated: Count = 0
+    skipped: bool = False  # the package had more requirements than MATCH_MAX_REQUIREMENTS
+    notes: list[str] = []
 
 
 class ReviewDecision(ContractModel):

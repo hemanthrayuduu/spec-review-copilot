@@ -64,9 +64,10 @@ BRIEF_SECTION = dict(number="46 61 00", title="Membrane Filtration Equipment",
 BRIEF_ITEM = dict(text="Approved equal requests due 14 days before bid date", doc_id="rfp",
                   page=4, section_number="00 21 13")
 
-CAPABILITY = dict(product_line="biological", parameter="total phosphorus", max_value=0.2,
-                  unit="mg/L", value_text="below 0.2 mg/L at many plants", basis="claim",
-                  source_url="https://example.org/carrousel-retrofits.pdf", source_page=2)
+CAPABILITY = dict(capability_id="BIO-01", product_line="biological", parameter="total phosphorus", max_value=0.2,
+                  unit="mg/L", value_text="below 0.2 mg/L at many plants", basis="claim", origin="public",
+                  source_id="ovivo_carrousel_retrofits", source_url="https://example.org/carrousel-retrofits.pdf",
+                  source_page=2, source_text="many plants achieve TP < 0.2 mg/L")
 
 VALID: dict[type[BaseModel], dict[str, Any]] = {
     Block: BLOCK,
@@ -79,7 +80,7 @@ VALID: dict[type[BaseModel], dict[str, Any]] = {
     PermitLimit: PERMIT,
     Capability: CAPABILITY,
     Evidence: dict(evidence_id="e1", source="capability", ref="capabilities.csv#12", page=2,
-                   text="below 0.2 mg/L at many plants", score=0.82),
+                   text="below 0.2 mg/L at many plants", score=0.82, origin="public"),
     MatchResult: dict(req_id="r1", status="needs_engineer", method="llm",
                       reason="Literature claims below 0.2 mg/L, not 0.1 mg/L.",
                       evidence_ids=["e1"], confidence=0.7),
@@ -263,3 +264,33 @@ def test_structural_is_a_trigger() -> None:
 def test_candidate_cites_its_document() -> None:
     with pytest.raises(ValidationError):
         Candidate(**{k: v for k, v in VALID[Candidate].items() if k != "doc_id"})
+
+
+def test_capability_needs_origin_id_and_quote() -> None:
+    with pytest.raises(ValidationError):
+        Capability(product_line="screens", parameter="opening", max_value=6, unit="mm", basis="typical",  # type: ignore[call-arg]
+                   source_url="https://example.org/a.pdf", source_page=1)  # no id, origin, source_id, quote
+
+
+def test_match_result_records_what_the_gate_changed() -> None:
+    r = MatchResult(req_id="s#1:g1:r1", status="needs_engineer", method="llm", reason="low confidence",
+                    confidence=0.4, gated_from="comply")
+    assert r.gated_from == "comply" and r.uses_synthetic is False
+
+
+def test_match_report_round_trips() -> None:
+    from spec_review.models import MatchReport
+    ev = Evidence(evidence_id="cap:SCR-01", source="capability", ref="ovivo_cf100_band_screen", page=2,
+                  text="screens: opening", score=0.5, origin="public", basis="typical", product_line="screens")
+    rep = MatchReport(package_id="p", evidence={ev.evidence_id: ev}, counts={"comply": 1})
+    assert MatchReport.model_validate_json(rep.model_dump_json()) == rep
+
+
+def test_past_exception_is_typed() -> None:
+    from spec_review.models import PastException
+    pe = PastException(exception_id="PE-01", year=2024, project="Town of Example WWTP", product_line="membranes",
+                       category="warranty", requirement="7-year full replacement membrane warranty",
+                       response_type="exception", response="Offered 5 years prorated.", outcome="accepted")
+    assert pe.outcome == "accepted"
+    with pytest.raises(ValidationError):
+        PastException(**{**pe.model_dump(), "outcome": "maybe"})
