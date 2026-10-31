@@ -126,3 +126,28 @@ def test_judge_v4_keeps_v3_and_adds_the_reading_rules() -> None:
     v4 = (ROOT / "spec_review/match/prompts/judge_v4.md").read_text()
     assert v3 != v4 and "caps how hard the product is worked" in v4 and "{requirement_json}" in v4
     assert "caps how hard" not in v3  # v3 is never edited
+
+
+def test_dropped_ids_are_named_in_the_reason() -> None:  # final review: "dropped and logged", with a reason
+    r = enforce("r1", reply("comply", ["cap:A", "cap:ZZ"]), [ev("cap:A")])
+    assert r.status == "comply" and "cap:ZZ" in r.reason and r.evidence_ids == ["cap:A"]
+
+
+def test_a_nutrient_requirement_needs_a_nutrient_row_to_settle() -> None:  # final review: the trap "by design"
+    bod = Evidence(evidence_id="cap:MBR-31", source="capability", ref="synthetic_product_data", page=5,
+                   text="membranes: permeate BOD5 guarantee: 5 mg/L (guaranteed, synthetic).", score=0.5,
+                   origin="synthetic", basis="guaranteed", product_line="membranes")
+    r = enforce("r1", reply("deviation", ["cap:MBR-31"]), [bod], nutrient=True)
+    assert (r.status, r.gated_from) == ("needs_engineer", "deviation")
+    assert enforce("r1", reply("deviation", ["cap:MBR-31"]), [bod]).status == "deviation"
+
+
+def test_judge_flags_phosphorus_requirements_as_nutrient() -> None:
+    bod = ev("cap:MBR-31")
+    r = req("<=", "0.1", "mg/L", "effluent total phosphorus",
+            text="The membrane system shall produce effluent total phosphorus not exceeding 0.1 mg/L.")
+    good = json.dumps({"status": "deviation", "reason": "only BOD is guaranteed", "evidence_ids": ["cap:MBR-31"],
+                       "confidence": 0.9})
+    results, _, _ = judge_requirements([r], {r.req_id: ["membranes"]}, {r.req_id: [bod]},
+                                       LLMClient(ScriptedProvider([good])))
+    assert results[0].status == "needs_engineer"

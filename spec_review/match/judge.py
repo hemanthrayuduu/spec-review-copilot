@@ -1,13 +1,16 @@
 """The LLM judge (spec 8.13): one call per requirement the rules did not settle, with evidence rules in code."""
 
 import json
+import logging
 from pathlib import Path
 
+from spec_review.knowledge.capabilities import NUTRIENTS
 from spec_review.llm.client import LLMClient, LLMError, LLMResponseError
 from spec_review.models import ContractModel, Evidence, MatchResult, MatchStatus, Requirement
 
 PROMPT_ID = "judge_v4"  # v4 adds capacity caps, design-input wording, and deadline direction (round 3); v1 is Appendix B verbatim
 PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_ID}.md").read_text(encoding="utf-8")
+logger = logging.getLogger("spec_review.match")
 RETRY_NOTE = "\n\nYour previous reply was invalid: {detail}\nReturn JSON that matches the schema."
 DECISIVE = ("comply", "comply_with_clarification", "deviation")
 
@@ -35,9 +38,12 @@ def settles(e: Evidence) -> bool:
     return e.source == "capability" and e.basis in ("guaranteed", "typical")
 
 
-def enforce(req_id: str, reply: JudgeReply, evidence: list[Evidence]) -> MatchResult:
+def enforce(req_id: str, reply: JudgeReply, evidence: list[Evidence], *, nutrient: bool = False) -> MatchResult:
+    """The evidence rules in code. A nutrient requirement (phosphorus, nitrogen, ammonia) is settled only by a
+    capability row about a nutrient, so a guaranteed row about something else can't decide it (final review)."""
     known = {e.evidence_id: e for e in evidence}
     cited = list(dict.fromkeys(i for i in reply.evidence_ids if i in known))  # first of each, unknown ids dropped
+    dropped = list(dict.fromkeys(i for i in reply.evidence_ids if i not in known))
     status, reason, gated_from = reply.status, reply.reason.strip() or "No reason given.", None
     if status in DECISIVE and not cited:
         status, gated_from = "needs_engineer", reply.status
@@ -45,6 +51,13 @@ def enforce(req_id: str, reply: JudgeReply, evidence: list[Evidence]) -> MatchRe
     elif status in DECISIVE and not any(settles(known[i]) for i in cited):
         status, gated_from = "needs_engineer", reply.status
         reason = f"Cited evidence is only claims, brochure text, or past exceptions. Judge said {reply.status}: {reason}"
+    elif status in DECISIVE and nutrient and not any(settles(known[i]) and NUTRIENTS.search(known[i].text)
+                                                     for i in cited):
+        status, gated_from = "needs_engineer", reply.status
+        reason = f"No settling evidence is about this nutrient. Judge said {reply.status}: {reason}"
+    if dropped:
+        logger.warning("%s: judge cited evidence ids not in its evidence list: %s", req_id, dropped)
+        reason = f"{reason} Dropped evidence ids not in the evidence list: {', '.join(dropped)}."
     return MatchResult(req_id=req_id, status=status, method="llm", reason=reason, evidence_ids=cited,
                        confidence=min(max(reply.confidence, 0.0), 1.0), gated_from=gated_from,
                        uses_synthetic=any(known[i].origin == "synthetic" for i in cited))
@@ -75,5 +88,6 @@ def judge_requirements(reqs: list[Requirement], lines: dict[str, list[str]], evi
             failed += 1
             results.append(_failed(req.req_id, r))
         else:
-            results.append(enforce(req.req_id, r, evidence[req.req_id]))
+            nutrient = NUTRIENTS.search(f"{req.parameter or ''} {req.source_text}") is not None
+            results.append(enforce(req.req_id, r, evidence[req.req_id], nutrient=nutrient))
     return results, calls, failed
