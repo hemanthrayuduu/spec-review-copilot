@@ -109,7 +109,7 @@ On 2026-10-31 the owner reviewed the knowledge base and the 232 labels before ro
 |---|---|---|
 | Every match result has a method, reason, and confidence | Met | Enforced by the `MatchResult` schema. `test_every_result_has_method_reason_and_confidence`. All 319 results in `runs/20261031T223243Z/match.json` |
 | Every comply has at least one supporting evidence id | Met | Code downgrades any uncited comply, clarification, or deviation, and any decision resting only on claims, brochure text, or past exceptions. The scorecard counts 0 uncited results in all four rounds |
-| The phosphorus trap comes out as needs_engineer | Met | `status.trap5 = needs_engineer` in every round. Its only evidence is claims (BIO-01, BIO-03, AER-01), which can't settle a status. The eval gate fails if this changes |
+| The phosphorus trap comes out as needs_engineer | Met | `status.trap5 = needs_engineer` in every round. Rounds 0 to 3 got there from the judge's reading: the final review found that the trap result also cited cap:MBR-31, a guaranteed BOD row, which code would have let settle a deviation. Since the review fix, a nutrient requirement can only be settled by a row about a nutrient, and none exists, so the outcome now comes from code. The eval gate also fails if it changes |
 | Status accuracy on Lakeview is reported, with every wrong item listed | Met | 0.8259 over matched, 0.7974 over all, 0.8259 grouped. All 47 wrong items are below, and `specreview eval dev` prints them with the run folder |
 
 **What the numbers mean:**
@@ -204,3 +204,25 @@ The run files are `runs/20261031T223243Z/match.json` (each result's reason and e
 - Task 11: Ruling: the Search service is srch-specreview-demo-cac in Canada Central — Germany West Central returned InsufficientResourcesAvailable for the Free tier; Canada Central is the next allowed region, as the plan said; it stays in rg-specreview-demo-gwc — cost if wrong: small cross-region latency on searches
 - Task 12: Ruling: the synthetic document is no longer a searched product document — its pages only repeat the synthetic capability rows, crowded those rows out of the top 8, and can't settle a status when cited (round 0) — cost if wrong: none; it remains the citation target for synthetic rows
 - Task 12: Ruling: CAPABILITY_SLOTS = 5 of the 8 evidence items are kept for capability rows (fused order kept within each group) — a retrieval-setting lever (design 7.9); round 0 lost the deciding GEN-01 and GEN-11 rows to brochure chunks — cost if wrong: fewer brochure chunks as context
+
+## Final review and fixes
+
+A fresh reviewer (Opus) read the whole branch on 2026-10-31. It found 0 Critical issues, 8 Important ones and about 20 Minor ones. All 8 Important issues were fixed in one pass, each with a test that failed first:
+
+1. **Loose rule match terms gave confident wrong statuses.** "voltage" caught control voltage, "service life" caught bearing life, and "recovery clean" caught a clean's duration. Terms now match the extracted parameter only and are phrases.
+2. **Operating and storage ranges were read like selectable ranges.** No rule decides a range requirement now; the judge does.
+3. **A match-stage failure aborted the run after extraction.** It is now a note in `match.json`, and the Phase 1 outputs are still written.
+4. **Azure index staleness was checked by count only.** The key set is compared now, partial uploads raise, and stale ids are skipped.
+5. **The eval passed with a dead judge.** It now fails on any judge failure, or when matching didn't run on a real provider.
+6. **The phosphorus trap rested on the judge, not on code.** It now rests on code: see the criteria table.
+7. **The run files didn't keep the evidence the judge saw.** `match.json` now lists it for every judged requirement.
+8. **Dropped judge ids weren't explained.** They are now logged and named in the reason.
+
+**Final numbers with the fixes** (`runs/20261031T230352Z`, judge replies served from the cache, $0.002):
+- 0.8259 over matched, 0.7974 over all, 0.8259 grouped;
+- the trap is needs_engineer; 0 uncited; 0 judge failures;
+- 2 requirements decided by rule (was 4), and the other 2 now go to the judge and are still right.
+
+**An in-sample number, stated plainly.** 0.826 is measured on the same Lakeview labels that judge_v2 to v4 were tuned against. The synthetic rows were also written knowing which parameters Lakeview asks about, so many map one to one onto Lakeview requirements: 72 against 48 hours, 15 against 30 minutes, 14 against 21 days. No status labels exist outside Lakeview, so this is not a held-out score. A held-out estimate needs status labels on another package, which the owner would write.
+
+**Two retrieval rulings for the owner to confirm as allowed levers.** De-indexing the synthetic document and keeping 5 capability slots go slightly beyond the design's list of levers ("top-k and the fusion constant"). The reviewer judged both justified.
