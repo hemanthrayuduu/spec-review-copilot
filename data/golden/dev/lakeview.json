@@ -124,7 +124,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "the knowledge base covers band screens (SCR), clarifiers (CLR), and SiC MBR (MBR)"
     },
     {
       "doc_id": "rfp",
@@ -142,7 +143,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11 field service covers installation check, startup, and training; GEN-12 training"
     },
     {
       "doc_id": "rfp",
@@ -160,7 +162,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-09: ships 20 to 26 weeks after approved shop drawings"
     },
     {
       "doc_id": "rfp",
@@ -178,7 +181,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-08: shop drawings 8 weeks after the purchase order"
     },
     {
       "doc_id": "rfp",
@@ -196,7 +200,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "a permission, not an obligation"
     },
     {
       "doc_id": "rfp",
@@ -214,7 +219,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "bid-procedure instruction (proposal delivery) that the brief tracks"
     },
     {
       "doc_id": "rfp",
@@ -232,7 +238,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "bid-procedure deadline that the brief tracks"
     },
     {
       "doc_id": "rfp",
@@ -250,7 +257,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "bid-procedure instruction"
     },
     {
       "doc_id": "rfp",
@@ -268,7 +276,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "GEN-14 lists five SiC MBR plants but not their years in municipal service"
     },
     {
       "doc_id": "rfp",
@@ -286,7 +295,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "bid form instruction (Form B)"
     },
     {
       "doc_id": "rfp",
@@ -304,7 +314,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-13: technician on site within 72 hours, not 48"
     },
     {
       "doc_id": "rfp",
@@ -322,7 +333,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no warehouse location in the knowledge base"
     },
     {
       "doc_id": "rfp",
@@ -340,7 +352,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-47: pilot unit available for 60 to 120 days"
     },
     {
       "doc_id": "rfp",
@@ -358,7 +371,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-47 does not say the pilot uses full scale modules"
     },
     {
       "doc_id": "rfp",
@@ -376,7 +390,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "phosphorus has only claims (BIO-01, BIO-03, AER-01); no guarantee"
     },
     {
       "doc_id": "rfp",
@@ -394,7 +409,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "rfp",
@@ -412,7 +428,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "MBR-47 bills pilot rental separately; the price must include it"
     },
     {
       "doc_id": "rfp",
@@ -430,7 +447,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-01: 12 months from startup or 18 from shipment, not 2 years from completion"
     },
     {
       "doc_id": "rfp",
@@ -448,7 +466,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "guarantees cover turbidity, TSS, BOD (MBR-29 to 31), not the nutrient limits; GEN-02"
     },
     {
       "doc_id": "rfp",
@@ -466,7 +485,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "rfp",
@@ -484,7 +504,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-07: prices valid 90 days, not 120"
     },
     {
       "doc_id": "rfp",
@@ -502,7 +523,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "GEN-05: 100 percent bond available at added cost"
     },
     {
       "doc_id": "rfp",
@@ -520,7 +542,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-04: up to $500 per day, capped at 5 percent"
     },
     {
       "doc_id": "rfp",
@@ -538,7 +561,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "GEN-15: BABA compliant supply when specified, at added cost"
     },
     {
       "doc_id": "rfp",
@@ -556,7 +580,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-15: BABA compliant supply when specified"
     },
     {
       "doc_id": "rfp",
@@ -574,7 +599,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-03: 10 percent with order, 80 on delivery, 10 on startup"
     },
     {
       "doc_id": "rfp",
@@ -592,7 +618,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-06: $2,000,000 per occurrence"
     },
     {
       "doc_id": "rfp",
@@ -610,7 +637,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "rfp",
@@ -628,7 +656,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "rfp",
@@ -646,7 +675,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "bid-procedure recommendation"
     },
     {
       "doc_id": "rfp",
@@ -664,7 +694,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "bid form instruction"
     },
     {
       "doc_id": "specs",
@@ -682,7 +713,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -700,7 +732,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "the Engineer's review period"
     },
     {
       "doc_id": "specs",
@@ -718,7 +751,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -736,7 +770,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-16: submittals are searchable PDF files"
     },
     {
       "doc_id": "specs",
@@ -754,7 +789,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -772,7 +808,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -790,7 +827,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -808,7 +846,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -826,7 +865,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -844,7 +884,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "GEN-10 and GEN-18 cover delivery and spare parts, not the full manual contents"
     },
     {
       "doc_id": "specs",
@@ -862,7 +903,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 2,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-10: manuals 4 weeks before startup, not 30 days"
     },
     {
       "doc_id": "specs",
@@ -880,7 +922,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "the Engineer's review step"
     },
     {
       "doc_id": "specs",
@@ -898,7 +941,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -916,7 +960,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-08: shop drawings 8 weeks after the purchase order"
     },
     {
       "doc_id": "specs",
@@ -934,7 +979,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -952,7 +998,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-14 reference lists for band screens; SCR rows"
     },
     {
       "doc_id": "specs",
@@ -970,7 +1017,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-01: 12 months from startup or 18 from shipment, not 2 years"
     },
     {
       "doc_id": "specs",
@@ -990,7 +1038,8 @@
       "or_equal_allowed": true,
       "from_addendum": null,
       "trap": 4,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "GEN-19: offered as an approved equal, request filed before the deadline"
     },
     {
       "doc_id": "specs",
@@ -1008,7 +1057,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "SCR-03: CF100 handles 50 to 1,500 L/s (1 to 40 mgd)"
     },
     {
       "doc_id": "specs",
@@ -1026,7 +1076,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "SCR-05 gives typical headloss of 250 to 400 mm; meeting 6 in is a sizing question"
     },
     {
       "doc_id": "specs",
@@ -1044,7 +1095,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "SCR-08 standard frame is 304L with polypropylene panels; SCR-14 offers Type 316 at added cost"
     },
     {
       "doc_id": "specs",
@@ -1062,7 +1114,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "SCR-15: all screen fasteners are Type 316"
     },
     {
       "doc_id": "specs",
@@ -1080,7 +1133,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1098,7 +1152,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "SCR-11 gives wash water demand, not a supplied booster pump"
     },
     {
       "doc_id": "specs",
@@ -1116,7 +1171,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "SCR-11 gives 20 to 30 gpm at 60 psi demand, not pump supply"
     },
     {
       "doc_id": "specs",
@@ -1134,7 +1190,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1152,7 +1209,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1170,7 +1228,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1188,7 +1247,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "SCR-17 is typical, without a washer compactor"
     },
     {
       "doc_id": "specs",
@@ -1206,7 +1266,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1224,7 +1285,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "SCR-16: NEMA 4X stainless steel control panel"
     },
     {
       "doc_id": "specs",
@@ -1242,7 +1304,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1260,7 +1323,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1278,7 +1342,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "SCR-12: 460 V, 3 phase, 60 Hz, TEFC, premium efficiency"
     },
     {
       "doc_id": "specs",
@@ -1296,7 +1361,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "the installing contractor's duty"
     },
     {
       "doc_id": "specs",
@@ -1314,7 +1380,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1332,7 +1399,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1350,7 +1418,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: up to 5 days on site per equipment type"
     },
     {
       "doc_id": "specs",
@@ -1368,7 +1437,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-12: one 8-hour session per equipment type"
     },
     {
       "doc_id": "specs",
@@ -1386,7 +1456,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -1404,7 +1475,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input for tank sizing"
     },
     {
       "doc_id": "specs",
@@ -1422,7 +1494,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1440,7 +1513,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "CLR-04 states the AGMA rating basis, not a service factor certification"
     },
     {
       "doc_id": "specs",
@@ -1458,7 +1532,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-01: 12 months from startup or 18 from shipment, not 5 years"
     },
     {
       "doc_id": "specs",
@@ -1476,7 +1551,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1494,7 +1570,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-03: drives rated 10,000 to 1,000,000 ft-lb, sized per project"
     },
     {
       "doc_id": "specs",
@@ -1512,7 +1589,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-04: 20 years under the AGMA rating"
     },
     {
       "doc_id": "specs",
@@ -1530,7 +1608,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-08: 0.5 to 1.5 hp, 460 V, 3 phase, TEFC"
     },
     {
       "doc_id": "specs",
@@ -1548,7 +1627,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-05: shutdown at 120 percent of continuous torque"
     },
     {
       "doc_id": "specs",
@@ -1566,7 +1646,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1584,7 +1665,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 6,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-06: torque overload alarm contact"
     },
     {
       "doc_id": "specs",
@@ -1602,7 +1684,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1620,7 +1703,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-07: tip speed 8 to 12 ft/min, set by the drive speed"
     },
     {
       "doc_id": "specs",
@@ -1638,7 +1722,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1656,7 +1741,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1674,7 +1760,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "CLR-11: SSPC-SP10 blast and epoxy, not galvanizing"
     },
     {
       "doc_id": "specs",
@@ -1692,7 +1779,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-10: Type 316 anchor bolts and submerged fasteners"
     },
     {
       "doc_id": "specs",
@@ -1710,7 +1798,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1728,7 +1817,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1746,7 +1836,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: installation check by the manufacturer's representative"
     },
     {
       "doc_id": "specs",
@@ -1764,7 +1855,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "the installing contractor's duty"
     },
     {
       "doc_id": "specs",
@@ -1782,7 +1874,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "CLR-12: standard dry run is 1 hour"
     },
     {
       "doc_id": "specs",
@@ -1800,7 +1893,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "CLR-12: 24-hour wet test"
     },
     {
       "doc_id": "specs",
@@ -1818,7 +1912,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: up to 5 days on site per equipment type"
     },
     {
       "doc_id": "specs",
@@ -1836,7 +1931,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -1854,7 +1950,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-10: O&M manuals as searchable PDF"
     },
     {
       "doc_id": "specs",
@@ -1872,7 +1969,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "GEN-08 gives timing, not shop drawing contents"
     },
     {
       "doc_id": "specs",
@@ -1890,7 +1988,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1908,7 +2007,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-32: written membrane warranty"
     },
     {
       "doc_id": "specs",
@@ -1926,7 +2026,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1944,7 +2045,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1962,7 +2064,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1980,7 +2083,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -1998,7 +2102,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-37: SiC modules are stored dry without preservative"
     },
     {
       "doc_id": "specs",
@@ -2016,7 +2121,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "storage instruction for whoever stores the modules (MBR-37 range is wider)"
     },
     {
       "doc_id": "specs",
@@ -2034,7 +2140,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "handling instruction for whoever stores the modules"
     },
     {
       "doc_id": "specs",
@@ -2052,7 +2159,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-01: 12 months from startup or 18 from shipment, not 2 years"
     },
     {
       "doc_id": "specs",
@@ -2070,7 +2178,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-13: phone response within 24 hours"
     },
     {
       "doc_id": "specs",
@@ -2088,7 +2197,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "procurement statement"
     },
     {
       "doc_id": "specs",
@@ -2106,7 +2216,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-01: 0.1 micron SiC, not 0.04 micron or smaller"
     },
     {
       "doc_id": "specs",
@@ -2124,7 +2235,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 5,
-      "expected_status": "needs_engineer"
+      "expected_status": "needs_engineer",
+      "status_reason": "phosphorus has only claims (BIO-01, BIO-03, AER-01); no guarantee"
     },
     {
       "doc_id": "specs",
@@ -2142,7 +2254,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2160,7 +2273,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2178,7 +2292,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2196,7 +2311,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2214,7 +2330,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2232,7 +2349,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2250,7 +2368,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2268,7 +2387,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2286,7 +2406,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2304,7 +2425,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2322,7 +2444,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2340,7 +2463,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2358,7 +2482,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2376,7 +2501,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2394,7 +2520,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2412,7 +2539,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2430,7 +2558,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2448,7 +2577,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2466,7 +2596,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "design input"
     },
     {
       "doc_id": "specs",
@@ -2484,7 +2615,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-20: design net flux at average flow selected from 10 to 25 gfd"
     },
     {
       "doc_id": "specs",
@@ -2502,7 +2634,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-20 and MBR-21: design flux selected for the project; 18 gfd fits"
     },
     {
       "doc_id": "specs",
@@ -2520,7 +2653,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-21: up to 40 gfd at peak hour"
     },
     {
       "doc_id": "specs",
@@ -2538,7 +2672,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-22 gives up to 2,400 ft2 per cassette; the area per train is sizing"
     },
     {
       "doc_id": "specs",
@@ -2556,7 +2691,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -2574,7 +2710,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-38: cassettes fit tanks of 9 to 14 ft side water depth"
     },
     {
       "doc_id": "specs",
@@ -2592,7 +2729,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-23 is a typical design value; the total depends on sizing"
     },
     {
       "doc_id": "specs",
@@ -2610,7 +2748,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-24: maintenance clean once per week"
     },
     {
       "doc_id": "specs",
@@ -2628,7 +2767,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-26: recovery clean every 6 to 12 months"
     },
     {
       "doc_id": "specs",
@@ -2646,7 +2786,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-25: 200 to 500 mg/L"
     },
     {
       "doc_id": "specs",
@@ -2664,7 +2805,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-27: 2,000 to 5,000 mg/L"
     },
     {
       "doc_id": "specs",
@@ -2682,7 +2824,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-35: 4:1 turndown with VFDs"
     },
     {
       "doc_id": "specs",
@@ -2700,7 +2843,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -2718,7 +2862,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "process or civil design input"
     },
     {
       "doc_id": "specs",
@@ -2736,7 +2881,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "process or civil design input"
     },
     {
       "doc_id": "specs",
@@ -2754,7 +2900,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "process or civil design input"
     },
     {
       "doc_id": "specs",
@@ -2772,7 +2919,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "MBR-31: 5 mg/L only when the supplier designs the biological process"
     },
     {
       "doc_id": "specs",
@@ -2790,7 +2938,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "ammonia has only claims (BIO-04); no guarantee"
     },
     {
       "doc_id": "specs",
@@ -2808,7 +2957,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-28: TMP below 10 psi"
     },
     {
       "doc_id": "specs",
@@ -2826,7 +2976,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 3,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "nitrogen has only claims (BIO-02, BIO-03, AER-01); no guarantee"
     },
     {
       "doc_id": "specs",
@@ -2844,7 +2995,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-29: 0.2 NTU or less 95 percent of the time"
     },
     {
       "doc_id": "specs",
@@ -2862,7 +3014,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-30 guarantees 5 mg/L, not 1 mg/L"
     },
     {
       "doc_id": "specs",
@@ -2880,7 +3033,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -2898,7 +3052,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-34: Type 316L stainless steel frames"
     },
     {
       "doc_id": "specs",
@@ -2916,7 +3071,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -2934,7 +3090,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-39 gives up to 6,000 lb; a cassette under 4,000 lb is a design question"
     },
     {
       "doc_id": "specs",
@@ -2952,7 +3109,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-07: silicon carbide flat plates, not PVDF fibers"
     },
     {
       "doc_id": "specs",
@@ -2970,7 +3128,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-46 is a factory permeability test, not an integrity test"
     },
     {
       "doc_id": "specs",
@@ -2988,7 +3147,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-04: 5,000,000 ppm-hours chlorine tolerance"
     },
     {
       "doc_id": "specs",
@@ -3006,7 +3166,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3024,7 +3185,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "pump sizing; no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3042,7 +3204,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "a permission, not an obligation"
     },
     {
       "doc_id": "specs",
@@ -3060,7 +3223,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-35: permeate pumps with VFDs"
     },
     {
       "doc_id": "specs",
@@ -3078,7 +3242,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-44: the system backpulses"
     },
     {
       "doc_id": "specs",
@@ -3096,7 +3261,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3114,7 +3280,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-36 gives sound enclosures but not the blower type"
     },
     {
       "doc_id": "specs",
@@ -3132,7 +3299,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-36: 85 dBA, not 80"
     },
     {
       "doc_id": "specs",
@@ -3150,7 +3318,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-24 and MBR-26 give the cleaning chemicals, not the supplied system"
     },
     {
       "doc_id": "specs",
@@ -3168,7 +3337,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3186,7 +3356,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3204,7 +3375,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "civil work for the contractor"
     },
     {
       "doc_id": "specs",
@@ -3222,7 +3394,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3240,7 +3413,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3258,7 +3432,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-43: plus or minus 0.5 percent of reading"
     },
     {
       "doc_id": "specs",
@@ -3276,7 +3451,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-40: NEMA 4X, which exceeds NEMA 12"
     },
     {
       "doc_id": "specs",
@@ -3294,7 +3470,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3312,7 +3489,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-41: UPS for 15 minutes, not 30"
     },
     {
       "doc_id": "specs",
@@ -3330,7 +3508,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3348,7 +3527,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3366,7 +3546,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3384,7 +3565,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3402,7 +3584,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-44 gives 8 to 12 minutes, typical, and does not say it is adjustable"
     },
     {
       "doc_id": "specs",
@@ -3420,7 +3603,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3438,7 +3622,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3456,7 +3641,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3474,7 +3660,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3492,7 +3679,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3510,7 +3698,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-42: 90 days of 1-minute trends"
     },
     {
       "doc_id": "specs",
@@ -3528,7 +3717,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-40: 15 in color operator interface"
     },
     {
       "doc_id": "specs",
@@ -3546,7 +3736,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3564,7 +3755,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-17: 14 days notice, not 21"
     },
     {
       "doc_id": "specs",
@@ -3582,7 +3774,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3600,7 +3793,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3618,7 +3812,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3636,7 +3831,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3654,7 +3850,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "MBR-34 frames are stainless; SiC plates are ceramic, not plastic"
     },
     {
       "doc_id": "specs",
@@ -3672,7 +3869,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-45: 2 percent spare modules, not 5"
     },
     {
       "doc_id": "specs",
@@ -3690,7 +3888,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "GEN-18 does not list these parts"
     },
     {
       "doc_id": "specs",
@@ -3708,7 +3907,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "the installing contractor's duty"
     },
     {
       "doc_id": "specs",
@@ -3726,7 +3926,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "the installing contractor's tolerance"
     },
     {
       "doc_id": "specs",
@@ -3744,7 +3945,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "construction sequence for the contractor"
     },
     {
       "doc_id": "specs",
@@ -3762,7 +3964,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3780,7 +3983,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3798,7 +4002,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-46: the field integrity test is a pressure decay test"
     },
     {
       "doc_id": "specs",
@@ -3816,7 +4021,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3834,7 +4040,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3852,7 +4059,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3870,7 +4078,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3888,7 +4097,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3906,7 +4116,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3924,7 +4135,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "MBR-20 flux and MBR-28 TMP are within the Article 2.02 limits"
     },
     {
       "doc_id": "specs",
@@ -3942,7 +4154,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "sampling by the owner or contractor"
     },
     {
       "doc_id": "specs",
@@ -3960,7 +4173,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -3978,7 +4192,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: startup service by the manufacturer's representative"
     },
     {
       "doc_id": "specs",
@@ -3996,7 +4211,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -4014,7 +4230,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "GEN-11: 5 days included; extra days at $1,600 per day"
     },
     {
       "doc_id": "specs",
@@ -4032,7 +4249,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -4050,7 +4268,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: installation check by field service"
     },
     {
       "doc_id": "specs",
@@ -4068,7 +4287,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: installation check by field service"
     },
     {
       "doc_id": "specs",
@@ -4086,7 +4306,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: startup field service"
     },
     {
       "doc_id": "specs",
@@ -4104,7 +4325,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: startup field service"
     },
     {
       "doc_id": "specs",
@@ -4122,7 +4344,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: startup field service"
     },
     {
       "doc_id": "specs",
@@ -4140,7 +4363,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: startup field service"
     },
     {
       "doc_id": "specs",
@@ -4158,7 +4382,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": 1,
-      "expected_status": null
+      "expected_status": "comply_with_clarification",
+      "status_reason": "GEN-11: 5 days included; extra days at $1,600 per day"
     },
     {
       "doc_id": "specs",
@@ -4176,7 +4401,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "GEN-11: startup field service"
     },
     {
       "doc_id": "specs",
@@ -4194,7 +4420,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "GEN-12: one 8-hour session per equipment type, not 16 hours"
     },
     {
       "doc_id": "specs",
@@ -4212,7 +4439,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -4230,7 +4458,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "needs_engineer",
+      "status_reason": "no evidence in the knowledge base"
     },
     {
       "doc_id": "specs",
@@ -4248,7 +4477,8 @@
       "or_equal_allowed": null,
       "from_addendum": null,
       "trap": null,
-      "expected_status": null
+      "expected_status": "not_applicable",
+      "status_reason": "storage instruction for the owner"
     },
     {
       "doc_id": "addendum_1",
@@ -4266,7 +4496,8 @@
       "or_equal_allowed": null,
       "from_addendum": "Addendum 1",
       "trap": 7,
-      "expected_status": null
+      "expected_status": "deviation",
+      "status_reason": "MBR-32: full replacement for 5 years from startup, then prorated"
     },
     {
       "doc_id": "addendum_1",
@@ -4284,7 +4515,8 @@
       "or_equal_allowed": null,
       "from_addendum": "Addendum 1",
       "trap": null,
-      "expected_status": null
+      "expected_status": "comply",
+      "status_reason": "SCR-01 and SCR-02: apertures from 2 mm"
     }
   ],
   "deadlines": [
@@ -4293,14 +4525,16 @@
       "doc_id": "rfp",
       "page": 3,
       "section_number": "3",
-      "req_id": null
+      "req_id": null,
+      "superseded_by": null
     },
     {
       "text": "Proposal due date revised to December 15, 2026 at 2:00 PM",
       "doc_id": "addendum_1",
       "page": 1,
       "section_number": null,
-      "req_id": null
+      "req_id": null,
+      "superseded_by": null
     }
   ],
   "required_forms": [
@@ -4309,14 +4543,16 @@
       "doc_id": "rfp",
       "page": 5,
       "section_number": "9",
-      "req_id": null
+      "req_id": null,
+      "superseded_by": null
     },
     {
       "text": "Form B - Reference Installations",
       "doc_id": "rfp",
       "page": 6,
       "section_number": "9",
-      "req_id": null
+      "req_id": null,
+      "superseded_by": null
     }
   ],
   "red_flags": [
@@ -4326,6 +4562,7 @@
       "page": 3,
       "section_number": "4",
       "req_id": null,
+      "superseded_by": null,
       "flag_type": "experience_minimum"
     },
     {
@@ -4334,6 +4571,7 @@
       "page": 3,
       "section_number": "5",
       "req_id": null,
+      "superseded_by": null,
       "flag_type": "pilot_testing"
     },
     {
@@ -4342,6 +4580,7 @@
       "page": 3,
       "section_number": "7",
       "req_id": null,
+      "superseded_by": null,
       "flag_type": "bond"
     },
     {
@@ -4350,6 +4589,7 @@
       "page": 4,
       "section_number": "7",
       "req_id": null,
+      "superseded_by": null,
       "flag_type": "liquidated_damages"
     },
     {
@@ -4358,6 +4598,7 @@
       "page": 4,
       "section_number": "7",
       "req_id": null,
+      "superseded_by": null,
       "flag_type": "domestic_content"
     },
     {
@@ -4366,6 +4607,7 @@
       "page": 129,
       "section_number": "46 21 00",
       "req_id": null,
+      "superseded_by": null,
       "flag_type": "named_manufacturer"
     }
   ],

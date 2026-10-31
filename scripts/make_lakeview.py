@@ -27,8 +27,10 @@ from spec_review.models import BriefItem, PermitLimit, RedFlag
 
 try:
     from scripts import lakeview_source as src
+    from scripts.lakeview_status import STATUS
 except ModuleNotFoundError:  # run as `python scripts/make_lakeview.py`
     import lakeview_source as src  # type: ignore[no-redef]
+    from lakeview_status import STATUS  # type: ignore[no-redef]
 
 LETTER = pymupdf.paper_rect("letter")
 BODY = LETTER + (72, 72, -72, -72)  # 1-inch margins
@@ -372,6 +374,28 @@ def requirement(doc_id: str, section: str | None, path: str, page: int, text: st
     )
 
 
+def apply_status(reqs: list[GoldenRequirement]) -> list[GoldenRequirement]:
+    """Join STATUS onto the requirements: every requirement gets exactly one entry, and every entry is used."""
+    used: set[tuple[str, str, str]] = set()
+    out, problems = [], []
+    for r in reqs:
+        keys = [k for k in STATUS if k[0] == (r.section_number or "-") and k[1] == r.paragraph_path
+                and r.source_text.startswith(k[2])]
+        if len(keys) != 1:
+            problems.append(f"{'no status' if not keys else 'several statuses'} for {r.section_number} "
+                            f"{r.paragraph_path}: {r.source_text[:60]}")
+            continue
+        status, reason = STATUS[keys[0]]
+        if r.expected_status and r.expected_status != status:
+            problems.append(f"status {status} disagrees with the source label {r.expected_status}: {r.source_text[:60]}")
+        used.add(keys[0])
+        out.append(r.model_copy(update={"expected_status": status, "status_reason": reason}))
+    problems += [f"status entry matches no requirement: {k}" for k in STATUS if k not in used and reqs]
+    if problems:
+        raise ValueError("; ".join(problems[:10]) + (f" (+{len(problems) - 10} more)" if len(problems) > 10 else ""))
+    return out
+
+
 @dataclass
 class Labels:
     requirements: list[GoldenRequirement]
@@ -467,7 +491,7 @@ def build_golden(out_dir: Path, specs: list[src.SpecSection],
                                 page=hits[0].page))
 
     golden = GoldenPackage(
-        package_id=src.PACKAGE_ID, relevant_sections=sections, requirements=out.requirements,
+        package_id=src.PACKAGE_ID, relevant_sections=sections, requirements=apply_status(out.requirements),
         deadlines=out.deadlines, required_forms=forms, red_flags=out.red_flags, permit_limits=limits,
         addenda_changes=[GoldenAddendumChange(addendum_id=src.ADDENDUM_ID, action=a, target_section=s,  # type: ignore[arg-type]
                                               target_paragraph=par) for a, s, par in src.ADDENDUM_CHANGES],

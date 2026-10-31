@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pymupdf
+import pytest
 
 from scripts.make_lakeview import build_lakeview, dehyphenate_text, normalize_ws
 from spec_review.eval.golden import GoldenPackage
@@ -47,3 +48,29 @@ def test_golden_counts(lakeview: tuple[Path, GoldenPackage]) -> None:
     assert len(g.requirements) >= 60 and sum(not r.mandatory for r in g.requirements) >= 8
     assert {f.flag_type for f in g.red_flags} == {"named_manufacturer", "pilot_testing", "bond",
                                                   "liquidated_damages", "domestic_content", "experience_minimum"}
+
+
+def test_every_lakeview_requirement_has_a_status_and_a_reason(lakeview_golden: GoldenPackage) -> None:
+    missing = [r.source_text[:50] for r in lakeview_golden.requirements if not (r.expected_status and r.status_reason)]
+    assert missing == []
+
+
+def test_phosphorus_trap_is_labeled_needs_engineer(lakeview_golden: GoldenPackage) -> None:
+    assert [r.expected_status for r in lakeview_golden.requirements if r.trap == 5] == ["needs_engineer"]
+
+
+def test_apply_status_names_unlabeled_requirements() -> None:
+    from scripts.make_lakeview import apply_status
+    from spec_review.eval.golden import GoldenRequirement
+    stray = GoldenRequirement(doc_id="specs", section_number="99 99 99", paragraph_path="1.01.A", page=1,
+                              source_text="Not a Lakeview requirement.", category="commercial", mandatory=True)
+    with pytest.raises(ValueError, match="no status"):
+        apply_status([stray])
+
+
+def test_every_status_entry_matches_exactly_one_requirement(lakeview_golden: GoldenPackage) -> None:
+    from scripts.lakeview_status import STATUS
+    for (section, path, prefix) in STATUS:
+        hits = [r for r in lakeview_golden.requirements if (r.section_number or "-") == section
+                and r.paragraph_path == path and r.source_text.startswith(prefix)]
+        assert len(hits) == 1, (section, path, prefix)
