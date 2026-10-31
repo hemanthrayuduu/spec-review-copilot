@@ -128,6 +128,7 @@ az cognitiveservices usage list --subscription "Azure for Students" --location g
 - **Reasoning effort.** GPT-5 models bill hidden reasoning as output tokens, so the default is `minimal`. If extraction misses requirements, raising it to `low` is the first lever before writing a new prompt.
 - **`gpt-5.4-mini` is a newer option.** It is generally available until 2027-09-21 (same schedule). Its price is unconfirmed. Switching is a `.env` change: deploy it, then set `AZURE_OPENAI_CHAT_DEPLOYMENT`.
 - **Lock the model at the first real scorecard.** Dev and test scorecards must use the same deployment, prompts, and settings.
+- **The judge runs at reasoning effort `low`** (`AZURE_OPENAI_JUDGE_REASONING_EFFORT=low`), and extraction stays at `minimal`. Raising the judge from `minimal` to `low` was the biggest single gain in Phase 2 tuning, and it costs about $0.11 more per Lakeview run (about $0.32 in all, judge included). See `docs/superpowers/plans/2026-10-31-phase-2-execution-log.md`.
 
 ## What a run costs
 
