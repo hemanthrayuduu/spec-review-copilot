@@ -92,28 +92,40 @@ def _halves(g: Group) -> list[Group]:
 Settled = tuple[Group, ExtractionReply | None, str | None]  # group, reply, failure reason
 
 
+def _dangling(reply: ExtractionReply) -> list[str]:
+    """Record ids that requirement dispositions name but the reply never returns."""
+    ids = {r.local_id for r in reply.records}
+    return sorted({x for d in reply.dispositions if d.outcome == "requirement" for x in d.record_ids if x not in ids})
+
+
 def _call(groups: list[Group], client: LLMClient) -> list[list[Settled]]:
     first = client.complete_many(PROMPT_ID, [render_prompt(g) for g in groups], ExtractionReply)
     out: list[list[Settled]] = [[] for _ in groups]
-    retry: list[int] = []
+    retry: list[tuple[int, str, ExtractionReply | None]] = []  # index, what was wrong, reply to keep if the retry fails
     split: list[int] = []
     for i, (g, r) in enumerate(zip(groups, first)):
         if isinstance(r, LLMTruncatedError):
             split.append(i)
         elif isinstance(r, LLMResponseError):
-            retry.append(i)
+            retry.append((i, str(r.detail), None))
         elif isinstance(r, LLMProviderError):
             out[i] = [(g, None, f"LLM call failed: {r.detail}")]
         elif isinstance(r, LLMError):
             out[i] = [(g, None, f"LLM call failed: {r}")]
+        elif dangling := _dangling(r):
+            retry.append((i, f"dispositions name records {', '.join(dangling)} that are not in records. "
+                             "Every record id in a disposition must be a record you return.", r))
         else:
             out[i] = [(g, r, None)]
     if retry:
-        prompts = [render_prompt(groups[i]) + RETRY_NOTE.format(detail=str(first[i].detail)[:2000])  # type: ignore[union-attr]
-                   for i in retry]
-        for i, r in zip(retry, client.complete_many(PROMPT_ID, prompts, ExtractionReply)):
-            out[i] = [(groups[i], r, None) if not isinstance(r, LLMError)
-                      else (groups[i], None, f"invalid reply after one retry: {r}")]
+        prompts = [render_prompt(groups[i]) + RETRY_NOTE.format(detail=detail[:2000]) for i, detail, _ in retry]
+        for (i, _, kept), r in zip(retry, client.complete_many(PROMPT_ID, prompts, ExtractionReply)):
+            if not isinstance(r, LLMError):
+                out[i] = [(groups[i], r, None)]
+            elif kept is not None:
+                out[i] = [(groups[i], kept, None)]  # the first reply parsed; its dangling ids settle as needs_engineer
+            else:
+                out[i] = [(groups[i], None, f"invalid reply after one retry: {r}")]
     if split:
         halves = [(i, h) for i in split for h in _halves(groups[i])]
         replies = client.complete_many(PROMPT_ID, [render_prompt(h) for _, h in halves], ExtractionReply)
@@ -154,6 +166,11 @@ def _unique_local_ids(reply: ExtractionReply) -> ExtractionReply:
     return reply.model_copy(update={"records": records})
 
 
+def _present(text: str | None) -> str | None:
+    """The model writes "" for an empty field as often as null; both mean missing."""
+    return text if text is not None and text.strip() else None
+
+
 def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: ExtractStats) -> list[CandidateDisposition]:
     reply = _unique_local_ids(reply)
     known = {c.candidate_id: c for c in g.candidates}
@@ -184,12 +201,16 @@ def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: Ext
         i, j = loc
         b = g.blocks[i]
         req_id = f"{g.group_id}:{rec.local_id}"
+        value, unit, parameter = (_present(x) for x in (rec.value, rec.unit, rec.parameter))
+        if rec.operator is not None and value is None:
+            logger.info("group %s: record %s has operator %r but no value; operator dropped", g.group_id,
+                        rec.local_id, rec.operator)
         try:
             req = Requirement(
                 req_id=req_id, doc_id=b.doc_id, section_number=g.section.number, section_title=g.section.title,
                 paragraph_path=b.paragraph_path or "", page=b.page, bbox=b.bbox, source_text=quote,
-                category=rec.category, parameter=rec.parameter, operator=rec.operator, value=rec.value,
-                unit=rec.unit, mandatory=rec.mandatory, named_manufacturer=rec.named_manufacturer,
+                category=rec.category, parameter=parameter, operator=rec.operator if value is not None else None,
+                value=value, unit=unit, mandatory=rec.mandatory, named_manufacturer=rec.named_manufacturer,
                 or_equal_allowed=rec.or_equal_allowed, linked_sections=rec.linked_sections,
                 from_addendum=b.from_addendum, confidence=min(max(rec.confidence, 0.0), 1.0),
                 candidate_ids=[c for c in rec.candidate_ids if c in known])

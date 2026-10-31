@@ -231,3 +231,46 @@ def test_extract_v2_is_active_and_states_the_field_rules() -> None:
     assert "value is one number or one range" in p and "unit is the word or symbol written right after" in p
     assert "should" in p and "mandatory false" in p
     assert "[p135] 2.03.B B. Modules shall be removable." in p and "specs#8:c2: Modules shall be removable." in p
+
+
+def test_operator_without_value_keeps_the_record() -> None:  # Lakeview round 1: 2 good records lost
+    res, _ = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(ScriptedProvider([reply(
+        [rec("r1", "Membranes shall be PVDF.", ["specs#8:c1"], operator=">=", value=None)],
+        [disp("specs#8:c1", "requirement", ["r1"]), disp("specs#8:c2", "not_requirement", reason="x")])])))
+    (r,) = res.requirements
+    assert (r.operator, r.value) == (None, None) and not res.rejected
+
+
+def test_empty_strings_become_missing_fields() -> None:
+    res, _ = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(ScriptedProvider([reply(
+        [rec("r1", "Membranes shall be PVDF.", ["specs#8:c1"], value="", unit="", parameter="")],
+        [disp("specs#8:c1", "requirement", ["r1"]), disp("specs#8:c2", "not_requirement", reason="x")])])))
+    (r,) = res.requirements
+    assert (r.value, r.unit, r.parameter) == (None, None, None)
+
+
+DANGLING = reply([], [disp("specs#8:c1", "requirement", ["r1"]), disp("specs#8:c2", "not_requirement", reason="x")])
+
+
+def test_dispositions_naming_missing_records_trigger_one_retry() -> None:  # Lakeview round 1: 33 such candidates
+    p = ScriptedProvider([DANGLING, reply([rec("r1", "Membranes shall be PVDF.", ["specs#8:c1"])],
+                                          [disp("specs#8:c1", "requirement", ["r1"]),
+                                           disp("specs#8:c2", "not_requirement", reason="x")])])
+    res, stats = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(p))
+    assert p.calls == 2 and "not in records" in p.prompts[1] and stats.groups_failed == 0
+    assert outcomes(res)["specs#8:c1"] == ("requirement", None)
+
+
+def test_still_dangling_after_retry_goes_to_needs_engineer() -> None:
+    p = ScriptedProvider([DANGLING, DANGLING])
+    res, stats = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(p))
+    assert p.calls == 2 and stats.groups_failed == 0
+    assert outcomes(res)["specs#8:c1"] == ("needs_engineer", "model marked requirement but returned no record")
+    assert outcomes(res)["specs#8:c2"] == ("not_requirement", "x")
+
+
+def test_failed_consistency_retry_keeps_the_first_reply() -> None:
+    p = ScriptedProvider([DANGLING, "not json"])
+    res, stats = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(p))
+    assert p.calls == 2 and stats.groups_failed == 0 and not res.rejected
+    assert outcomes(res)["specs#8:c2"] == ("not_requirement", "x")
