@@ -1,5 +1,6 @@
 """The specreview command line."""
 
+from collections import Counter
 from enum import Enum
 from pathlib import Path
 
@@ -10,6 +11,13 @@ from spec_review.eval.golden import load_golden
 from spec_review.eval.metrics import pages_kept_ratio
 from spec_review.eval.scorecard import build_scorecard
 from spec_review.ingest.azure_docintel import DocIntelClient, DocIntelError, docintel_from_settings
+from spec_review.knowledge.capabilities import (
+    KnowledgeError,
+    guard_problems,
+    load_capabilities,
+    load_past_exceptions,
+    quote_problems,
+)
 from spec_review.llm.check import check_chat, check_docintel
 from spec_review.llm.client import LLMConfigError, LLMError, get_client
 from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package
@@ -19,6 +27,9 @@ app = typer.Typer(
     no_args_is_help=True,
     help="Spec Review Copilot: read bid packages and draft compliance outputs for engineer review.",
 )
+
+knowledge_app = typer.Typer(no_args_is_help=True, help="Check and build the knowledge base (data/knowledge).")
+app.add_typer(knowledge_app, name="knowledge")
 
 DEV_PACKAGE = Path("data/raw/dev/lakeview")
 DEV_GOLDEN = Path("data/golden/dev/lakeview.json")
@@ -151,3 +162,26 @@ def azure_check() -> None:
             typer.echo(check_docintel(di))
         except (DocIntelError, OSError) as e:
             _fail(f"docintel failed: {e}")
+
+
+@knowledge_app.command("check")
+def knowledge_check() -> None:
+    """Validate capabilities.csv and past_exceptions.csv, and find every quote on its cited page."""
+    settings = get_settings()
+    try:
+        caps = load_capabilities(settings.knowledge_dir / "capabilities.csv")
+        exceptions = load_past_exceptions(settings.knowledge_dir / "past_exceptions.csv")
+    except (KnowledgeError, OSError) as e:
+        _fail(str(e))
+    problems = guard_problems(caps)
+    quotes, unchecked = quote_problems(caps, settings.raw_dir)
+    by = Counter(f"{c.origin} {c.basis}" for c in caps)
+    typer.echo(f"Capabilities: {len(caps)} ({', '.join(f'{k} {v}' for k, v in sorted(by.items()))})")
+    typer.echo(f"Past exceptions: {len(exceptions)}")
+    for line in unchecked:
+        typer.echo(f"unchecked  {line}")
+    for line in problems + quotes:
+        typer.echo(f"problem    {line}")
+    if problems or quotes:
+        _fail(f"knowledge check found {len(problems) + len(quotes)} problems")
+    typer.echo(f"Knowledge check passed ({len(unchecked)} rows unchecked: source not downloaded).")

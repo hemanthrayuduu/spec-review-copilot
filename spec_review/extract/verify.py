@@ -41,6 +41,11 @@ def _score(quote: str, text: str) -> float:
     return fuzz.partial_ratio(quote, text) if len(text) >= len(quote) else fuzz.ratio(quote, text)
 
 
+def quote_found(quote: str, text: str) -> bool:
+    """The quote check on its own: quote matches somewhere in text (spec 8.8)."""
+    return _score(_key(quote), _key(text)) >= QUOTE_MIN
+
+
 def locate(quote: str, blocks: Sequence[Block], *, prefer: Collection[int] = ()) -> tuple[int, int] | None:
     """The block (i, i), or adjacent pair (i, i+1), holding the quote. Among equal matches, prefer wins, then order."""
     q = _key(quote)

@@ -9,15 +9,16 @@ Usage: uv run python scripts/download_sources.py [--role dev] [--force]
 
 from collections import Counter
 from collections.abc import Callable
+from html.parser import HTMLParser
 from pathlib import Path
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
 import httpx
 import typer
-import yaml
-from pydantic import BaseModel, ConfigDict, HttpUrl
+from pydantic import BaseModel
 
-Role = Literal["dev", "test", "stretch", "context", "knowledge", "reference"]
+# Source and its loader live in the package now; they stay importable from here.
+from spec_review.sources import DuplicateSourceError, Role, Source, load_sources  # noqa: F401
 
 USER_AGENT = "spec-review-copilot/0.1 (public-data research prototype)"
 PDF_MAGIC = b"%PDF-"
@@ -25,47 +26,11 @@ PDF_EOF = b"%%EOF"
 PDF_WINDOW = 1024  # PDF readers accept the header in the first KB and %%EOF in the last KB
 
 
-class Source(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    id: str
-    role: Role
-    kind: Literal["file", "landing_page"]
-    url: HttpUrl
-    notes: str | None = None
-
-
-class DuplicateSourceError(ValueError):
-    pass
-
-
 class DownloadResult(BaseModel):
     source_id: str
     outcome: Literal["downloaded", "skipped", "landing_page", "failed"]
     path: Path | None = None
     detail: str = ""
-
-
-class _UniqueKeyLoader(yaml.SafeLoader):
-    """SafeLoader that refuses duplicate keys; plain PyYAML silently keeps the last one."""
-
-
-def _construct_unique_mapping(loader: _UniqueKeyLoader, node: yaml.MappingNode, deep: bool = False) -> dict[Any, Any]:
-    seen = set()
-    for key_node, _ in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in seen:
-            raise DuplicateSourceError(f"duplicate key in sources file: {key!r}")
-        seen.add(key)
-    return loader.construct_mapping(node, deep=deep)
-
-
-_UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _construct_unique_mapping)
-
-
-def load_sources(path: Path) -> list[Source]:
-    data = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)
-    return [Source(id=source_id, **entry) for source_id, entry in data["sources"].items()]
 
 
 def target_dir(raw_root: Path, source: Source) -> Path:
@@ -112,6 +77,52 @@ def download_file(client: httpx.Client, source: Source, raw_root: Path, *, force
     return DownloadResult(source_id=source.id, outcome="downloaded", path=final, detail=f"{size_mb:.1f} MB")
 
 
+class _TextOnly(HTMLParser):
+    SKIP = {"script", "style", "noscript", "template"}
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.parts: list[str] = []
+        self._skipping = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._skipping += tag in self.SKIP
+
+    def handle_endtag(self, tag: str) -> None:
+        self._skipping -= tag in self.SKIP and self._skipping > 0
+
+    def handle_data(self, data: str) -> None:
+        if not self._skipping:
+            self.parts.append(data)
+
+
+def html_to_text(html: str) -> str:
+    """The visible text of a page, whitespace collapsed; scripts and styles dropped."""
+    parser = _TextOnly()
+    parser.feed(html)
+    parser.close()
+    return " ".join(" ".join(parser.parts).split())
+
+
+def download_web_page(client: httpx.Client, source: Source, raw_root: Path, *, force: bool = False) -> DownloadResult:
+    """Save a product page's visible text as <id>.txt; capabilities cite it as page 1."""
+    final = target_dir(raw_root, source) / f"{source.id}.txt"
+    if final.exists() and not force:
+        return DownloadResult(source_id=source.id, outcome="skipped", path=final, detail="already downloaded")
+    try:
+        response = client.get(str(source.url))
+    except httpx.HTTPError as exc:
+        return DownloadResult(source_id=source.id, outcome="failed", detail=f"{type(exc).__name__}: {exc}")
+    if not response.is_success:
+        return DownloadResult(source_id=source.id, outcome="failed", detail=f"HTTP {response.status_code}")
+    text = html_to_text(response.text)
+    if not text:
+        return DownloadResult(source_id=source.id, outcome="failed", detail="page has no visible text")
+    final.parent.mkdir(parents=True, exist_ok=True)
+    final.write_text(text + "\n", encoding="utf-8")
+    return DownloadResult(source_id=source.id, outcome="downloaded", path=final, detail=f"{len(text)} characters")
+
+
 def landing_page_instructions(source: Source, raw_root: Path) -> DownloadResult:
     folder = target_dir(raw_root, source)
     folder.mkdir(parents=True, exist_ok=True)
@@ -129,6 +140,8 @@ def download_all(sources: list[Source], raw_root: Path, client: httpx.Client, *,
             continue
         if source.kind == "landing_page":
             result = landing_page_instructions(source, raw_root)
+        elif source.kind == "web_page":
+            result = download_web_page(client, source, raw_root, force=force)
         else:
             result = download_file(client, source, raw_root, force=force)
         if on_result is not None:

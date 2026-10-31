@@ -150,3 +150,29 @@ def test_main_exits_nonzero_when_any_source_fails(tmp_path: Path, monkeypatch: p
     result = CliRunner().invoke(app, ["--sources", str(sources), "--raw-root", str(tmp_path / "raw")])
     assert result.exit_code == 1
     assert "HTTP 500" in result.output and "failed 1" in result.output
+
+
+def test_html_to_text_drops_script_and_style() -> None:
+    from scripts.download_sources import html_to_text
+    assert html_to_text("<p>Frame: <b>304L</b></p><script>x=1</script><style>p{}</style>") == "Frame: 304L"
+
+
+def test_web_page_is_saved_as_text(tmp_path: Path) -> None:
+    from scripts.download_sources import download_web_page
+    from spec_review.sources import Source
+    page = "<html><body><h1>CF100</h1><p>Stainless Steel 304L</p><script>t()</script></body></html>"
+    client = make_client(httpx.MockTransport(lambda r: httpx.Response(200, text=page,
+                                                                       headers={"content-type": "text/html"})))
+    src = Source(id="pg", role="knowledge", kind="web_page", url="https://example.org/cf100/", evidence=True)
+    result = download_web_page(client, src, tmp_path)
+    assert result.outcome == "downloaded"
+    assert (tmp_path / "knowledge/pg/pg.txt").read_text() == "CF100 Stainless Steel 304L\n"
+
+
+def test_web_page_kind_and_evidence_flag_parse(tmp_path: Path) -> None:
+    from spec_review.sources import load_sources
+    path = tmp_path / "s.yaml"
+    path.write_text("sources:\n  pg:\n    role: knowledge\n    kind: web_page\n    url: https://example.org/x/\n"
+                    "    evidence: true\n")
+    [s] = load_sources(path)
+    assert (s.kind, s.evidence) == ("web_page", True)
