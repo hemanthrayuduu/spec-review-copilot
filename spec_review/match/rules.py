@@ -34,10 +34,11 @@ def term_hit(term: str, text: str) -> bool:
 
 
 def rule_candidates(req: Requirement, lines: list[str], caps: list[Capability]) -> list[Capability]:
+    """Terms are matched against the extracted parameter only: a whole sentence holds too many other words."""
     unit = parse_unit(req.unit)
-    if unit is None:
+    if unit is None or not req.parameter:
         return []
-    text = f"{req.parameter or ''} {req.source_text}"
+    text = req.parameter
     out = []
     for c in caps:
         if c.basis != "guaranteed" or not c.match_terms or c.product_line not in (*lines, "general"):
@@ -51,7 +52,9 @@ def rule_candidates(req: Requirement, lines: list[str], caps: list[Capability]) 
 
 
 def rule_check(req: Requirement, lines: list[str], caps: list[Capability]) -> MatchResult | None:
-    if req.operator is None or (value := parse_value(req.value)) is None:
+    # A range requirement is usually an operating or storage range the product must cover, the opposite reading of a
+    # selectable range, and a row doesn't say which it is: the judge decides those (final review, 2026-10-31).
+    if req.operator in (None, "range") or (value := parse_value(req.value)) is None:
         return None
     found = rule_candidates(req, lines, caps)
     if len(found) != 1:

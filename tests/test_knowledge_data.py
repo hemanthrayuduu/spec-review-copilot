@@ -61,3 +61,26 @@ def test_rule_decisions_on_the_lakeview_text_agree_with_the_labels() -> None:
         if m is not None and m.status != r["expected_status"]:
             wrong.append((r["source_text"][:60], m.status, r["expected_status"]))
     assert wrong == []
+
+
+def test_rules_abstain_on_the_review_near_misses() -> None:
+    """Final review: plausible spec sentences that the old, loose match terms decided wrongly at confidence 1.0."""
+    from spec_review.match.rules import rule_check
+    from spec_review.models import Requirement
+    caps = load_capabilities(KNOW / "capabilities.csv")
+
+    def req(parameter: str, op: str, value: str, unit: str, text: str) -> Requirement:
+        return Requirement(req_id="s#1:g1:r1", doc_id="specs", section_number="46 00 00", section_title="-",
+                           paragraph_path="2.01.A", page=1, source_text=text, category="performance",
+                           parameter=parameter, operator=op, value=value, unit=unit, mandatory=True,  # type: ignore[arg-type]
+                           confidence=0.9)
+    near_misses = [
+        (["screens"], req("control voltage", "=", "120", "V", "Control voltage shall be 120 V.")),
+        (["clarifiers"], req("bearing L-10 service life", ">=", "100,000", "hours",
+                             "Bearings shall have an L-10 service life of not less than 100,000 hours.")),
+        (["membranes"], req("recovery clean duration", "<=", "8", "hours",
+                            "The membrane recovery clean shall take no more than 8 hours.")),
+        (["membranes"], req("module storage temperature", "range", "-30 to 60", "°C",
+                            "Modules shall be storable from -30 to 60 °C.")),
+    ]
+    assert [rule_check(r, lines, caps) for lines, r in near_misses] == [None, None, None, None]

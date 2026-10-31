@@ -74,13 +74,22 @@ def test_flux_converts_lmh_to_gfd() -> None:
     assert r is not None and r.status == "comply"  # 25 LMH is about 14.7 gfd
 
 
-def test_temperature_range_with_offset_units() -> None:
-    r = rule_check(req("range", "10 to 28", "°C", "mixed liquor temperature"), ["membranes"],
-                   [cap("membranes", "operating temperature", 12, 26, "°C", terms=["temperature"])])
-    assert r is not None and r.status == "comply"
-    r = rule_check(req("range", "50 to 82", "degrees F", "mixed liquor temperature"), ["membranes"],
-                   [cap("membranes", "operating temperature", 12, 26, "°C", terms=["temperature"])])
-    assert r is not None and r.status == "comply"  # 10 to 27.8 °C
+def test_range_requirements_go_to_the_judge() -> None:
+    # Final review: an operating or storage range must cover the plant's range, the opposite of a selectable range,
+    # and a row doesn't say which kind it is. So no rule decides a range requirement.
+    assert rule_check(req("range", "10 to 28", "°C", "mixed liquor temperature"), ["membranes"],
+                      [cap("membranes", "operating temperature", 12, 26, "°C", terms=["temperature"])]) is None
+
+
+def test_offset_units_convert() -> None:
+    r = rule_check(req("<=", "86", "degrees F", "maximum temperature"), ["membranes"],
+                   [cap("membranes", "maximum temperature", 25, 25, "°C", terms=["temperature"])])
+    assert r is not None and r.status == "comply"  # 25 °C is 77 °F
+
+
+def test_terms_match_the_parameter_not_the_sentence() -> None:
+    r = req(">=", "50,000", "ft-lb", "drive rating", text="The drive continuous torque shall be 50,000 ft-lb.")
+    assert rule_check(r, ["clarifiers"], [cap("clarifiers", "torque", 51200, 51200, "ft-lb", terms=["torque"])]) is None
 
 
 def test_unparseable_unit_abstains_without_raising() -> None:  # Review Focus 1
