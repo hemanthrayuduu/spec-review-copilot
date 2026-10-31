@@ -38,8 +38,8 @@ Every resource follows Microsoft's [Cloud Adoption Framework naming convention](
 | Embedding deployment | `text-embedding-3-small` | 2 |
 | Document Intelligence resource | `di-specreview-demo-gwc` | 1b |
 | Budget | `budget-specreview-demo` | 1b |
-| AI Search service | `srch-specreview-demo-gwc` | 2 |
-| Search index | `idx-capabilities` | 2 |
+| AI Search service, Free tier, in **Canada Central** | `srch-specreview-demo-cac` | 2 |
+| Search index (capabilities, product documents, past exceptions) | `idx-knowledge` | 2 |
 | Storage account | `stspecreviewdemo` (lowercase, no hyphens, 3–24 characters) | 4 |
 | Blob containers | `packages`, `runs`, `reviews` | 4 |
 | Log Analytics workspace | `log-specreview-demo-gwc` | 4 |
@@ -47,6 +47,7 @@ Every resource follows Microsoft's [Cloud Adoption Framework naming convention](
 | Container apps | `ca-specreview-api`, `ca-specreview-app` | 4 |
 | Container images (GitHub Container Registry) | `ghcr.io/hemanthrayuduu/spec-review-copilot-api`, `…-app` | 4 |
 
+- **Search lives in Canada Central.** On 2026-10-31 Germany West Central had no Free-tier Search capacity (`InsufficientResourcesAvailable`), so the service went to Canada Central, which the student policy also allows. It sits in the same resource group, and its name carries `cac`. Only small search requests cross the region; Search stores no customer documents beyond the public and fictional knowledge base.
 - **Global uniqueness:** the Foundry resource, Document Intelligence, AI Search, and storage names become public hostnames, so they must be unique across Azure. If one is taken, add a short suffix, for example `aif-specreview-demo-gwc-01` or `stspecreviewdemo01`.
 - **Deployment names match the model name,** so `.env` reads plainly.
 - **Tags:** put these on the resource group, so every resource inherits them and the cost view groups cleanly:
@@ -104,11 +105,22 @@ az cognitiveservices usage list --subscription "Azure for Students" --location g
    AZURE_DOCINTEL_KEY=<key>
    LLM_PRICE_INPUT_PER_MTOK=0.25
    LLM_PRICE_OUTPUT_PER_MTOK=2.00
+   AZURE_OPENAI_EMBED_DEPLOYMENT=text-embedding-3-small
+   EMBED_PRICE_PER_MTOK=0.02
+   PROVIDER_SEARCH=azure
+   AZURE_SEARCH_ENDPOINT=https://<your-search-service>.search.windows.net
+   AZURE_SEARCH_KEY=<admin key>
    ```
 
    - **Endpoint:** use the resource's Azure OpenAI endpoint, `https://<your-openai-resource>.openai.azure.com`, from the resource's Keys and Endpoint page. Don't use the project endpoint (`…services.ai.azure.com/api/projects/proj-specreview-demo`). The code adds `/openai/v1/` itself.
    - **Prices:** leaving them blank makes every run report a cost of $0.
-6. **Check it:** `uv run specreview azure-check`. It makes one tiny call to each configured service. For chat it prints the model, tokens, and cost, plus the deployment's tokens-per-minute limit when Azure sends it. For Document Intelligence it prints how many lines it read.
+6. **Phase 2: embeddings and Search.**
+   - Deploy `text-embedding-3-small`, version 1, on the Foundry resource as **Global Standard** (capacity 120, so 120K tokens per minute).
+   - Create the Search service on the **Free** tier: `az search service create -g rg-specreview-demo-gwc -n srch-specreview-demo-cac --sku free -l canadacentral --subscription <id>`.
+   - Copy its admin key into `.env` (`az search admin-key show ... --query primaryKey -o tsv`), never onto the screen.
+   - Run `PROVIDER_LLM=azure uv run specreview knowledge build`. It embeds the knowledge base (272 items, about 34K tokens, under $0.001) and fills `idx-knowledge`.
+   - `knowledge build` refuses to fill Azure Search with mock embeddings. A mock run with `PROVIDER_SEARCH=azure` searches in memory instead and says so in `match.json`.
+7. **Check it:** `uv run specreview azure-check`. It makes one tiny call to each configured service. For chat it prints the model, tokens, and cost, plus the deployment's tokens-per-minute limit when Azure sends it. For embeddings it prints the vector size (1536), and for Search how many items the index holds. For Document Intelligence it prints how many lines it read.
 
 ## Choosing the model
 
@@ -130,7 +142,7 @@ Measured on 2026-10-31 with gpt-5-mini (minimal reasoning) and the `extract_v2` 
 - **Document Intelligence:** Lakeview has one scanned page and Mountain Regional none, so both are inside the free 500 pages a month ([pricing](https://azure.microsoft.com/en-gb/pricing/details/ai-document-intelligence/)).
 - **Phase 1b actual spend:** about $3, covering smoke calls, two Lakeview tuning rounds, and one Mountain Regional run.
 - **Re-runs of unchanged input are free.** Replies are cached in `.cache/llm/`, and Document Intelligence results in `.cache/docintel/`.
-- **Later phases:** embeddings come to under $1, and AI Search Free costs $0. The Container Apps free grant covers about 100 hours a month of a small container ([billing](https://learn.microsoft.com/en-us/azure/container-apps/billing)). Blob storage costs cents.
+- **Phase 2 setup, measured:** embedding the knowledge base cost $0.0007, and AI Search Free costs $0. Later phases: The Container Apps free grant covers about 100 hours a month of a small container ([billing](https://learn.microsoft.com/en-us/azure/container-apps/billing)). Blob storage costs cents.
 
 ## Quota
 
@@ -139,10 +151,10 @@ Checked on 2026-10-31 in Germany West Central:
 | Quota | Used / limit | Note |
 |---|---|---|
 | `gpt-5-mini` Global Standard | 500 / 500 | All of it is assigned to the `gpt-5-mini` deployment |
-| `text-embedding-3-small` Global Standard | 0 / 1000 | Phase 2 embeddings |
+| `text-embedding-3-small` Global Standard | 120 / 1000 | Assigned to the `text-embedding-3-small` deployment (2026-10-31) |
 | `gpt-5.4-mini` Global Standard | 0 / 0 | Needs a quota request before it can be deployed |
 | AI Services accounts | 1 / 100 | |
-| AI Search Free | 0 / 1 per subscription | Phase 2 |
+| AI Search Free | 1 / 1 per subscription | `srch-specreview-demo-cac`. Free tier: 50 MB, 3 indexes, no SLA ([tiers](https://learn.microsoft.com/azure/search/search-sku-tier)) |
 
 **Resource providers not yet registered:** `Microsoft.App` (Container Apps) and `Microsoft.OperationalInsights` (Log Analytics) are both needed in Phase 4, and `Microsoft.Quota` is needed for `az quota`. Registering is free: `az provider register -n <provider> --subscription <Azure for Students id>`.
 
