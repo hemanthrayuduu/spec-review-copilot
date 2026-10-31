@@ -6,7 +6,9 @@ from typing import Literal
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-DEFAULT_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"  # the repo's .env, whatever the working directory
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_ENV_FILE = REPO_ROOT / ".env"  # the repo's .env, whatever the working directory
+SOURCES_FILE = REPO_ROOT / "data" / "sources.yaml"
 ENV_FILE: Path | None = DEFAULT_ENV_FILE
 
 
@@ -29,8 +31,8 @@ class Settings(BaseSettings):
     azure_search_index: str = "idx-knowledge"
     provider_search: Literal["memory", "azure"] = "memory"
     embed_price_per_mtok: float = Field(default=0.0, ge=0.0)
-    knowledge_dir: Path = Path("data/knowledge")
-    raw_dir: Path = Path("data/raw")
+    knowledge_dir: Path = REPO_ROOT / "data" / "knowledge"  # anchored like .env, so any working directory works
+    raw_dir: Path = REPO_ROOT / "data" / "raw"
     match_max_requirements: int = Field(default=1000, ge=0)  # bigger packages skip matching unless this is raised
     confidence_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
     llm_price_input_per_mtok: float = Field(default=0.0, ge=0.0)

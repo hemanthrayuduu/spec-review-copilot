@@ -8,7 +8,7 @@ from typing import Protocol
 import numpy as np
 from rank_bm25 import BM25Plus
 
-from spec_review.config import Settings
+from spec_review.config import SOURCES_FILE, Settings
 from spec_review.knowledge.capabilities import KnowledgeError, load_capabilities, load_past_exceptions
 from spec_review.knowledge.corpus import build_corpus, load_doc_pages
 from spec_review.llm.client import LLMClient
@@ -69,7 +69,7 @@ class KnowledgeBase:
 
 
 def load_knowledge(settings: Settings, client: LLMClient, *,
-                   sources_path: Path = Path("data/sources.yaml")) -> KnowledgeBase:
+                   sources_path: Path = SOURCES_FILE) -> KnowledgeBase:
     """Load the CSVs and documents, embed every item (cached), and build both indexes."""
     caps = load_capabilities(settings.knowledge_dir / "capabilities.csv")
     exceptions = load_past_exceptions(settings.knowledge_dir / "past_exceptions.csv")

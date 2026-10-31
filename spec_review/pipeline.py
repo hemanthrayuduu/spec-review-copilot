@@ -16,8 +16,11 @@ from spec_review.filter.relevance import decide, load_product_map
 from spec_review.ingest import ingest_package
 from spec_review.ingest.azure_docintel import docintel_from_settings
 from spec_review.ingest.pdf_local import find_tessdata
+from spec_review.knowledge.index import KnowledgeBase
 from spec_review.llm.client import LLMCall, LLMClient, get_client
+from spec_review.match.stage import judge_client_for, match_package
 from spec_review.models import (
+    MatchReport,
     Brief,
     CandidateResult,
     CoverageReport,
@@ -124,12 +127,21 @@ class PackageOutputs:
     llm_calls: list[LLMCall]
     permit_only: list[str]  # "number title" of permit sections that skip requirement extraction
     provider: str  # client.provider.name: "mock", "azure", or a test fake's name
+    match: MatchReport
 
 
 def run_package(package_dir: Path, writer: RunWriter, settings: Settings, *, client: LLMClient | None = None,
-                cache_dir: Path | None = Path(".cache/ingest")) -> PackageOutputs:
-    """Every stage, then brief.md and requirements.xlsx. The client is built first, so bad settings fail fast."""
-    client = client or get_client(settings, log_path=writer.run_dir / "llm_calls.jsonl")
+                cache_dir: Path | None = Path(".cache/ingest"), judge_client: LLMClient | None = None,
+                knowledge: KnowledgeBase | None = None) -> PackageOutputs:
+    """Every stage, then brief.md and requirements.xlsx. The clients are built first, so bad settings fail fast.
+
+    A caller that passes its own client gets it for the judge too, unless it passes judge_client.
+    """
+    log_path = writer.run_dir / "llm_calls.jsonl"
+    if client is None:
+        client = get_client(settings, log_path=log_path)
+        judge_client = judge_client or judge_client_for(settings, log_path)
+    judge_client = judge_client or client
     read = run_read(package_dir, writer, settings, cache_dir=cache_dir)
     pid, seg, filt = read.ingest.package_id, read.segment, read.filter
 
@@ -148,6 +160,8 @@ def run_package(package_dir: Path, writer: RunWriter, settings: Settings, *, cli
     writer.write("permits", permits)
     brief = build_brief(pid, seg, filt, candidates, extract, permits)
     writer.write("brief", brief)
+    match = match_package(pid, extract, filt.decisions, settings, client, judge_client, knowledge)
+    writer.write("match", match)
 
     settled = {d.candidate_id for d in extract.dispositions}
     by_outcome = verify.dispositions
@@ -163,10 +177,11 @@ def run_package(package_dir: Path, writer: RunWriter, settings: Settings, *, cli
     (writer.run_dir / "brief.md").write_text(render_brief_md(brief, [MOCK_NOTE] if provider == "mock" else []),
                                              encoding="utf-8")
     write_requirements_xlsx(writer.run_dir / "requirements.xlsx", extract=extract, candidates=candidates, brief=brief,
-                            verify=verify, coverage=coverage, threshold=settings.confidence_threshold)
+                            verify=verify, coverage=coverage, threshold=settings.confidence_threshold, match=match)
     writer.mark_latest()
     extracted = {s.section_id for s in sections}
     permit_only = [f"{s.number} {s.title}" if s.number else s.title
                    for s in permit_secs if s.section_id not in extracted]
+    calls = list(client.calls) + (list(judge_client.calls) if judge_client is not client else [])
     return PackageOutputs(replace(read, coverage=coverage), candidates, extract, verify, permits, brief,
-                          list(client.calls), permit_only, provider)
+                          calls, permit_only, provider, match)

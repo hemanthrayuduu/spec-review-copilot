@@ -21,6 +21,7 @@ from spec_review.knowledge.capabilities import (
 from spec_review.knowledge.index import load_knowledge
 from spec_review.llm.check import check_chat, check_docintel
 from spec_review.llm.client import LLMConfigError, LLMError, get_client
+from spec_review.outputs.matrix_xlsx import STATUSES
 from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package
 from spec_review.runs import RunWriter, new_run_id
 
@@ -50,6 +51,16 @@ def _pct(rate: float | None) -> str:
     return "n/a" if rate is None else f"{rate:.0%}"
 
 
+def _status_line(out: PackageOutputs) -> str:
+    m = out.match
+    if m.skipped:
+        return f"status: matching skipped. {m.notes[0]}"
+    counts = ", ".join(f"{s} {m.counts.get(s, 0)}" for s in STATUSES)
+    synthetic = sum(r.uses_synthetic for r in m.results)
+    return (f"status: {counts} (rule {m.methods.get('rule', 0)}, judge {m.methods.get('llm', 0)}, gated {m.gated}, "
+            f"synthetic evidence {synthetic})")
+
+
 def _package_lines(out: PackageOutputs) -> list[str]:
     v, d, calls = out.verify, out.verify.dispositions, out.llm_calls
     lines = [
@@ -63,7 +74,8 @@ def _package_lines(out: PackageOutputs) -> list[str]:
         f"tokens {sum(c.input_tokens for c in calls)}/{sum(c.output_tokens for c in calls)}, "
         f"cost ${sum(c.cost_usd for c in calls):.4f}",
         f"permit-only sections: {', '.join(out.permit_only) or 'none'}",
-        "outputs: brief.md, requirements.xlsx",
+        _status_line(out),
+        "outputs: brief.md, requirements.xlsx, match.json",
     ]
     return lines + (["provider: mock (counts are not accuracy)"] if out.provider == "mock" else [])
 

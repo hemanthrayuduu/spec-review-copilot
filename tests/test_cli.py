@@ -73,6 +73,7 @@ def test_run_writes_outputs_in_mock_mode(tmp_path: Path, lakeview_pdfs: Path, mo
     assert result.exit_code == 0, result.output
     assert "provider: mock" in result.output and "needs engineer" in result.output
     assert "permit-only sections: NPDES DISCHARGE PERMIT EXCERPT" in result.output
+    assert "status: comply 0, comply_with_clarification 0, deviation" in result.output and "judge" in result.output
     assert (tmp_path / "runs/cli2/brief.md").exists() and (tmp_path / "runs/cli2/requirements.xlsx").exists()
     assert "Mock provider" in (tmp_path / "runs/cli2/brief.md").read_text()
 

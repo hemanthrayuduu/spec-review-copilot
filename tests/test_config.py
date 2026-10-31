@@ -77,4 +77,5 @@ def test_phase2_settings_defaults() -> None:
     s = Settings()
     assert (s.provider_search, s.azure_search_index, s.match_max_requirements) == ("memory", "idx-knowledge", 1000)
     assert s.azure_openai_judge_reasoning_effort is None and s.embed_price_per_mtok == 0.0
-    assert (s.knowledge_dir, s.raw_dir) == (Path("data/knowledge"), Path("data/raw"))
+    root = Path(spec_review.__file__).resolve().parents[1]
+    assert (s.knowledge_dir, s.raw_dir) == (root / "data/knowledge", root / "data/raw")

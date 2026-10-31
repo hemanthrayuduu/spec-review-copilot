@@ -9,6 +9,7 @@ from spec_review.filter.relevance import decide, load_product_map
 from spec_review.ingest import ingest_package
 from spec_review.models import FilterResult, SegmentResult
 from spec_review.llm.client import LLMClient
+from spec_review.llm.mock import FakeEmbedder
 from spec_review.pipeline import build_coverage, run_package, run_read
 from spec_review.runs import RunWriter
 from spec_review.segment.sections import split_sections
@@ -105,13 +106,13 @@ def test_reissued_section_in_an_addendum_pdf_reaches_the_filter(tmp_path: Path) 
 def test_run_package_with_echo_settles_every_candidate(tmp_path: Path, lakeview_pdfs: Path) -> None:
     import openpyxl
     out = run_package(lakeview_pdfs, RunWriter("p1", root=tmp_path), Settings(_env_file=None),
-                      client=LLMClient(EchoProvider()), cache_dir=None)
+                      client=LLMClient(EchoProvider(), embedder=FakeEmbedder()), cache_dir=None)
     cov = out.read.coverage
     assert cov.candidates_without_disposition == 0 and cov.silent_drops == 0
     assert cov.candidates_total == len(out.candidates.candidates) > 0
     assert cov.candidates_requirement + cov.candidates_not_requirement + cov.candidates_needs_engineer == \
         cov.candidates_total
-    for name in ("candidates", "extract", "verify", "permits", "brief", "coverage"):
+    for name in ("candidates", "extract", "verify", "permits", "brief", "match", "coverage"):
         assert (tmp_path / "p1" / f"{name}.json").exists(), name
     assert (tmp_path / "p1/brief.md").exists() and (tmp_path / "p1/requirements.xlsx").exists()
     assert openpyxl.load_workbook(tmp_path / "p1/requirements.xlsx")["Requirements"].max_row == \
@@ -129,3 +130,16 @@ def test_package_without_candidates_completes(tmp_path: Path) -> None:
     assert out.candidates.candidates == [] and out.llm_calls == [] and out.extract.requirements == []
     assert openpyxl.load_workbook(tmp_path / "p2/requirements.xlsx")["Requirements"].max_row == 1
     assert (tmp_path / "p2/brief.md").read_text().startswith("# Triage brief: pkg")
+
+
+def test_run_package_writes_match_json_with_one_result_per_requirement(tmp_path: Path, lakeview_pdfs: Path) -> None:
+    from spec_review.models import MatchReport
+    from spec_review.llm.mock import MockProvider
+    settings = Settings(_env_file=None)
+    out = run_package(lakeview_pdfs, RunWriter("m1", root=tmp_path), settings, cache_dir=None,
+                      client=LLMClient(EchoProvider(), embedder=FakeEmbedder()),
+                      judge_client=LLMClient(MockProvider(settings.mock_fixtures_dir)))
+    report = MatchReport.model_validate_json((tmp_path / "m1/match.json").read_text())
+    assert [r.req_id for r in report.results] == [r.req_id for r in out.extract.requirements]
+    assert report.results and all(r.reason and r.method for r in report.results)
+    assert report == out.match and not report.skipped and report.judge_failed == 0

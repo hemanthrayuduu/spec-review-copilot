@@ -51,7 +51,7 @@ def test_workbook_sheets_and_rows(tmp_path: Path) -> None:
     reqs = wb["Requirements"]
     assert reqs.max_row == 3 and reqs.freeze_panes == "A2" and reqs.auto_filter.ref
     header = [c.value for c in reqs[1]]
-    assert header[0] == "req_id" and header[-1] == "source text" and "low confidence" in header
+    assert header[0] == "req_id" and header[-7] == "source text" and "low confidence" in header
     rows = {r[0]: dict(zip(header, r)) for r in reqs.iter_rows(min_row=2, values_only=True)}
     assert rows["s1:g1:r2"]["low confidence"] == "yes" and rows["s1:g1:r2"]["note"] == "found by model, no rule trigger"
     assert rows["s1:g1:r1"]["note"] in ("", None)
@@ -62,3 +62,24 @@ def test_workbook_sheets_and_rows(tmp_path: Path) -> None:
     assert kinds == ["deadline", "red flag:named_manufacturer"]
     metrics = {r[0]: r[1] for r in wb["Coverage"].iter_rows(min_row=2, values_only=True)}
     assert metrics["silent_drops"] == 0 and metrics["verify.quote_pass_rate"] == 1.0
+
+
+def test_requirements_sheet_has_status_columns(tmp_path: Path) -> None:
+    from spec_review.models import Evidence, MatchReport, MatchResult
+    ev = Evidence(evidence_id="cap:GEN-01", source="capability", ref="synthetic_product_data", page=7, text="t",
+                  score=0.0, origin="synthetic", basis="guaranteed", product_line="general")
+    match = MatchReport(package_id="p", results=[MatchResult(req_id="s1:g1:r1", status="deviation", method="llm",
+                                                             reason="12 months, not 2 years.",
+                                                             evidence_ids=["cap:GEN-01"], confidence=0.8,
+                                                             uses_synthetic=True)],
+                        evidence={ev.evidence_id: ev}, counts={"deviation": 1})
+    path = write_requirements_xlsx(tmp_path / "r.xlsx", **small_outputs(), match=match)
+    wb = openpyxl.load_workbook(path)
+    header = [c.value for c in wb["Requirements"][1]]
+    rows = {r[0]: dict(zip(header, r)) for r in wb["Requirements"].iter_rows(min_row=2, values_only=True)}
+    assert header[-6:] == ["status", "method", "match confidence", "reason", "evidence", "synthetic"]
+    assert rows["s1:g1:r1"]["status"] == "deviation" and rows["s1:g1:r1"]["synthetic"] == "SYNTHETIC"
+    assert rows["s1:g1:r1"]["evidence"] == "cap:GEN-01 (synthetic_product_data p.7)"
+    assert rows["s1:g1:r2"]["status"] in ("", None)
+    metrics = {r[0]: r[1] for r in wb["Coverage"].iter_rows(min_row=2, values_only=True)}
+    assert metrics["match.deviation"] == 1 and metrics["match.comply"] == 0

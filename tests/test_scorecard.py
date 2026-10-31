@@ -7,6 +7,7 @@ from spec_review.eval.golden import GoldenPackage
 from spec_review.eval.metrics import brief_recall, candidate_recall
 from spec_review.eval.scorecard import build_scorecard
 from spec_review.llm.client import LLMClient
+from spec_review.llm.mock import FakeEmbedder
 from spec_review.models import Brief, PermitLimit
 from spec_review.pipeline import PackageOutputs, run_package
 from spec_review.runs import RunWriter
@@ -33,7 +34,7 @@ def test_mock_scorecard_withholds_accuracy(mock_out: PackageOutputs, lakeview_go
 def test_echo_scorecard_reports_requirement_metrics(lakeview_pdfs: Path, lakeview_golden: GoldenPackage,
                                                     tmp_path: Path) -> None:
     out = run_package(lakeview_pdfs, RunWriter("s2", root=tmp_path), Settings(_env_file=None),
-                      client=LLMClient(EchoProvider()), cache_dir=None)
+                      client=LLMClient(EchoProvider(), embedder=FakeEmbedder()), cache_dir=None)
     card = build_scorecard(lakeview_golden, out, Settings(_env_file=None))  # "echo" is not mock: metrics filled
     assert card.requirement_recall is not None and card.requirement_precision is not None
     assert len(card.traps) == 7 and card.llm.calls > 0 and card.llm.provider == "echo"
