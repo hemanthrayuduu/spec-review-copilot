@@ -8,7 +8,14 @@ from typing import Any, Literal
 from pydantic import Field, ValidationError, field_validator
 
 from spec_review.extract.groups import Group, article_of, render_candidates, render_text
-from spec_review.extract.verify import clean_quote, locate, number_check, numbers_in_cited, settle_dispositions
+from spec_review.extract.verify import (
+    clean_quote,
+    locate,
+    number_check,
+    numbers_in_cited,
+    resolve_candidate_id,
+    settle_dispositions,
+)
 from spec_review.llm.client import LLMClient, LLMError, LLMProviderError, LLMResponseError, LLMTruncatedError
 from spec_review.models import (
     CandidateDisposition,
@@ -166,13 +173,23 @@ def _unique_local_ids(reply: ExtractionReply) -> ExtractionReply:
     return reply.model_copy(update={"records": records})
 
 
+def _resolve_ids(reply: ExtractionReply, g: Group) -> ExtractionReply:
+    """Candidate ids the model shortened are mapped back to the group's full ids."""
+    known = {c.candidate_id for c in g.candidates}
+    records = [r.model_copy(update={"candidate_ids": [resolve_candidate_id(c, known) for c in r.candidate_ids]})
+               for r in reply.records]
+    dispositions = [d.model_copy(update={"candidate_id": resolve_candidate_id(d.candidate_id, known)})
+                    for d in reply.dispositions]
+    return reply.model_copy(update={"records": records, "dispositions": dispositions})
+
+
 def _present(text: str | None) -> str | None:
     """The model writes "" for an empty field as often as null; both mean missing."""
     return text if text is not None and text.strip() else None
 
 
 def _records(g: Group, reply: ExtractionReply, result: ExtractResult, stats: ExtractStats) -> list[CandidateDisposition]:
-    reply = _unique_local_ids(reply)
+    reply = _resolve_ids(_unique_local_ids(reply), g)
     known = {c.candidate_id: c for c in g.candidates}
     accepted: dict[str, str] = {}
     rejected: dict[str, str] = {}

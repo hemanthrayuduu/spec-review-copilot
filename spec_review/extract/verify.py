@@ -80,6 +80,18 @@ def unit_present(unit: str | None, source_text: str) -> bool:
     return not unit or unit.strip().casefold() in norm_text(source_text).casefold()
 
 
+def resolve_candidate_id(cid: str, known: Collection[str]) -> str:
+    """The group's id for cid: cid itself, or the one known id it shortens ("c12" for "specs#8:c12").
+
+    Long ids get shortened by the model in big groups; an id that matches no candidate, or several, passes through.
+    """
+    if cid in known:
+        return cid
+    tail = cid.split(":")[-1]
+    hits = [k for k in known if k.split(":")[-1] == tail]
+    return hits[0] if len(hits) == 1 else cid
+
+
 def settle_dispositions(group: Group, reply: "ExtractionReply | None", accepted: dict[str, str],
                         rejected_reasons: dict[str, str], failure: str | None) -> list[CandidateDisposition]:
     """Exactly one disposition per candidate in the group (spec 8.8 coverage check)."""

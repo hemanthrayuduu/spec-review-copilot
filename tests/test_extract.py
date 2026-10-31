@@ -274,3 +274,22 @@ def test_failed_consistency_retry_keeps_the_first_reply() -> None:
     res, stats = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(p))
     assert p.calls == 2 and stats.groups_failed == 0 and not res.rejected
     assert outcomes(res)["specs#8:c2"] == ("not_requirement", "x")
+
+
+def test_shortened_candidate_ids_are_resolved() -> None:  # Mountain Regional: 154 dispositions lost to "c1138"
+    res, stats = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(ScriptedProvider([reply(
+        [rec("r1", "Membranes shall be PVDF.", ["c1"])],
+        [disp("c1", "requirement", ["r1"]), disp("c2", "not_requirement", reason="covered elsewhere")])])))
+    (r,) = res.requirements
+    assert r.candidate_ids == ["specs#8:c1"]
+    assert outcomes(res) == {"specs#8:c1": ("requirement", None), "specs#8:c2": ("not_requirement", "covered elsewhere")}
+    g = small_group(*TWO_PAGE)
+    report = build_report("p", res, stats, CandidateResult(package_id="p", candidates=list(g.candidates)),
+                          page_texts(g.blocks), 0.6)
+    assert report.records_without_candidate == 0
+
+
+def test_unresolvable_short_id_is_still_ignored() -> None:
+    res, _ = extract_groups("p", [small_group(*TWO_PAGE)], LLMClient(ScriptedProvider([reply(
+        [], [disp("c9", "not_requirement", reason="x")])])))
+    assert set(outcomes(res).values()) == {("needs_engineer", "no disposition from model")}
