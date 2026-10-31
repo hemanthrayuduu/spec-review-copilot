@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from typing import Any
 
 from spec_review.extract.candidates import build_candidates, extraction_sections, section_candidates
@@ -210,3 +211,23 @@ def test_repeated_local_ids_get_unique_req_ids_and_links() -> None:  # final rev
     assert len(ids) == 3 and len(set(ids)) == 3
     assert {o for o, _ in outcomes(res).values()} == {"requirement"}
     assert len({tuple(d.req_ids) for d in res.dispositions}) == 3
+
+
+def _appendix_a() -> str:
+    spec = (Path(__file__).parents[1] / "docs/PROJECT_SPEC.md").read_text()
+    block = spec.split("## Appendix A", 1)[1].split("```", 2)[1]
+    return block.strip()
+
+
+def test_extract_v1_prompt_is_still_appendix_a_verbatim() -> None:  # prompt files are never edited
+    v1 = (Path(__file__).parents[1] / "spec_review/extract/prompts/extract_v1.md").read_text()
+    assert v1.strip() == _appendix_a()
+
+
+def test_extract_v2_is_active_and_states_the_field_rules() -> None:
+    from spec_review.extract.requirements import PROMPT_ID
+    p = render_prompt(small_group(*TWO_PAGE))
+    assert PROMPT_ID == "extract_v2"
+    assert "value is one number or one range" in p and "unit is the word or symbol written right after" in p
+    assert "should" in p and "mandatory false" in p
+    assert "[p135] 2.03.B B. Modules shall be removable." in p and "specs#8:c2: Modules shall be removable." in p

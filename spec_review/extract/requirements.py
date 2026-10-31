@@ -23,7 +23,7 @@ from spec_review.segment.paths import part_of
 
 logger = logging.getLogger("spec_review.extract")
 
-PROMPT_ID = "extract_v1"
+PROMPT_ID = "extract_v2"  # v2 adds value, unit, operator, and splitting rules (round 1, 2026-10-31)
 PROMPT = (Path(__file__).parent / "prompts" / f"{PROMPT_ID}.md").read_text(encoding="utf-8")
 RETRY_NOTE = "\n\nYour previous reply was invalid: {detail}\nReturn JSON that matches the schema."
 
