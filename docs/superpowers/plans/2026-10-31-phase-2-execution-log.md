@@ -226,3 +226,35 @@ A fresh reviewer (Opus) read the whole branch on 2026-10-31. It found 0 Critical
 **An in-sample number, stated plainly.** 0.826 is measured on the same Lakeview labels that judge_v2 to v4 were tuned against. The synthetic rows were also written knowing which parameters Lakeview asks about, so many map one to one onto Lakeview requirements: 72 against 48 hours, 15 against 30 minutes, 14 against 21 days. No status labels exist outside Lakeview, so this is not a held-out score. A held-out estimate needs status labels on another package, which the owner would write.
 
 **Two retrieval rulings for the owner to confirm as allowed levers.** De-indexing the synthetic document and keeping 5 capability slots go slightly beyond the design's list of levers ("top-k and the fusion constant"). The reviewer judged both justified.
+
+### Final-review rulings and deferred minors (from the ledger)
+
+- Final: minor (deferred): float equality at rule boundaries (50 °C against >= 122 °F); use math.isclose
+- Final: minor (deferred): nutrient guard scans parameter and match_terms only; add value_text, source_text, phosphate, nitrate, TKN, NH4, and refuse typical nutrient rows
+- Final: minor (deferred): knowledge check should flag match terms that can never fire (unit pint can't read, such as NTU in MBR-29; or a typical basis)
+- Final: minor (deferred): pint parses junk units ("pH" as picohenry); only the unit-compatibility check keeps them safe
+- Final: minor (deferred): COST_PER_1000 = 0.75 matches minimal effort; low effort measured about $1.02 per 1,000
+- Final: minor (deferred): MAX_COMPLETION_TOKENS = 16000 is used for the judge too (design 8 says keep it small)
+- Final: minor (deferred): the locked judge effort low lives in .env only; .env.example leaves it blank, so a fresh clone judges at minimal
+- Final: minor (deferred): the CLI shows a synthetic count, not the share, and no separate judge cost
+- Final: minor (deferred): _record_failure("embed") labels embedding failures with the chat provider and model
+- Final: minor (deferred): embed() filters None instead of asserting alignment
+- Final: minor (deferred): _match_cells is O(N²)
+- Final: minor (deferred): AzureSearchIndex never closes its httpx client
+- Final: minor (deferred): azure-check with search enabled but no endpoint retries about 14 s instead of naming the missing setting
+- Final: minor (deferred): the design's .cache/knowledge memory index was replaced by the embedding cache without a ruling
+- Final: minor (deferred): knowledge build has no CLI test
+- Final: minor (deferred): StatusReport doesn't count the 95 extracted results with no golden match
+- Final: minor (deferred): trap5 takes the last match when several items are trap 5
+- Final: minor (deferred): PHASE_PROMPTS.md still describes ChromaDB and Ollama in the kept history text
+- Final: minor (deferred): the Azure index doesn't detect text drift under unchanged ids, or an embedding model switch with the same dimensions
+- Final: Ruling: label quality (the GEN-11 field-service comply labels, NEMA 4X vs NEMA 12) — owner domain calls, reviewed and approved before round 0 and frozen — cost if wrong: a few accuracy points either way
+- Final: Ruling: whether the synthetic values are typical industry practice — a domain judgment the owner approved — cost if wrong: demo realism only; every such result is tagged SYNTHETIC
+- Final: Ruling: Mountain Regional routing (46_51_42 to aeration) — matching MR is a Phase 2 non-goal, and evidence search has no product-line filter, so its evidence isn't hidden — cost if wrong: weaker MR statuses if MR is ever matched
+- Final: Ruling: prompt injection through bid-PDF text — outside the demo's threat model; enforcement limits any steering to cited, settling capability rows — cost if wrong: a crafted PDF could nudge statuses, but never cite evidence that doesn't exist
+- Final: Ruling: xlsx text starting with "=" read as a formula — a pattern from Phase 1, not introduced here; deferred — cost if wrong: a garbled cell for a rare source text
+- Final: Ruling: Search Free-tier limits and Canada Central latency — operational, mitigated by retries — cost if wrong: slower runs
+- Final: Ruling: NaN confidence from the judge — strict structured output makes it practically impossible — cost if wrong: one invalid result raising a validation error
+- Final: Ruling: embedding cache keyed by deployment name — operational edge outside the plan — cost if wrong: stale vectors after reusing a deployment name for another model
+- Final: Ruling: two LLMClients appending to one llm_calls.jsonl — they run one after the other — cost if wrong: an interleaved log line
+- Final: Ruling: Search api-version 2024-07-01 — GA and sufficient — cost if wrong: none now
