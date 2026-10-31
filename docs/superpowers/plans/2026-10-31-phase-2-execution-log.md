@@ -258,3 +258,17 @@ A fresh reviewer (Opus) read the whole branch on 2026-10-31. It found 0 Critical
 - Final: Ruling: embedding cache keyed by deployment name — operational edge outside the plan — cost if wrong: stale vectors after reusing a deployment name for another model
 - Final: Ruling: two LLMClients appending to one llm_calls.jsonl — they run one after the other — cost if wrong: an interleaved log line
 - Final: Ruling: Search api-version 2024-07-01 — GA and sufficient — cost if wrong: none now
+
+## Fresh rerun on main after the merge (no cache)
+
+- **Run:** `runs/20261031T233513Z`, run on 2026-10-31 with an empty LLM cache, so every extraction and judge call went to Azure.
+- **Calls:** 394 calls, $0.44.
+- **Extraction:**
+  - 311 requirements;
+  - recall 0.9569, mandatory recall 0.9548, precision 0.7138;
+  - citation accuracy, quote check and number check all 1.0;
+  - 7 of 7 traps.
+- **Status accuracy:** 0.7973 over 222 matched, 0.7629 over all 232, 0.8063 grouped.
+- **Gates:** the phosphorus trap is needs_engineer; 0 uncited; 0 judge failures; the eval exited 0.
+
+**Run-to-run variation.** gpt-5-mini is not deterministic, so a fresh run differs from the cached round-3 replies (0.8259 over matched). Here it scored about 3 points lower on status accuracy and about 1 point lower on recall, with 8 fewer requirements extracted. Treat the status figure as about 0.80 ± 0.03 on Lakeview, not as a single exact number. Cached reruns reproduce a run exactly.
