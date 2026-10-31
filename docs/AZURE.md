@@ -27,27 +27,27 @@ flowchart LR
 
 ## Names
 
-Every resource follows Microsoft's [Cloud Adoption Framework naming convention](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming): `<type>-<workload>-<environment>-<region>`. The type prefixes come from Microsoft's [abbreviation list](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations). The workload is `specreview`, the environment is `demo`, and the region code here is `eus2` (East US 2); change it if you deploy elsewhere.
+Every resource follows Microsoft's [Cloud Adoption Framework naming convention](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming): `<type>-<workload>-<environment>-<region>`. The type prefixes come from Microsoft's [abbreviation list](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations). The workload is `specreview`, the environment is `demo`, and the region code here is `cac` (Canada Central); change it if you deploy elsewhere.
 
 | What | Name | Phase |
 |---|---|---|
-| Resource group | `rg-specreview-demo-eus2` | 1b |
-| Foundry resource (hosts the OpenAI models) | `aif-specreview-demo-eus2` | 1b |
+| Resource group | `rg-specreview-demo-cac` | 1b |
+| Foundry resource (hosts the OpenAI models) | `aif-specreview-demo-cac` | 1b |
 | Foundry project | `proj-specreview-demo` | 1b |
 | Chat deployment | `gpt-5-mini` | 1b |
 | Embedding deployment | `text-embedding-3-small` | 2 |
-| Document Intelligence resource | `di-specreview-demo-eus2` | 1b |
+| Document Intelligence resource | `di-specreview-demo-cac` | 1b |
 | Budget | `budget-specreview-demo` | 1b |
-| AI Search service | `srch-specreview-demo-eus2` | 2 |
+| AI Search service | `srch-specreview-demo-cac` | 2 |
 | Search index | `idx-capabilities` | 2 |
 | Storage account | `stspecreviewdemo` (lowercase, no hyphens, 3–24 characters) | 4 |
 | Blob containers | `packages`, `runs`, `reviews` | 4 |
-| Log Analytics workspace | `log-specreview-demo-eus2` | 4 |
-| Container Apps environment | `cae-specreview-demo-eus2` | 4 |
+| Log Analytics workspace | `log-specreview-demo-cac` | 4 |
+| Container Apps environment | `cae-specreview-demo-cac` | 4 |
 | Container apps | `ca-specreview-api`, `ca-specreview-app` | 4 |
 | Container images (GitHub Container Registry) | `ghcr.io/hemanthrayuduu/spec-review-copilot-api`, `…-app` | 4 |
 
-- **Global uniqueness:** the Foundry resource, Document Intelligence, AI Search, and storage names become public hostnames, so they must be unique across Azure. If one is taken, add a short suffix, for example `aif-specreview-demo-eus2-01` or `stspecreviewdemo01`.
+- **Global uniqueness:** the Foundry resource, Document Intelligence, AI Search, and storage names become public hostnames, so they must be unique across Azure. If one is taken, add a short suffix, for example `aif-specreview-demo-cac-01` or `stspecreviewdemo01`.
 - **Deployment names match the model name,** so `.env` reads plainly.
 - **Tags:** put these on the resource group, so every resource inherits them and the cost view groups cleanly:
 
@@ -61,29 +61,29 @@ Every resource follows Microsoft's [Cloud Adoption Framework naming convention](
 
 ## Setup, done once by you
 
-1. **Create the resource group** `rg-specreview-demo-eus2` with the tags above. In [Microsoft Foundry](https://ai.azure.com) (formerly Azure AI Foundry), create a Foundry resource named `aif-specreview-demo-eus2` in that group, with a project named `proj-specreview-demo`. Deployments live on the resource; the project is where you deploy and test them in the portal. The pipeline calls the resource's endpoint, never the project's. Pick a region where `gpt-5-mini` is offered as Global Standard. Foundry shows this when you deploy; I couldn't confirm a region list.
+1. **Create the resource group** `rg-specreview-demo-cac` with the tags above. In [Microsoft Foundry](https://ai.azure.com) (formerly Azure AI Foundry), create a Foundry resource named `aif-specreview-demo-cac` in that group, with a project named `proj-specreview-demo`. Deployments live on the resource; the project is where you deploy and test them in the portal. The pipeline calls the resource's endpoint, never the project's. Pick a region where `gpt-5-mini` is offered as Global Standard. Foundry shows this when you deploy; I couldn't confirm a region list.
 2. **Deploy `gpt-5-mini`**:
    - deployment type **Global Standard**;
    - deployment name **`gpt-5-mini`**;
    - note the tokens-per-minute (TPM) quota it shows, since that sets how long a large package takes (see "Quota" below).
-3. **Create a Document Intelligence resource** named `di-specreview-demo-eus2`, on the **F0 (free)** tier, in the same group. This step is optional: without it, `PROVIDER_OCR=local` uses Tesseract.
+3. **Create a Document Intelligence resource** named `di-specreview-demo-cac`, on the **F0 (free)** tier, in the same group. This step is optional: without it, `PROVIDER_OCR=local` uses Tesseract.
 4. **Set budget alerts:** a budget named `budget-specreview-demo`, with alerts at $25, $50, and $75, under Cost Management. They only notify you; they don't stop spending. On a new subscription they can take up to 48 hours to become available. The Azure for Students subscription itself stops when the $100 credit runs out ([Azure for Students costs](https://learn.microsoft.com/en-us/azure/education-hub/navigate-costs)).
 5. **Fill in `.env`.** Copy `.env.example` to `.env` (it's gitignored), then set:
 
    ```
    PROVIDER_LLM=azure
    PROVIDER_OCR=azure
-   AZURE_OPENAI_ENDPOINT=https://aif-specreview-demo-eus2.openai.azure.com
+   AZURE_OPENAI_ENDPOINT=https://aif-specreview-demo-cac.openai.azure.com
    AZURE_OPENAI_KEY=<key>
    AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-5-mini
    AZURE_OPENAI_REASONING_EFFORT=minimal
-   AZURE_DOCINTEL_ENDPOINT=https://di-specreview-demo-eus2.cognitiveservices.azure.com
+   AZURE_DOCINTEL_ENDPOINT=https://di-specreview-demo-cac.cognitiveservices.azure.com
    AZURE_DOCINTEL_KEY=<key>
    LLM_PRICE_INPUT_PER_MTOK=0.25
    LLM_PRICE_OUTPUT_PER_MTOK=2.00
    ```
 
-   - **Endpoint:** use the resource's Azure OpenAI endpoint, `https://aif-specreview-demo-eus2.openai.azure.com`, from the resource's Keys and Endpoint page. Don't use the project endpoint (`…services.ai.azure.com/api/projects/proj-specreview-demo`). The code adds `/openai/v1/` itself.
+   - **Endpoint:** use the resource's Azure OpenAI endpoint, `https://aif-specreview-demo-cac.openai.azure.com`, from the resource's Keys and Endpoint page. Don't use the project endpoint (`…services.ai.azure.com/api/projects/proj-specreview-demo`). The code adds `/openai/v1/` itself.
    - **Prices:** leaving them blank makes every run report a cost of $0.
 6. **Check it:** `uv run specreview azure-check`. It makes one tiny call to each configured service. For chat it prints the model, tokens, and cost, plus the deployment's tokens-per-minute limit when Azure sends it. For Document Intelligence it prints how many lines it read.
 
@@ -131,7 +131,7 @@ Azure reports the deployment's limit in the `x-ratelimit-limit-tokens` response 
 4. **Free tiers only:** AI Search Free and the Container Apps grant. Never provisioned throughput (PTU), and never a paid Search tier; both bill every hour.
 5. **Let containers scale to zero** (Phase 4). Keep one copy running only on interview day.
 6. **Push images to GitHub Container Registry,** which is free for public repos, rather than Azure Container Registry.
-7. **Keep the budget alerts on,** and delete `rg-specreview-demo-eus2` after the demo. Everything is in that one group, so one delete removes it all.
+7. **Keep the budget alerts on,** and delete `rg-specreview-demo-cac` after the demo. Everything is in that one group, so one delete removes it all.
 
 ## Troubleshooting
 
