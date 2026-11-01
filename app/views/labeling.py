@@ -31,20 +31,18 @@ from views.common import md  # noqa: E402
 
 CATEGORIES = list(Category.__args__)  # type: ignore[attr-defined]
 OPERATORS = ["", *Operator.__args__]  # type: ignore[attr-defined]
-# Each form's widget keys: dropped after a good save so the form comes back blank, kept after a refused one.
-FORM_KEYS: dict[LabelKind, tuple[str, ...]] = {
-    "requirements": ("lab_section", "lab_path", "lab_source", "lab_category", "lab_parameter", "lab_operator",
-                     "lab_value", "lab_unit", "lab_mandatory", "lab_addendum"),
-    "relevant_sections": ("lab_sec_number", "lab_sec_title", "lab_sec_first", "lab_sec_last"),
-    "deadlines": ("lab_dl_text", "lab_dl_section"),
-    "required_forms": ("lab_form_text", "lab_form_section"),
+# Each form's fields and their blank values. A good save sets them, never deletes them: only a value the page
+# sets reaches the browser, which otherwise keeps showing what was typed. A refused save leaves them as typed.
+BLANK: dict[LabelKind, dict[str, Any]] = {
+    "requirements": {"lab_section": "", "lab_path": "", "lab_source": "", "lab_category": None, "lab_parameter": "",
+                     "lab_operator": "", "lab_value": "", "lab_unit": "", "lab_mandatory": None, "lab_addendum": ""},
+    "relevant_sections": {"lab_sec_number": "", "lab_sec_title": ""},  # its page fields go back to the page shown
+    "deadlines": {"lab_dl_text": "", "lab_dl_section": ""},
+    "required_forms": {"lab_form_text": "", "lab_form_section": ""},
 }
+SECTION_PAGES = ("lab_sec_first", "lab_sec_last")
 NOUNS: dict[LabelKind, str] = {"requirements": "requirement", "relevant_sections": "relevant section",
                                "deadlines": "deadline", "required_forms": "required form"}
-
-for done in st.session_state.pop("lab_reset", []):
-    for key in FORM_KEYS[done]:
-        st.session_state.pop(key, None)
 
 st.header("Labeling helper")
 st.caption("For the owner: write golden labels by hand. Fields start blank and are never prefilled.")
@@ -97,6 +95,10 @@ def save(kind: LabelKind, model: type[BaseModel], data: dict[str, Any]) -> None:
         st.rerun()
 
 
+for done in st.session_state.pop("lab_reset", []):
+    st.session_state.update(BLANK[done] | ({key: page for key in SECTION_PAGES} if done == "relevant_sections" else {}))
+for key in SECTION_PAGES:
+    st.session_state.setdefault(key, page)
 req_tab, sec_tab, dl_tab, form_tab = right.tabs(["Requirement", "Relevant section", "Deadline", "Required form"])
 with req_tab.form("lab_form"):
     section = st.text_input("Section number", key="lab_section")
@@ -120,8 +122,8 @@ with req_tab.form("lab_form"):
 with sec_tab.form("lab_sec_form"):
     number = st.text_input("Section number (blank if unnumbered)", key="lab_sec_number")
     title = st.text_input("Title", key="lab_sec_title")
-    first = int(st.number_input("First page", min_value=1, value=page, step=1, key="lab_sec_first"))
-    last = int(st.number_input("Last page", min_value=1, value=page, step=1, key="lab_sec_last"))
+    first = int(st.number_input("First page", min_value=1, step=1, key="lab_sec_first"))
+    last = int(st.number_input("Last page", min_value=1, step=1, key="lab_sec_last"))
     if st.form_submit_button("Add relevant section", key="lab_add_sec"):
         if not first <= last <= pages:
             st.error(f"Not saved: the first page must come before the last, and both within 1 to {pages}.")

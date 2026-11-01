@@ -285,3 +285,20 @@ def test_review_pages_show_dollar_amounts_literally(tmp_path: Path, name: str) -
     at = page(name, ApiClient("http://testserver", http=TestClient(create_app(settings, runner=fake_runner))))
     body = " ".join(m.value for m in at.markdown)
     assert not at.exception and r"\$500" in body and r"\$1,500" in body
+
+
+def test_a_good_save_tells_the_browser_to_clear_the_form(tmp_path: Path) -> None:
+    """Found in the browser: a good save left the typed text on screen. Deleting a widget's session value clears it
+    for AppTest only; the browser keeps its copy unless the server sets the value (set_value) on the next run."""
+    at = labeling(tmp_path)
+    at.text_area(key="lab_dl_text").input("Proposals are due May 1, 2027.")
+    at.text_input(key="lab_dl_section").input("00 11 13")
+    at.button(key="lab_add_dl").click().run()
+    cleared = [at.text_area(key="lab_dl_text"), at.text_input(key="lab_dl_section")]
+    assert not at.exception and all(w.value == "" and w.proto.set_value for w in cleared)
+    at.number_input(key="lab_page").set_value(2).run()
+    at.text_input(key="lab_sec_title").input("RFP")
+    at.number_input(key="lab_sec_first").set_value(1)
+    at.button(key="lab_add_sec").click().run()
+    first, last = at.number_input(key="lab_sec_first"), at.number_input(key="lab_sec_last")
+    assert (first.value, last.value) == (2, 2) and first.proto.set_value and last.proto.set_value  # back to this page
