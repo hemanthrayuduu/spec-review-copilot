@@ -83,3 +83,14 @@ def test_requirements_sheet_has_status_columns(tmp_path: Path) -> None:
     assert rows["s1:g1:r2"]["status"] in ("", None)
     metrics = {r[0]: r[1] for r in wb["Coverage"].iter_rows(min_row=2, values_only=True)}
     assert metrics["match.deviation"] == 1 and metrics["match.comply"] == 0
+
+
+def test_text_starting_with_an_equals_sign_stays_text(tmp_path: Path) -> None:
+    """Code review: a PDF line such as =HYPERLINK(...) became a live formula in requirements.xlsx."""
+    out = small_outputs()
+    bad = '=HYPERLINK("http://example.com","x")'
+    out["extract"].requirements[0] = out["extract"].requirements[0].model_copy(update={"source_text": bad})
+    out["candidates"].candidates[1] = out["candidates"].candidates[1].model_copy(update={"sentence": "=1+1"})
+    wb = openpyxl.load_workbook(write_requirements_xlsx(tmp_path / "r.xlsx", **out))
+    cells = [c for ws in wb for row in ws.iter_rows() for c in row if isinstance(c.value, str) and c.value[:1] == "="]
+    assert {c.value for c in cells} == {bad, "=1+1"} and all(c.data_type == "s" for c in cells)

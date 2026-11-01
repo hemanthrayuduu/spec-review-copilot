@@ -6,6 +6,7 @@ from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
+from spec_review.outputs.cells import keep_text
 from spec_review.review.run_view import Item, RunView, status_label
 
 MATRIX_COLUMNS = ("Item", "Code", "Final status", "Reviewed by", "Review note", "Section", "Paragraph", "Doc", "Page",
@@ -38,9 +39,7 @@ def write_compliance_matrix(view: RunView, path: Path) -> Path:
         cell.font = Font(bold=True)
     for n, it in enumerate(view.items, start=1):
         ws.append(_row(n, it))
-        for cell in ws[n + 1]:
-            if isinstance(cell.value, str) and cell.value.startswith("="):
-                cell.data_type = "s"  # PDF text and notes are untrusted; never a formula
+        keep_text(ws[n + 1])
         if fill := FILLS.get(it.code):
             ws.cell(row=n + 1, column=2).fill = PatternFill("solid", fgColor=fill)
     for i, name in enumerate(MATRIX_COLUMNS, start=1):
@@ -59,6 +58,7 @@ def write_compliance_matrix(view: RunView, path: Path) -> Path:
                  + [(f"Final status: {s}", n) for s, n in sorted(Counter(
                      i.final_status or "not matched" for i in view.items).items())]):
         summary.append(line)
+        keep_text(summary[summary.max_row])
     if view.draft_banner:
         summary.append((view.draft_banner,))
         summary.cell(row=summary.max_row, column=1).font = Font(bold=True, color="C00000")

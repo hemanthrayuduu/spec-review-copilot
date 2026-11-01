@@ -55,3 +55,14 @@ def test_runs_are_kept_apart(tmp_path: Path) -> None:
 def test_eval_never_reads_review_data() -> None:  # spec 8.15: review history can't change dev or test scores
     src = "".join(p.read_text() for p in (ROOT / "spec_review/eval").glob("*.py"))
     assert "review_exceptions" not in src and "reviews.sqlite" not in src and "ReviewStore" not in src
+
+
+def test_exception_text_that_starts_like_a_formula_is_quoted(tmp_path: Path) -> None:
+    """Code review: review_exceptions.csv wrote untrusted PDF text and notes as is; Excel runs =, +, - and @ cells."""
+    s = store(tmp_path)
+    context = ExceptionContext(**{**CONTEXT.__dict__, "requirement": "-5 dBA below the limit shall apply."})
+    for _ in range(2):  # the duplicate check still finds the row
+        s.save("run1", ReviewDecision(req_id="r", final_status="deviation", reviewer="@hr", note="=1+1"),
+               context=context)
+    [row] = list(csv.DictReader((tmp_path / "ex.csv").open()))
+    assert (row["note"], row["requirement"], row["reviewer"]) == ("'=1+1", "'-5 dBA below the limit shall apply.", "'@hr")

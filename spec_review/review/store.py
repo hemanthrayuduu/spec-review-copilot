@@ -20,6 +20,14 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS decisions (
     note TEXT NOT NULL, reviewer TEXT NOT NULL, timestamp TEXT NOT NULL)"""
 
 
+FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _csv_text(value: object) -> object:
+    """A cell that Excel would run as a formula gets a leading apostrophe (the OWASP CSV injection guard)."""
+    return f"'{value}" if isinstance(value, str) and value.startswith(FORMULA_START) else value
+
+
 @dataclass
 class ExceptionContext:
     """What review_exceptions.csv records about the requirement, besides the decision itself."""
@@ -79,5 +87,6 @@ class ReviewStore:
             writer = csv.DictWriter(f, fieldnames=EXCEPTION_COLUMNS)
             if new:
                 writer.writeheader()
-            writer.writerow({"timestamp": decision.timestamp.isoformat(), "reviewer": decision.reviewer,
-                             "run_id": run_id, "req_id": decision.req_id, "note": decision.note, **asdict(context)})
+            row = {"timestamp": decision.timestamp.isoformat(), "reviewer": decision.reviewer, "note": decision.note,
+                   **asdict(context)}
+            writer.writerow({"run_id": run_id, "req_id": decision.req_id, **{k: _csv_text(v) for k, v in row.items()}})

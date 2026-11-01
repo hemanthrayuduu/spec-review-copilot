@@ -6,6 +6,7 @@ The manufacturer's capabilities that Phase 2 checks each requirement against (de
 |---|---|
 | `capabilities.csv` | One row per product line and parameter. `origin` says where each row comes from. |
 | `past_exceptions.csv` | 20 past bid exceptions and clarifications. **Every row is fictional.** |
+| `review_exceptions.csv` | Deviations an engineer approved in the review app, one row per run and requirement. Written by the app and gitignored. A cell that starts with `=`, `+`, `-`, `@`, a tab or a carriage return gets a leading `'`, so Excel never runs it as a formula; strip it before reading the text. |
 
 ## Public and synthetic rows
 

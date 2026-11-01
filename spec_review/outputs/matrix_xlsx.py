@@ -20,6 +20,7 @@ from spec_review.models import (
     ExtractResult,
     VerifyReport,
 )
+from spec_review.outputs.cells import keep_text
 
 REQUIREMENT_COLUMNS = ("req_id", "doc_id", "page", "section", "title", "paragraph", "category", "mandatory",
                        "parameter", "operator", "value", "unit", "named manufacturer", "or equal", "from addendum",
@@ -37,6 +38,7 @@ def _sheet(wb: Workbook, title: str, header: Sequence[str], rows: Iterable[Seque
         cell.font = Font(bold=True)
     for row in rows:
         ws.append(list(row))
+        keep_text(ws[ws.max_row])
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = ws.dimensions
     return ws
