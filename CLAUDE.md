@@ -4,6 +4,7 @@ AI assistant that reads municipal water and wastewater bid packages (RFPs, equip
 
 Full spec: docs/PROJECT_SPEC.md
 Phase prompts: docs/PHASE_PROMPTS.md
+Hands-on test guide: docs/USER_WORKFLOW.md
 Data sources: data/sources.yaml
 
 ## Rules that are never broken
