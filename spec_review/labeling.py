@@ -46,12 +46,19 @@ def load_labels(path: Path, package_id: str) -> GoldenPackage:
     return GoldenPackage.model_validate_json(path.read_text(encoding="utf-8")) if path.is_file() else _empty(package_id)
 
 
+def _editable(golden: GoldenPackage, path: Path) -> GoldenPackage:
+    """A golden file with planted traps comes from a generator (Lakeview) and is frozen: never edit it here."""
+    if golden.traps:
+        raise ValueError(f"{path} is generated (it records planted traps) and frozen; change its generator instead")
+    return golden
+
+
 def add_requirement(golden_path: Path, package_id: str, row: GoldenRequirement) -> GoldenPackage:
-    golden = load_labels(golden_path, package_id)
+    golden = _editable(load_labels(golden_path, package_id), golden_path)
     return _save(golden_path, golden.model_copy(update={"requirements": [*golden.requirements, row]}))
 
 
 def remove_requirement(golden_path: Path, index: int) -> GoldenPackage:
-    golden = GoldenPackage.model_validate_json(golden_path.read_text(encoding="utf-8"))
+    golden = _editable(GoldenPackage.model_validate_json(golden_path.read_text(encoding="utf-8")), golden_path)
     rows = [r for i, r in enumerate(golden.requirements) if i != index]
     return _save(golden_path, golden.model_copy(update={"requirements": rows}))

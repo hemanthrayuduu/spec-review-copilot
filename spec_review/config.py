@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     embed_price_per_mtok: float = Field(default=0.0, ge=0.0)
     knowledge_dir: Path = REPO_ROOT / "data" / "knowledge"  # anchored like .env, so any working directory works
     raw_dir: Path = REPO_ROOT / "data" / "raw"
+    golden_dir: Path = REPO_ROOT / "data" / "golden"  # where the labeling helper writes
     match_max_requirements: int = Field(default=1000, ge=0)  # bigger packages skip matching unless this is raised
     runs_dir: Path = REPO_ROOT / "runs"
     review_db: Path = REPO_ROOT / "runs" / "reviews.sqlite"  # review decisions, kept next to the runs they review

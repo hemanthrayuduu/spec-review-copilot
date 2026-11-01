@@ -39,3 +39,23 @@ def test_page_view_returns_png_and_text(tmp_path: Path) -> None:
     pdf = make_pdf(tmp_path / "specs.pdf", ["<p>Screens shall be stainless.</p>"])
     png, text = page_view(pdf, 1)
     assert png[:4] == b"\x89PNG" and "Screens shall be stainless." in text
+
+
+def test_a_generated_golden_file_is_never_edited(tmp_path: Path, lakeview_golden) -> None:  # type: ignore[no-untyped-def]
+    """Found in the demo: picking dev/lakeview would have appended to the frozen, generated answer key."""
+    import pytest
+    path = tmp_path / "golden/dev/lakeview.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(lakeview_golden.model_dump_json())
+    row = GoldenRequirement(doc_id="specs", section_number="46 61 00", paragraph_path="9.99.A", page=4,
+                            source_text="x", category="material", mandatory=True)
+    with pytest.raises(ValueError, match="generated"):
+        add_requirement(path, "lakeview", row)
+    with pytest.raises(ValueError, match="generated"):
+        remove_requirement(path, 0)
+    assert path.read_text() == lakeview_golden.model_dump_json()
+
+
+def test_the_golden_folder_is_a_setting() -> None:
+    from spec_review.config import REPO_ROOT, Settings
+    assert Settings(_env_file=None).golden_dir == REPO_ROOT / "data" / "golden"  # type: ignore[call-arg]

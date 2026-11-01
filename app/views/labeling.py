@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import streamlit as st  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 
-from spec_review.config import REPO_ROOT, get_settings  # noqa: E402
+from spec_review.config import get_settings  # noqa: E402
 from spec_review.eval.golden import GoldenRequirement  # noqa: E402
 from spec_review.labeling import add_requirement, blank_row, load_labels, page_view  # noqa: E402
 from spec_review.labeling import remove_requirement  # noqa: E402
@@ -23,7 +23,7 @@ OPERATORS = ["", *Operator.__args__]  # type: ignore[attr-defined]
 st.header("Labeling helper")
 st.caption("For the owner: write golden labels by hand. Fields start blank and are never prefilled.")
 root = Path(st.session_state.get("labeling_root") or get_settings().raw_dir)
-golden_root = Path(st.session_state.get("labeling_golden") or REPO_ROOT / "data" / "golden")
+golden_root = Path(st.session_state.get("labeling_golden") or get_settings().golden_dir)
 splits = sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
 if not splits:
     st.info(f"No package folders under {root}.")
@@ -63,12 +63,14 @@ with right.form("lab_form", clear_on_submit=True):
             st.success(f"Added to {golden_path}")
         except ValidationError as exc:
             st.error(f"Not saved: {exc.errors()[0]['loc'][0]} {exc.errors()[0]['msg']}")
+        except ValueError as exc:
+            st.error(f"Not saved: {exc}")
 
 labels = load_labels(golden_path, package)
 st.subheader(f"{len(labels.requirements)} labels in {golden_path.name}")
 for n, r in enumerate(labels.requirements):
     a, b = st.columns([8, 1])
     a.write(f"{r.doc_id} p.{r.page} · {r.section_number or '-'} {r.paragraph_path}: {r.source_text[:100]}")
-    if b.button("Delete", key=f"lab_del_{n}"):
+    if b.button("Delete", key=f"lab_del_{n}", disabled=bool(labels.traps)):
         remove_requirement(golden_path, n)
         st.rerun()
