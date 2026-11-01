@@ -99,7 +99,9 @@ for done in st.session_state.pop("lab_reset", []):
     st.session_state.update(BLANK[done] | ({key: page for key in SECTION_PAGES} if done == "relevant_sections" else {}))
 for key in SECTION_PAGES:
     st.session_state.setdefault(key, page)
-req_tab, sec_tab, dl_tab, form_tab = right.tabs(["Requirement", "Relevant section", "Deadline", "Required form"])
+# Keyed, so a save that adds a message above the tabs still shows the tab the owner was working in.
+req_tab, sec_tab, dl_tab, form_tab = right.tabs(["Requirement", "Relevant section", "Deadline", "Required form"],
+                                                key="lab_tab", on_change="rerun")
 with req_tab.form("lab_form"):
     section = st.text_input("Section number", key="lab_section")
     path = st.text_input("Paragraph path", key="lab_path")

@@ -302,3 +302,21 @@ def test_a_good_save_tells_the_browser_to_clear_the_form(tmp_path: Path) -> None
     at.button(key="lab_add_sec").click().run()
     first, last = at.number_input(key="lab_sec_first"), at.number_input(key="lab_sec_last")
     assert (first.value, last.value) == (2, 2) and first.proto.set_value and last.proto.set_value  # back to this page
+
+
+def tab_container(node: Any) -> Any:
+    proto = getattr(node, "proto", None)
+    if type(proto).__name__ == "Block" and proto.WhichOneof("type") == "tab_container":
+        return proto.tab_container
+    return next((t for c in getattr(node, "children", {}).values() if (t := tab_container(c)) is not None), None)
+
+
+def test_a_save_stays_on_its_tab(tmp_path: Path) -> None:
+    """Found in the browser: after adding a deadline the page jumped back to the Requirement tab."""
+    make_pdf(tmp_path / "raw/test/pkgx/rfp.pdf", ["<p>Proposals are due May 1, 2027.</p>"])
+    at = page("labeling", None, labeling_root=str(tmp_path / "raw"), labeling_golden=str(tmp_path / "golden"),
+              lab_tab="Deadline")
+    at.text_area(key="lab_dl_text").input("Proposals are due May 1, 2027.")
+    at.button(key="lab_add_dl").click().run()
+    assert not at.exception and len(at.success) == 1
+    assert tab_container(at.main).default_tab_index == 2 and at.session_state["lab_tab"] == "Deadline"
