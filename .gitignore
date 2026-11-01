@@ -9,3 +9,5 @@ __pycache__/
 *.egg-info/
 dist/
 .cache/
+data/uploads/
+data/knowledge/review_exceptions.csv

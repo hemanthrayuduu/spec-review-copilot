@@ -154,3 +154,14 @@ def test_a_broken_knowledge_base_still_writes_the_phase1_outputs(tmp_path: Path,
     assert report.skipped and "matching failed" in report.notes[0]
     assert (tmp_path / "k1/brief.md").exists() and (tmp_path / "k1/requirements.xlsx").exists()
     assert (tmp_path / "k1/coverage.json").exists()
+
+
+def test_run_package_writes_run_info_first(tmp_path: Path, lakeview_pdfs: Path) -> None:
+    from spec_review.models import RunInfo
+    from spec_review.pipeline import PIPELINE_STAGES
+    seen: list[str] = []
+    run_package(lakeview_pdfs, RunWriter("p9", root=tmp_path, on_write=seen.append), Settings(_env_file=None),
+                client=LLMClient(EchoProvider(), embedder=FakeEmbedder()), cache_dir=None)
+    info = RunInfo.model_validate_json((tmp_path / "p9/run.json").read_text())
+    assert seen[0] == "run" and info.package_dir == str(lakeview_pdfs.resolve()) and info.run_id == "p9"
+    assert set(seen) <= set(PIPELINE_STAGES) and info.created.tzinfo is not None and info.provider == "echo"

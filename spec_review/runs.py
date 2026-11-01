@@ -1,6 +1,7 @@
 """Run folders: every stage writes runs/<run_id>/<stage>.json so each step can be inspected."""
 
 import os
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -13,14 +14,18 @@ def new_run_id(now: datetime | None = None) -> str:
 
 
 class RunWriter:
-    def __init__(self, run_id: str, root: Path = Path("runs")) -> None:
+    def __init__(self, run_id: str, root: Path = Path("runs"), on_write: Callable[[str], None] | None = None) -> None:
         self.root = root
+        self.run_id = run_id
         self.run_dir = root / run_id
+        self.on_write = on_write  # called with the stage name after each write, for job progress
 
     def write(self, stage: str, payload: BaseModel) -> Path:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         path = self.run_dir / f"{stage}.json"
         path.write_text(payload.model_dump_json(indent=2))
+        if self.on_write is not None:
+            self.on_write(stage)
         return path
 
     def mark_latest(self) -> None:

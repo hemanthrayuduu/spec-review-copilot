@@ -233,6 +233,22 @@ class MatchReport(ContractModel):
     notes: list[str] = []
 
 
+class RunInfo(ContractModel):
+    """runs/<run_id>/run.json: what was run and where its PDFs live, written before any other stage."""
+
+    run_id: NonBlankStr
+    package_id: NonBlankStr
+    package_dir: NonBlankStr  # absolute path
+    created: datetime
+    provider: str
+
+    @model_validator(mode="after")
+    def _created_is_aware(self) -> Self:
+        if self.created.tzinfo is None:
+            raise ValueError("created must be timezone-aware")
+        return self
+
+
 class ReviewDecision(ContractModel):
     req_id: NonBlankStr
     final_status: MatchStatus

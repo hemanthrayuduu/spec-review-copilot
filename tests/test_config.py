@@ -79,3 +79,9 @@ def test_phase2_settings_defaults() -> None:
     assert s.azure_openai_judge_reasoning_effort is None and s.embed_price_per_mtok == 0.0
     root = Path(spec_review.__file__).resolve().parents[1]
     assert (s.knowledge_dir, s.raw_dir) == (root / "data/knowledge", root / "data/raw")
+
+
+def test_phase3_settings_defaults() -> None:
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.review_db.name == "reviews.sqlite" and s.review_db.parent == s.runs_dir
+    assert s.api_url == "http://127.0.0.1:8000" and s.max_upload_mb == 200 and s.uploads_dir.name == "uploads"

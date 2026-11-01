@@ -17,3 +17,11 @@ def test_write_and_latest(tmp_path: Path) -> None:
     w.mark_latest()
     RunWriter("r2", root=tmp_path).mark_latest()
     assert (tmp_path / "latest").resolve() == (tmp_path / "r2").resolve()
+
+
+def test_run_writer_reports_each_stage(tmp_path: Path) -> None:
+    seen: list[str] = []
+    w = RunWriter("r1", root=tmp_path, on_write=seen.append)
+    w.write("ingest", IngestResult(package_id="p"))
+    w.write("brief", IngestResult(package_id="p"))
+    assert seen == ["ingest", "brief"]

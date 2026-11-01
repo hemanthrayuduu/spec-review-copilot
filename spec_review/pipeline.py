@@ -2,6 +2,7 @@
 the brief, and the outputs (Phase 1b)."""
 
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path
 
 from spec_review.brief.build import build_brief
@@ -20,6 +21,7 @@ from spec_review.knowledge.index import KnowledgeBase
 from spec_review.llm.client import LLMCall, LLMClient, get_client
 from spec_review.match.stage import judge_client_for, match_package
 from spec_review.models import (
+    RunInfo,
     MatchReport,
     Brief,
     CandidateResult,
@@ -113,6 +115,10 @@ def run_read(package_dir: Path, writer: RunWriter, settings: Settings, *,
     return ReadOutputs(ing, seg, filt, coverage)
 
 
+# Every stage file a full run writes, in order; job progress counts them.
+PIPELINE_STAGES = ("run", "ingest", "segment", "addenda", "xrefs", "filter", "candidates", "extract", "verify",
+                   "permits", "brief", "match", "coverage")
+
 MOCK_NOTE = "Mock provider: no model ran; requirement counts are not accuracy."
 
 
@@ -142,6 +148,8 @@ def run_package(package_dir: Path, writer: RunWriter, settings: Settings, *, cli
         client = get_client(settings, log_path=log_path)
         judge_client = judge_client or judge_client_for(settings, log_path)
     judge_client = judge_client or client
+    writer.write("run", RunInfo(run_id=writer.run_id, package_id=package_dir.name, package_dir=str(package_dir.resolve()),
+                                created=datetime.now(UTC), provider=client.provider.name))
     read = run_read(package_dir, writer, settings, cache_dir=cache_dir)
     pid, seg, filt = read.ingest.package_id, read.segment, read.filter
 

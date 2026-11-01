@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     knowledge_dir: Path = REPO_ROOT / "data" / "knowledge"  # anchored like .env, so any working directory works
     raw_dir: Path = REPO_ROOT / "data" / "raw"
     match_max_requirements: int = Field(default=1000, ge=0)  # bigger packages skip matching unless this is raised
+    runs_dir: Path = REPO_ROOT / "runs"
+    review_db: Path = REPO_ROOT / "runs" / "reviews.sqlite"  # review decisions, kept next to the runs they review
+    uploads_dir: Path = REPO_ROOT / "data" / "uploads"
+    api_url: str = "http://127.0.0.1:8000"  # where the review app finds the API
+    max_upload_mb: int = Field(default=200, ge=1)
     confidence_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
     llm_price_input_per_mtok: float = Field(default=0.0, ge=0.0)
     llm_price_output_per_mtok: float = Field(default=0.0, ge=0.0)
