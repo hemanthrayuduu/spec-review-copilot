@@ -13,7 +13,7 @@ from pydantic import ValidationError  # noqa: E402
 
 from spec_review.config import get_settings  # noqa: E402
 from spec_review.eval.golden import GoldenRequirement  # noqa: E402
-from spec_review.labeling import add_requirement, blank_row, load_labels, page_view  # noqa: E402
+from spec_review.labeling import add_requirement, blank_row, load_labels, page_count, page_view  # noqa: E402
 from spec_review.labeling import remove_requirement  # noqa: E402
 from spec_review.models import Category, Operator  # noqa: E402
 
@@ -34,8 +34,15 @@ package = st.selectbox("Package", packages, key="lab_package")
 if not package:
     st.stop()
 pdfs = sorted(p for p in (root / split / package).rglob("*.pdf"))
+if not pdfs:
+    st.info(f"{split}/{package} has no PDF files to label.")
+    st.stop()
 pdf = st.selectbox("Document", pdfs, format_func=lambda p: p.stem, key="lab_doc")
 page = int(st.number_input("Page", min_value=1, value=1, step=1, key="lab_page"))
+pages = page_count(pdf)
+if page > pages:
+    st.warning(f"{pdf.stem} has {pages} page{'s' if pages != 1 else ''}; pick a page from 1 to {pages}.")
+    st.stop()
 png, text = page_view(pdf, page)
 left, right = st.columns([3, 2])
 left.image(png, caption=f"{pdf.stem} page {page}", use_container_width=True)

@@ -16,6 +16,11 @@ LABEL_FIELDS = ("section_number", "paragraph_path", "source_text", "category", "
                 "unit", "mandatory")
 
 
+def page_count(pdf: Path) -> int:
+    with pymupdf.open(pdf) as doc:
+        return len(doc)
+
+
 def page_view(pdf: Path, page: int) -> tuple[bytes, str]:
     """The page as a PNG and its text, for the owner to read while labeling."""
     with pymupdf.open(pdf) as doc:

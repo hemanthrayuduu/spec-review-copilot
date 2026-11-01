@@ -108,3 +108,15 @@ def test_labeling_page_starts_blank(tmp_path: Path) -> None:
     assert not at.exception and len(at.get("image")) == 1
     assert all(t.value == "" for t in at.text_input) and all(t.value == "" for t in at.text_area)
     assert at.selectbox(key="lab_category").value is None and at.radio(key="lab_mandatory").value is None
+
+
+def test_labeling_page_handles_a_folder_without_pdfs_and_a_page_past_the_end(tmp_path: Path) -> None:
+    """Found in the demo: a package folder with no PDFs crashed the page with IndexError."""
+    (tmp_path / "raw/context/empty").mkdir(parents=True)
+    at = page("labeling", None, labeling_root=str(tmp_path / "raw"), labeling_golden=str(tmp_path / "golden"))
+    assert not at.exception and any("no PDF" in i.value for i in at.info)
+    make_pdf(tmp_path / "raw/dev/pkgx/specs.pdf", ["<p>One page.</p>"])
+    at = page("labeling", None, labeling_root=str(tmp_path / "raw"), labeling_golden=str(tmp_path / "golden"))
+    at.selectbox(key="lab_split").set_value("dev").run()
+    at.number_input(key="lab_page").set_value(5).run()
+    assert not at.exception and any("1 page" in w.value for w in at.warning)
