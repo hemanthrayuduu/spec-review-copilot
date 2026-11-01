@@ -1,19 +1,25 @@
-"""The labeling helper backend (spec 8.15): the owner writes golden labels by hand, one requirement at a time.
+"""The labeling helper backend (spec 8.15): the owner writes golden labels by hand, one label at a time.
 
 Nothing here reads pipeline output or calls a language model, so no label is ever prefilled. A test pins that.
 """
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import pymupdf
+from pydantic import BaseModel
 
-from spec_review.eval.golden import GoldenPackage, GoldenRequirement
+from spec_review.eval.golden import GoldenPackage, GoldenRequirement, GoldenSection
+from spec_review.models import BriefItem
 
 PAGE_DPI = 110
 LABEL_FIELDS = ("section_number", "paragraph_path", "source_text", "category", "parameter", "operator", "value",
-                "unit", "mandatory")
+                "unit", "mandatory", "from_addendum")
+# The kinds of label the test scorecard reads (spec 9): what each list in a golden file holds.
+LabelKind = Literal["requirements", "relevant_sections", "deadlines", "required_forms"]
+LABEL_KINDS: dict[str, type[BaseModel]] = {"requirements": GoldenRequirement, "relevant_sections": GoldenSection,
+                                           "deadlines": BriefItem, "required_forms": BriefItem}
 
 
 def page_count(pdf: Path) -> int:
@@ -31,7 +37,18 @@ def page_view(pdf: Path, page: int) -> tuple[bytes, str]:
 def blank_row(doc_id: str, page: int) -> dict[str, Any]:
     """A new label: only where it is. Every label field starts empty."""
     return {"doc_id": doc_id, "page": page, "section_number": None, "paragraph_path": "", "source_text": "",
-            "category": None, "parameter": None, "operator": None, "value": None, "unit": None, "mandatory": None}
+            "category": None, "parameter": None, "operator": None, "value": None, "unit": None, "mandatory": None,
+            "from_addendum": None}
+
+
+def blank_section(doc_id: str, page: int) -> dict[str, Any]:
+    """A new relevant section: only where it is, as its first and last page. Number and title start empty."""
+    return {"doc_id": doc_id, "number": None, "title": "", "page_start": page, "page_end": page}
+
+
+def blank_item(doc_id: str, page: int) -> dict[str, Any]:
+    """A new deadline or required form: only where it is. Its text starts empty."""
+    return {"text": "", "doc_id": doc_id, "page": page, "section_number": None}
 
 
 def _empty(package_id: str) -> GoldenPackage:
@@ -58,12 +75,15 @@ def _editable(golden: GoldenPackage, path: Path) -> GoldenPackage:
     return golden
 
 
-def add_requirement(golden_path: Path, package_id: str, row: GoldenRequirement) -> GoldenPackage:
+def add_label(golden_path: Path, package_id: str, kind: LabelKind, item: BaseModel) -> GoldenPackage:
+    """Append one label to its list, creating the file if needed."""
+    if type(item) is not LABEL_KINDS[kind]:
+        raise TypeError(f"{kind} holds {LABEL_KINDS[kind].__name__} labels, not {type(item).__name__}")
     golden = _editable(load_labels(golden_path, package_id), golden_path)
-    return _save(golden_path, golden.model_copy(update={"requirements": [*golden.requirements, row]}))
+    return _save(golden_path, golden.model_copy(update={kind: [*getattr(golden, kind), item]}))
 
 
-def remove_requirement(golden_path: Path, index: int) -> GoldenPackage:
+def remove_label(golden_path: Path, kind: LabelKind, index: int) -> GoldenPackage:
     golden = _editable(GoldenPackage.model_validate_json(golden_path.read_text(encoding="utf-8")), golden_path)
-    rows = [r for i, r in enumerate(golden.requirements) if i != index]
-    return _save(golden_path, golden.model_copy(update={"requirements": rows}))
+    kept = [x for i, x in enumerate(getattr(golden, kind)) if i != index]
+    return _save(golden_path, golden.model_copy(update={kind: kept}))

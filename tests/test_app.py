@@ -145,6 +145,8 @@ def test_labeling_page_starts_blank(tmp_path: Path) -> None:
     assert not at.exception and len(at.get("image")) == 1
     assert all(t.value == "" for t in at.text_input) and all(t.value == "" for t in at.text_area)
     assert at.selectbox(key="lab_category").value is None and at.radio(key="lab_mandatory").value is None
+    assert [t.label for t in at.tabs] == ["Requirement", "Relevant section", "Deadline", "Required form"]
+    assert at.number_input(key="lab_sec_first").value == at.number_input(key="lab_sec_last").value == 1  # where it is
 
 
 def test_labeling_page_handles_a_folder_without_pdfs_and_a_page_past_the_end(tmp_path: Path) -> None:
@@ -168,9 +170,68 @@ def test_labeling_page_uses_the_ingest_doc_id_for_nested_and_uppercase_pdfs(tmp_
     at.text_input(key="lab_path").input("2.01.A")
     at.selectbox(key="lab_category").set_value("material")
     at.radio(key="lab_mandatory").set_value("yes")
-    at.button[0].click().run()
+    at.button(key="lab_add_req").click().run()
     saved = json.loads((tmp_path / "golden/dev/pkgx.json").read_text())
     assert not at.exception and [r["doc_id"] for r in saved["requirements"]] == ["sub/Specs"]
+
+
+def labeling(tmp_path: Path) -> AppTest:
+    make_pdf(tmp_path / "raw/test/pkgx/rfp.pdf", ["<p>Proposals are due May 1, 2027.</p>", "<p>Form A - Pricing</p>"])
+    return page("labeling", None, labeling_root=str(tmp_path / "raw"), labeling_golden=str(tmp_path / "golden"))
+
+
+def test_labeling_page_saves_each_kind_the_test_scorecard_reads(tmp_path: Path) -> None:
+    """Phase 4a: relevant sections, deadlines, required forms and from_addendum, besides requirement rows."""
+    at = labeling(tmp_path)
+    at.text_input(key="lab_sec_number").input("00 21 13")
+    at.text_input(key="lab_sec_title").input("INSTRUCTIONS TO PROPOSERS")
+    at.number_input(key="lab_sec_last").set_value(2)
+    at.button(key="lab_add_sec").click().run()
+    at.text_area(key="lab_dl_text").input("Proposals are due May 1, 2027.")
+    at.button(key="lab_add_dl").click().run()
+    at.number_input(key="lab_page").set_value(2).run()
+    at.text_area(key="lab_form_text").input("Form A - Pricing")
+    at.button(key="lab_add_form").click().run()
+    at.text_input(key="lab_path").input("3.1")
+    at.text_area(key="lab_source").input("Proposals are due May 1, 2027.")
+    at.selectbox(key="lab_category").set_value("schedule")
+    at.radio(key="lab_mandatory").set_value("yes")
+    at.text_input(key="lab_addendum").input("Addendum 2")
+    at.button(key="lab_add_req").click().run()
+    saved = json.loads((tmp_path / "golden/test/pkgx.json").read_text())
+    assert not at.exception
+    assert [(s["number"], s["title"], s["page_start"], s["page_end"]) for s in saved["relevant_sections"]] == [
+        ("00 21 13", "INSTRUCTIONS TO PROPOSERS", 1, 2)]
+    assert [(d["text"], d["page"]) for d in saved["deadlines"]] == [("Proposals are due May 1, 2027.", 1)]
+    assert [(f["text"], f["page"]) for f in saved["required_forms"]] == [("Form A - Pricing", 2)]
+    assert [(r["page"], r["from_addendum"]) for r in saved["requirements"]] == [(2, "Addendum 2")]
+    assert at.text_input(key="lab_addendum").value == "" and at.text_area(key="lab_source").value == ""  # cleared
+    assert any("1 requirement, 1 relevant section, 1 deadline, 1 required form" in h.value for h in at.subheader)
+
+
+def test_a_refused_save_keeps_what_the_owner_typed(tmp_path: Path) -> None:
+    """Deferred minor, now in scope: a refused save cleared every field the owner had typed."""
+    at = labeling(tmp_path)
+    at.text_input(key="lab_path").input("3.1")
+    at.text_area(key="lab_source").input("Proposals are due May 1, 2027.")
+    at.button(key="lab_add_req").click().run()  # no category and no mandatory: refused
+    assert not at.exception and any("Not saved" in e.value for e in at.error)
+    assert at.text_area(key="lab_source").value == "Proposals are due May 1, 2027."
+    assert not (tmp_path / "golden/test/pkgx.json").exists()
+
+
+def test_labeling_delete_removes_one_label_of_its_kind(tmp_path: Path) -> None:
+    from spec_review.eval.golden import GoldenSection
+    from spec_review.labeling import add_label
+    from spec_review.models import BriefItem
+    golden = tmp_path / "golden/test/pkgx.json"
+    add_label(golden, "pkgx", "relevant_sections", GoldenSection(doc_id="rfp", number=None, title="RFP",
+                                                                  page_start=1, page_end=2))
+    add_label(golden, "pkgx", "deadlines", BriefItem(text="Proposals are due May 1, 2027.", doc_id="rfp", page=1))
+    at = labeling(tmp_path)
+    at.button(key="lab_del_relevant_sections_0").click().run()
+    saved = json.loads(golden.read_text())
+    assert not at.exception and saved["relevant_sections"] == [] and len(saved["deadlines"]) == 1
 
 
 def test_a_changed_set_of_items_needs_a_new_tick(tmp_path: Path) -> None:

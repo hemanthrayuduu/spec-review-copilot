@@ -3,11 +3,16 @@
 import re
 from pathlib import Path
 
+import pytest
+
 from pdf_fixtures import make_pdf
-from spec_review.eval.golden import GoldenRequirement, load_golden
-from spec_review.labeling import add_requirement, blank_row, page_view, remove_requirement
+from spec_review.eval.golden import GoldenRequirement, GoldenSection, load_golden
+from spec_review.labeling import LABEL_KINDS, add_label, blank_item, blank_row, blank_section, page_view, remove_label
+from spec_review.models import BriefItem
 
 ROOT = Path(__file__).parents[1]
+REQ = GoldenRequirement(doc_id="specs", section_number="46 61 00", paragraph_path="2.01.A", page=4,
+                        source_text="Screens shall be stainless.", category="material", mandatory=True)
 LABEL_FILES = [ROOT / "spec_review/labeling.py", ROOT / "app/views/labeling.py"]
 
 
@@ -24,15 +29,44 @@ def test_labeling_never_reads_runs_or_model_output() -> None:  # spec 8.15: no m
                         "judge", "load_run"}
 
 
-def test_add_requirement_creates_then_appends(tmp_path: Path) -> None:
+def test_add_label_creates_then_appends(tmp_path: Path) -> None:
     path = tmp_path / "golden/test/pkg.json"
-    row = GoldenRequirement(doc_id="specs", section_number="46 61 00", paragraph_path="2.01.A", page=4,
-                            source_text="Screens shall be stainless.", category="material", mandatory=True)
-    add_requirement(path, "pkg", row)
-    pkg = add_requirement(path, "pkg", row.model_copy(update={"paragraph_path": "2.01.B"}))
+    add_label(path, "pkg", "requirements", REQ)
+    pkg = add_label(path, "pkg", "requirements", REQ.model_copy(update={"paragraph_path": "2.01.B"}))
     assert [r.paragraph_path for r in pkg.requirements] == ["2.01.A", "2.01.B"]
     assert load_golden(path).package_id == "pkg"
-    assert [r.paragraph_path for r in remove_requirement(path, 0).requirements] == ["2.01.B"]
+    assert [r.paragraph_path for r in remove_label(path, "requirements", 0).requirements] == ["2.01.B"]
+
+
+def test_each_kind_the_test_scorecard_reads_is_added_and_removed(tmp_path: Path) -> None:
+    """Phase 4a: the spec's labeling protocol needs sections, deadlines, forms and from_addendum, not only rows."""
+    path = tmp_path / "golden/test/pkg.json"
+    items = {"requirements": REQ.model_copy(update={"from_addendum": "Addendum 2"}),
+             "relevant_sections": GoldenSection(doc_id="specs", number="46 61 00", title="MEMBRANES", page_start=120,
+                                                page_end=141),
+             "deadlines": BriefItem(text="Proposals are due December 15, 2026 at 2:00 PM.", doc_id="rfp", page=1),
+             "required_forms": BriefItem(text="Form A - Proposal Pricing Form", doc_id="rfp", page=5)}
+    assert set(LABEL_KINDS) == set(items)
+    for kind, item in items.items():
+        add_label(path, "pkg", kind, item)
+    pkg = load_golden(path)
+    assert [getattr(pkg, kind) for kind in items] == [[item] for item in items.values()]
+    assert pkg.requirements[0].from_addendum == "Addendum 2"
+    for kind in items:
+        assert getattr(remove_label(path, kind, 0), kind) == []
+
+
+def test_a_label_of_the_wrong_kind_is_refused(tmp_path: Path) -> None:
+    with pytest.raises(TypeError, match="relevant_sections"):
+        add_label(tmp_path / "pkg.json", "pkg", "relevant_sections", BriefItem(text="x", doc_id="rfp", page=1))
+    assert not (tmp_path / "pkg.json").exists()
+
+
+def test_blank_section_and_item_hold_only_where_the_owner_is() -> None:
+    assert {k: v for k, v in blank_section("specs", 7).items() if v not in (None, "", [])} == {
+        "doc_id": "specs", "page_start": 7, "page_end": 7}
+    assert {k: v for k, v in blank_item("rfp", 3).items() if v not in (None, "", [])} == {"doc_id": "rfp", "page": 3}
+    assert "from_addendum" in blank_row("specs", 4) and blank_row("specs", 4)["from_addendum"] is None
 
 
 def test_page_view_returns_png_and_text(tmp_path: Path) -> None:
@@ -43,16 +77,18 @@ def test_page_view_returns_png_and_text(tmp_path: Path) -> None:
 
 def test_a_generated_golden_file_is_never_edited(tmp_path: Path, lakeview_golden) -> None:  # type: ignore[no-untyped-def]
     """Found in the demo: picking dev/lakeview would have appended to the frozen, generated answer key."""
-    import pytest
     path = tmp_path / "golden/dev/lakeview.json"
     path.parent.mkdir(parents=True)
     path.write_text(lakeview_golden.model_dump_json())
-    row = GoldenRequirement(doc_id="specs", section_number="46 61 00", paragraph_path="9.99.A", page=4,
-                            source_text="x", category="material", mandatory=True)
-    with pytest.raises(ValueError, match="generated"):
-        add_requirement(path, "lakeview", row)
-    with pytest.raises(ValueError, match="generated"):
-        remove_requirement(path, 0)
+    items = {"requirements": REQ, "relevant_sections": GoldenSection(doc_id="specs", number="46 61 00", title="M",
+                                                                     page_start=1, page_end=2),
+             "deadlines": BriefItem(text="Due May 1.", doc_id="rfp", page=1),
+             "required_forms": BriefItem(text="Form A", doc_id="rfp", page=1)}
+    for kind, item in items.items():
+        with pytest.raises(ValueError, match="generated"):
+            add_label(path, "lakeview", kind, item)
+        with pytest.raises(ValueError, match="generated"):
+            remove_label(path, kind, 0)
     assert path.read_text() == lakeview_golden.model_dump_json()
 
 
