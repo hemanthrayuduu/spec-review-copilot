@@ -209,9 +209,17 @@ def test_labeling_page_saves_each_kind_the_test_scorecard_reads(tmp_path: Path) 
     assert any("1 requirement, 1 relevant section, 1 deadline, 1 required form" in h.value for h in at.subheader)
 
 
+def forms(node: Any) -> list[Any]:
+    """Every st.form under node, as its proto. AppTest has no browser, so it can't clear a form: read the flag."""
+    proto = getattr(node, "proto", None)
+    found = [proto.form] if type(proto).__name__ == "Block" and proto.WhichOneof("type") == "form" else []
+    return found + [f for child in getattr(node, "children", {}).values() for f in forms(child)]
+
+
 def test_a_refused_save_keeps_what_the_owner_typed(tmp_path: Path) -> None:
     """Deferred minor, now in scope: a refused save cleared every field the owner had typed."""
     at = labeling(tmp_path)
+    assert [f.clear_on_submit for f in forms(at.main)] == [False] * 4  # the page clears a form only after a save
     at.text_input(key="lab_path").input("3.1")
     at.text_area(key="lab_source").input("Proposals are due May 1, 2027.")
     at.button(key="lab_add_req").click().run()  # no category and no mandatory: refused
