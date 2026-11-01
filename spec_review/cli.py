@@ -244,3 +244,23 @@ def knowledge_build() -> None:
         typer.echo(f"Azure AI Search index {settings.azure_search_index}: uploaded {len(kb.items)} items")
     for note in kb.notes:
         typer.echo(f"note       {note}")
+
+
+@app.command("outputs")
+def outputs_cmd(run_id: str) -> None:
+    """Write the five outputs for a run, using the engineer's latest review decisions."""
+    from spec_review.outputs.bundle import write_outputs
+    from spec_review.review.run_view import load_run
+    from spec_review.review.store import ReviewStore
+    settings = get_settings()
+    run_dir = settings.runs_dir / run_id
+    if not (run_dir / "extract.json").is_file():
+        _fail(f"{run_dir} is not a finished run (no extract.json)")
+    store = ReviewStore(settings.review_db, settings.knowledge_dir / "review_exceptions.csv")
+    result = write_outputs(load_run(run_dir, store.latest(run_id)), run_dir / "outputs")
+    for name in result.files:
+        typer.echo(f"wrote      {run_dir / 'outputs' / name}")
+    for note in result.skipped:
+        typer.echo(f"skipped    {note}")
+    if result.draft_banner:
+        typer.echo(result.draft_banner)

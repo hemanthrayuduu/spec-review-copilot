@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from spec_review.eval.golden import GoldenPackage
     from spec_review.models import CrossRef, Section
     from spec_review.pipeline import ReadOutputs
+    from spec_review.review.run_view import RunView
 
 
 @pytest.fixture(autouse=True)
@@ -64,3 +65,21 @@ def lakeview_read(lakeview_pdfs: Path, tmp_path_factory: pytest.TempPathFactory)
     from spec_review.runs import RunWriter
 
     return run_read(lakeview_pdfs, RunWriter("read", root=tmp_path_factory.mktemp("runs")), Settings(), cache_dir=None)
+
+
+@pytest.fixture(scope="session")
+def lakeview_run_view(lakeview_pdfs: Path, tmp_path_factory: pytest.TempPathFactory) -> "RunView":
+    """Lakeview through the whole pipeline with the Echo extractor and the mock judge: real addenda blocks."""
+    from spec_review.config import Settings
+    from spec_review.llm.client import LLMClient
+    from spec_review.llm.mock import FakeEmbedder, MockProvider
+    from spec_review.pipeline import run_package
+    from spec_review.review.run_view import load_run
+    from spec_review.runs import RunWriter
+    from tests.llm_fakes import EchoProvider
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    writer = RunWriter("lv", root=tmp_path_factory.mktemp("runs"))
+    run_package(lakeview_pdfs, writer, settings, cache_dir=None,
+                client=LLMClient(EchoProvider(), embedder=FakeEmbedder()),
+                judge_client=LLMClient(MockProvider(settings.mock_fixtures_dir)))
+    return load_run(writer.run_dir, {})
