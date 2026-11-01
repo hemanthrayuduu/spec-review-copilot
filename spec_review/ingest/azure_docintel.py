@@ -5,9 +5,13 @@ free F0 tier reads only the first two pages of a request. Results are cached by
 a hash of the page bytes, so a page is never paid for twice.
 """
 
+import email.utils
 import hashlib
 import json
+import logging
 import time
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -21,10 +25,26 @@ API_VERSION = "2024-11-30"
 MODEL = "prebuilt-read"
 POINTS_PER_INCH = 72.0
 MAX_RATE_RETRIES = 5
+MAX_WAIT = 30.0  # seconds, the longest a Retry-After may hold a page
+
+logger = logging.getLogger("spec_review.ingest")
 
 
 class DocIntelError(Exception):
     pass
+
+
+def retry_after(resp: httpx.Response) -> float:
+    """Seconds to wait before retrying: Retry-After holds seconds or an HTTP date. 1 if missing or unreadable."""
+    value = resp.headers.get("Retry-After", "1")
+    try:
+        seconds = float(value)
+    except ValueError:
+        try:
+            seconds = (email.utils.parsedate_to_datetime(value) - datetime.now(UTC)).total_seconds()
+        except (TypeError, ValueError):  # unparseable, or a date with no time zone
+            seconds = 1.0
+    return min(max(seconds, 0.0), MAX_WAIT)
 
 
 class PageReader(Protocol):
@@ -48,13 +68,18 @@ class DocIntelClient:
         """One-page PDF in; its text lines with bounding boxes in PDF points out."""
         cache = self.cache_dir / f"{hashlib.sha256(pdf_bytes).hexdigest()}.json" if self.cache_dir else None
         if cache is not None and cache.is_file():
-            return [(t, tuple(b)) for t, b in json.loads(cache.read_text())]  # type: ignore[misc]
+            try:
+                return [(t, tuple(b)) for t, b in json.loads(cache.read_text())]  # type: ignore[misc]
+            except (ValueError, TypeError) as exc:  # half-written or damaged: read the page again and rewrite it
+                logger.warning("ignoring damaged OCR cache %s: %s", cache.name, exc)
         if self.auth_error:
             raise DocIntelError(self.auth_error)
         lines = self._lines(self._analyze(pdf_bytes))
-        if cache is not None:
+        if cache is not None:  # written aside, then moved in whole: a crash never leaves half a file
             cache.parent.mkdir(parents=True, exist_ok=True)
-            cache.write_text(json.dumps([[t, list(b)] for t, b in lines]))
+            tmp = cache.with_name(f"{cache.stem}.{uuid.uuid4().hex}.tmp")
+            tmp.write_text(json.dumps([[t, list(b)] for t, b in lines]))
+            tmp.replace(cache)
         return lines
 
     def _sleep(self, seconds: float) -> None:
@@ -67,7 +92,7 @@ class DocIntelClient:
                                   headers={**self.headers, "Content-Type": "application/pdf"})
             if resp.status_code != 429:
                 break
-            self._sleep(min(float(resp.headers.get("Retry-After", "1")), 30.0))
+            self._sleep(retry_after(resp))
         if resp.status_code in (401, 403):
             self.auth_error = (f"Document Intelligence refused the key (HTTP {resp.status_code}); "
                                "check AZURE_DOCINTEL_KEY and AZURE_DOCINTEL_ENDPOINT")
@@ -79,7 +104,9 @@ class DocIntelClient:
         while True:
             poll = self.http.get(operation, headers=self.headers)
             if poll.status_code == 429:
-                self._sleep(min(float(poll.headers.get("Retry-After", "1")), 30.0))
+                if time.monotonic() > deadline:  # a service that stays busy must not hold the run forever
+                    raise DocIntelError(f"analysis still rate limited after {self.timeout_seconds:.0f} s")
+                self._sleep(retry_after(poll))
                 continue
             body = poll.json()
             status = body.get("status")

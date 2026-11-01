@@ -1,8 +1,10 @@
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
 
-from spec_review.ingest import find_pdf, ingest_package
+from spec_review.ingest import INGEST_VERSION, find_pdf, ingest_package
 from spec_review.ingest.pdf_local import find_tessdata
 from tests.pdf_fixtures import make_pdf, make_scanned_pdf
 
@@ -178,3 +180,26 @@ def test_find_pdf_is_the_inverse_of_doc_id(tmp_path: Path, case_sensitive_disk: 
     assert [d.doc_id for d in ingest_package(pkg, tessdata=None, cache_dir=None).documents] == ["Specs", "sub/rfp"]
     assert find_pdf(pkg, "Specs") == pkg / "Specs.PDF" and find_pdf(pkg, "sub/rfp") == pkg / "sub" / "rfp.pdf"
     assert find_pdf(pkg, "specs") is None and find_pdf(pkg, "../pkg/Specs") is None
+
+
+def test_a_damaged_ingest_cache_is_read_again(tmp_path: Path) -> None:
+    """Code review: a damaged cache file made the document "read failed" on every later run."""
+    make_pdf(tmp_path / "pkg" / "specs.pdf", ["<p>Pumps shall be stainless steel.</p>"])
+    cache = tmp_path / "cache"
+    first = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=cache)
+    [f] = cache.glob("*.json")
+    f.write_text('{"pages": [')
+    again = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=cache)
+    assert again.skipped == [] and [b.text for b in again.blocks] == [b.text for b in first.blocks]
+    assert json.loads(f.read_text())["pages"]  # rewritten whole
+
+
+def test_two_ingest_writers_never_share_a_temp_file(tmp_path: Path) -> None:
+    """Code review: every writer used <cache>.tmp, so two runs at once could publish interleaved JSON."""
+    pdf = tmp_path / "pkg" / "specs.pdf"
+    make_pdf(pdf, ["<p>Pumps shall be stainless steel.</p>"])
+    cache = tmp_path / "cache"
+    digest = hashlib.sha256(pdf.read_bytes()).hexdigest()
+    (cache / f"{digest}-{INGEST_VERSION}-noocr.tmp").mkdir(parents=True)  # another writer's file in the way
+    res = ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=cache)
+    assert res.skipped == [] and len(list(cache.glob("*.json"))) == 1

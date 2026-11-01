@@ -4,6 +4,7 @@ import hashlib
 import json
 import logging
 import re
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -130,18 +131,21 @@ def _read_cached(path: Path, doc_id: str, tessdata: Path | None, cache_dir: Path
     engine = "docintel" if docintel is not None else "tesseract" if tessdata else "noocr"
     cache = cache_dir / f"{digest}-{INGEST_VERSION}-{engine}.json"
     if cache.is_file():
-        data = json.loads(cache.read_text())
-        pages = [PageInfo.model_validate({**p, "doc_id": doc_id}) for p in data["pages"]]
-        lines = [RawLine(doc_id, x[0], tuple(x[1]), x[2], x[3], x[4], x[5]) for x in data["lines"]]  # type: ignore[arg-type]
-        rows = [Block.model_validate({**r, "doc_id": doc_id}) for r in data["rows"]]
-        regions = {int(k): [tuple(r) for r in v] for k, v in data["regions"].items()}
-        return _Document(pages, lines, {int(k): tuple(v) for k, v in data["sizes"].items()},  # type: ignore[misc]
-                         TableExtraction(rows, regions))  # type: ignore[arg-type]
+        try:
+            data = json.loads(cache.read_text())
+            pages = [PageInfo.model_validate({**p, "doc_id": doc_id}) for p in data["pages"]]
+            lines = [RawLine(doc_id, x[0], tuple(x[1]), x[2], x[3], x[4], x[5]) for x in data["lines"]]  # type: ignore[arg-type]
+            rows = [Block.model_validate({**r, "doc_id": doc_id}) for r in data["rows"]]
+            regions = {int(k): [tuple(r) for r in v] for k, v in data["regions"].items()}
+            return _Document(pages, lines, {int(k): tuple(v) for k, v in data["sizes"].items()},  # type: ignore[misc]
+                             TableExtraction(rows, regions))  # type: ignore[arg-type]
+        except (ValueError, KeyError, TypeError, IndexError) as exc:  # damaged: read the PDF again and rewrite it
+            logger.warning("ignoring damaged ingest cache %s: %s", cache.name, exc)
     doc = _read(path, doc_id, tessdata, docintel)
     if docintel is not None and any(p.status == "needs_ocr" for p in doc.pages):
         return doc  # a Document Intelligence failure may be transient: read again next run (its good pages are cached)
     cache_dir.mkdir(parents=True, exist_ok=True)
-    tmp = cache.with_suffix(".tmp")
+    tmp = cache.with_name(f"{cache.stem}.{uuid.uuid4().hex}.tmp")  # one per writer: two runs never share it
     tmp.write_text(json.dumps({
         "pages": [p.model_dump(exclude={"doc_id"}) for p in doc.pages],
         "lines": [[x.page, list(x.bbox), x.text, x.size, x.bold, x.origin] for x in doc.lines],

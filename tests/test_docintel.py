@@ -89,3 +89,45 @@ def test_auth_failure_stops_further_requests() -> None:  # final review I4
     with pytest.raises(DocIntelError, match="AZURE_DOCINTEL_KEY"):
         di.read_page(b"b")
     assert len(seen) == 1
+
+
+def test_rate_limited_polling_still_stops_at_the_deadline() -> None:
+    """Code review: a 429 on the poll skipped the deadline check, so a busy service meant an endless loop."""
+    responses = iter([ACCEPTED] + [httpx.Response(429, headers={"Retry-After": "0"})] * 50)
+    di = DocIntelClient(ENDPOINT, "k", cache_dir=None, poll_seconds=0, timeout_seconds=0,
+                        http_client=httpx.Client(transport=httpx.MockTransport(lambda req: next(responses))))
+    with pytest.raises(DocIntelError, match="rate limited"):
+        di.read_page(b"x")
+
+
+@pytest.mark.parametrize("where", ["analyze", "poll"])
+def test_retry_after_may_be_an_http_date(where: str) -> None:
+    """Code review: Retry-After: <HTTP date> went through float() and raised ValueError."""
+    busy = httpx.Response(429, headers={"Retry-After": "Fri, 31 Oct 2026 07:28:00 GMT"})
+    done = httpx.Response(200, json=analyze_result([TP_LINE]))
+    di = fake_di([busy, ACCEPTED, done] if where == "analyze" else [ACCEPTED, busy, done], [])
+    assert len(di.read_page(b"x")) == 1
+
+
+def test_a_damaged_page_cache_is_read_again(tmp_path: Path) -> None:
+    """Code review: a half-written cache file raised on every later read, so the page stayed needs_ocr."""
+    import hashlib
+    (tmp_path / f"{hashlib.sha256(b'page').hexdigest()}.json").write_text('[["Total Phos')
+    di = fake_di([ACCEPTED, httpx.Response(200, json=analyze_result([TP_LINE]))], [], tmp_path)
+    assert len(di.read_page(b"page")) == 1
+    assert json.loads(next(tmp_path.glob("*.json")).read_text())  # rewritten whole
+
+
+def test_a_crash_while_caching_leaves_no_half_written_page_cache(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Code review: the page cache was written in place, so a crash left a damaged file behind."""
+    real = Path.write_text
+
+    def crash(self: Path, data: str, *args: Any, **kwargs: Any) -> int:
+        real(self, data[: len(data) // 2], *args, **kwargs)
+        raise OSError("disk full")
+
+    di = fake_di([ACCEPTED, httpx.Response(200, json=analyze_result([TP_LINE]))], [], tmp_path)
+    monkeypatch.setattr(Path, "write_text", crash)
+    with pytest.raises(OSError, match="disk full"):
+        di.read_page(b"page")
+    assert not list(tmp_path.glob("*.json"))
