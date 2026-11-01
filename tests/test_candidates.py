@@ -128,3 +128,31 @@ def test_a_section_that_only_mentions_a_permit_is_still_read_for_requirements() 
     assert all(d.keep and d.permit for d in decisions)
     assert [s.section_id for s in extraction_sections(secs, decisions)] == ["specs#01 33 00", "memo#1"]
     assert [s.section_id for s in permit_sections(secs, decisions)] == ["specs#01 33 00", "memo#1", "permit#1"]
+
+
+def test_a_sentence_after_a_page_break_cites_its_own_page() -> None:
+    """Code review: every sentence joined across a page break cited the first block's page."""
+    s = section_of([blk("A. The pumps shall be installed by the", 3, path="3.02.A"),
+                    blk("Contractor. The Contractor shall submit test results within 30 days.", 4, kind="paragraph",
+                        path="3.02.A")])
+    assert [(i, c.page, c.sentence) for i, c in section_candidates(s)] == [
+        (0, 3, "The pumps shall be installed by the Contractor."),
+        (1, 4, "The Contractor shall submit test results within 30 days.")]
+
+
+def test_a_page_break_never_joins_two_documents() -> None:
+    """Code review: an addendum block after an unfinished spec block was glued into one sentence citing the spec."""
+    s = section_of([blk("A. Provide one permeate pump for each train, plus", 5, path="2.05.A"),
+                    Block(doc_id="addendum_1", page=6, bbox=(72, 100, 540, 112), kind="paragraph",
+                          text="Permeate pumps shall be self priming.", paragraph_path="2.05.B",
+                          from_addendum="Addendum 1")])
+    assert [(c.doc_id, c.page) for _, c in section_candidates(s)] == [("rfp", 5), ("addendum_1", 6)]
+
+
+def test_a_list_item_continued_on_the_next_page_keeps_its_structural_trigger() -> None:
+    """Found checking the page fix on Lakeview 1.05.B: the carried-over sentence lost the list item's trigger."""
+    s = section_of([blk("B. Each train operates on a filtration cycle of production followed by relaxation or", 135,
+                        path="1.05.B"),
+                    blk("backpulse. Air scour runs during production to limit solids buildup.", 136, kind="paragraph",
+                        path="1.05.B")])
+    assert [(c.page, c.triggers) for _, c in section_candidates(s)] == [(135, ["structural"]), (136, ["structural"])]

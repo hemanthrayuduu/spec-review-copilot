@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Iterator
+from typing import NamedTuple
 
 from spec_review.extract.text import split_sentences, strip_marker
 from spec_review.filter.relevance import is_permit_document
@@ -47,14 +48,35 @@ def find_triggers(sentence: str, kind: BlockKind) -> list[Trigger]:
 
 
 def _continues(prev: Block, nxt: Block) -> bool:
-    """A sentence cut by a page break: no final punctuation, and the next page's block has no marker."""
+    """A sentence cut by a page break: no final punctuation, and the next page of the same document has no marker."""
     return (prev.kind != "table_row" and not prev.text.rstrip().endswith(TERMINAL)
-            and nxt.page == prev.page + 1 and nxt.superseded_by is None
+            and nxt.doc_id == prev.doc_id and nxt.page == prev.page + 1 and nxt.superseded_by is None
             and nxt.kind not in ("heading", "table_row") and strip_marker(nxt.text) == nxt.text.strip())
 
 
-def section_sentences(section: Section) -> Iterator[tuple[int, Block, str]]:
-    """Every sentence of the section's current text, with its first block's index. Table rows stay whole."""
+def _starts(text: str, later: list[Block]) -> list[int]:
+    """Where each joined block begins in the joined text; -1 if it cannot be found."""
+    starts, cursor = [], 0
+    for b in later:
+        piece = " ".join(b.text.split())
+        at = text.find(piece, cursor)
+        starts.append(at)
+        cursor = at + len(piece) if at >= 0 else cursor
+    return starts
+
+
+class SectionSentence(NamedTuple):
+    index: int  # the block the sentence starts in, which gives its document and page
+    block: Block
+    text: str
+    kind: BlockKind  # the paragraph's first block: a list item carried onto the next page is still a list item
+
+
+def section_sentences(section: Section) -> Iterator[SectionSentence]:
+    """Every sentence of the section's current text. Table rows stay whole.
+
+    A sentence cut by a page break is joined across it, and cites the page it starts on.
+    """
     blocks, i = section.blocks, 0
     while i < len(blocks):
         b = blocks[i]
@@ -65,16 +87,24 @@ def section_sentences(section: Section) -> Iterator[tuple[int, Block, str]]:
         while j + 1 < len(blocks) and _continues(blocks[j], blocks[j + 1]):
             j += 1
             text = f"{text} {blocks[j].text}"
-        for sentence in [" ".join(text.split())] if b.kind == "table_row" else split_sentences(strip_marker(text)):
-            yield i, b, sentence
+        if b.kind == "table_row":
+            yield SectionSentence(i, b, " ".join(text.split()), b.kind)
+        else:
+            text = " ".join(strip_marker(text).split())
+            starts, cursor = _starts(text, blocks[i + 1:j + 1]), 0
+            for sentence in split_sentences(text):
+                at = text.find(sentence, cursor)
+                cursor = at + len(sentence) if at >= 0 else cursor
+                k = i + sum(0 <= s <= at for s in starts)
+                yield SectionSentence(k, blocks[k], sentence, b.kind)
         i = j + 1
 
 
 def section_candidates(section: Section) -> list[tuple[int, Candidate]]:
     """Each candidate with the index of its first block in section.blocks."""
     out: list[tuple[int, Candidate]] = []
-    for i, b, sentence in section_sentences(section):
-        triggers = find_triggers(sentence, b.kind)
+    for i, b, sentence, kind in section_sentences(section):
+        triggers = find_triggers(sentence, kind)
         if triggers:
             out.append((i, Candidate(candidate_id=f"{section.section_id}:c{len(out) + 1}",
                                      section_id=section.section_id, doc_id=b.doc_id,

@@ -68,7 +68,7 @@ def _kept_sections(segment: SegmentResult, filt: FilterResult) -> list[Section]:
 def _sentences(segment: SegmentResult, filt: FilterResult) -> Iterator[tuple[Section, Block, str]]:
     """Every current sentence of the kept sections, trigger or not: a deadline needs no "shall"."""
     for s in extraction_sections(segment.sections, filt.decisions):
-        for _, b, sentence in section_sentences(s):
+        for _, b, sentence, _ in section_sentences(s):
             yield s, b, sentence
 
 
