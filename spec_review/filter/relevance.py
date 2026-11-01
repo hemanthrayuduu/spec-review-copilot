@@ -13,6 +13,7 @@ from spec_review.segment.paths import section_key
 BODY_KEYWORD_MIN = 3
 PROCESS_DIVISIONS = {"11", "13", "40", "41", "43", "44", "46"}
 PERMIT_BLOCKS = 10
+PERMIT_DOCUMENT = "permit document"  # reason prefix: an unnumbered section whose title names a permit
 
 
 class ProductLine(BaseModel):
@@ -54,6 +55,9 @@ def _rules(s: Section, pmap: ProductMap) -> SectionDecision | None:
     head = " ".join([s.title, *(b.text for b in s.blocks[:PERMIT_BLOCKS])])
     permit_kw = _first_hit(pmap.permits.keywords, head)
     permit_reason = f"permit keyword '{permit_kw}'"
+    title_kw = _first_hit(pmap.permits.keywords, s.title) if s.number is None else None
+    if title_kw:  # the permit itself, not a spec section that mentions one
+        permit_reason = f"{PERMIT_DOCUMENT}: '{title_kw}' in the title, read by the permit stage only"
 
     def keep(reasons: list[str], lines: list[str] | None = None) -> SectionDecision:
         # The permit flag is set whichever rule keeps the section: a permit is usually a front-end document.
@@ -89,6 +93,11 @@ def _rules(s: Section, pmap: ProductMap) -> SectionDecision | None:
     if kw:
         return keep([f"always include keyword '{kw}' in title"])
     return None
+
+
+def is_permit_document(d: SectionDecision) -> bool:
+    """Only the permit stage reads a permit document; every other kept section is read for requirements too."""
+    return d.permit and not d.product_lines and any(r.startswith(PERMIT_DOCUMENT) for r in d.reasons)
 
 
 def decide(sections: list[Section], xrefs: list[CrossRef], pmap: ProductMap) -> list[SectionDecision]:

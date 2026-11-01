@@ -13,7 +13,7 @@ from spec_review.extract.candidates import (
 from spec_review.extract.text import norm_text
 from spec_review.filter.relevance import decide, load_product_map
 from spec_review.models import Block, CrossRef, Section
-from tests.block_fixtures import sec
+from tests.block_fixtures import blocks_from, sec
 
 
 @pytest.mark.parametrize("sentence,kind,expected", [
@@ -109,3 +109,22 @@ def test_lakeview_candidate_recall_is_complete(lakeview_segmented: tuple[list[Se
     missed = [g.source_text for g in lakeview_golden.requirements
               if not any(norm_text(g.source_text) in s for s in sentences)]
     assert missed == []
+
+
+def test_a_section_that_only_mentions_a_permit_is_still_read_for_requirements() -> None:
+    """Code review: 01 33 00 mentioning NPDES in its opening went only to the permit stage, so its requirements,
+    deadlines and red flags were never read (CLAUDE.md rules 8 and 9). Only a permit document is permit-only."""
+    spec = sec("01 33 00", "SUBMITTALS", ["A. Submittals shall follow the NPDES permit for the plant.",
+                                         "B. The Contractor shall submit shop drawings within 14 days."])
+    memo = Section(section_id="memo#1", number=None, title="TECHNICAL MEMORANDUM", numbering_style="front_end",
+                   doc_id="memo", page_start=1, page_end=1,
+                   blocks=blocks_from(["TECHNICAL MEMORANDUM", "The plant discharges under an NPDES permit.",
+                                       "The Contractor shall submit a schedule within 7 days."], doc="memo"))
+    permit = Section(section_id="permit#1", number=None, title="NPDES DISCHARGE PERMIT EXCERPT",
+                     numbering_style="front_end", doc_id="permit", page_start=1, page_end=1,
+                     blocks=blocks_from(["NPDES DISCHARGE PERMIT EXCERPT", "Permit No. LV0100421"], doc="permit"))
+    secs = [spec, memo, permit]
+    decisions = decide(secs, [], load_product_map())
+    assert all(d.keep and d.permit for d in decisions)
+    assert [s.section_id for s in extraction_sections(secs, decisions)] == ["specs#01 33 00", "memo#1"]
+    assert [s.section_id for s in permit_sections(secs, decisions)] == ["specs#01 33 00", "memo#1", "permit#1"]

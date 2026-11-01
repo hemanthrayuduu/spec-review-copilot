@@ -4,6 +4,7 @@ import re
 from collections.abc import Iterator
 
 from spec_review.extract.text import split_sentences, strip_marker
+from spec_review.filter.relevance import is_permit_document
 from spec_review.models import Block, BlockKind, Candidate, CandidateResult, Section, SectionDecision, Trigger
 
 TERMINAL = (".", ";", ":", "?", "!")
@@ -94,8 +95,11 @@ def _kept(sections: list[Section], decisions: list[SectionDecision]) -> list[tup
 
 
 def extraction_sections(sections: list[Section], decisions: list[SectionDecision]) -> list[Section]:
-    """Kept sections read for requirements. A permit section with no product line goes only to the permit stage."""
-    return [s for s, d in _kept(sections, decisions) if not (d.permit and not d.product_lines)]
+    """Kept sections read for requirements: all of them except a permit document, which only the permit stage reads.
+
+    A spec section that merely mentions a permit (01 33 00 citing the NPDES permit) is read by both.
+    """
+    return [s for s, d in _kept(sections, decisions) if not is_permit_document(d)]
 
 
 def permit_sections(sections: list[Section], decisions: list[SectionDecision]) -> list[Section]:
