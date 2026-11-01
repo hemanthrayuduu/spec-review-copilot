@@ -65,3 +65,20 @@ def test_find_evidence_skips_ids_missing_from_the_corpus() -> None:
                        vectors=StaleIndex(), notes=[])
     r = req("<=", "6", "mm", "screen opening")
     assert [e.evidence_id for e in find_evidence([r], kb, client)[r.req_id]] == ["cap:A"]
+
+
+def test_retrieve_shows_both_rankings_and_what_the_judge_gets() -> None:
+    """One search for the judge and for specreview knowledge search, so the command shows what the judge sees."""
+    from llm_fakes import EchoProvider
+    from spec_review.match.evidence import retrieve
+    caps = [cap(capability_id=f"C{i}", parameter=f"parameter {i} opening", source_text=f"Text {i} openings.")
+            for i in range(12)]
+    items = build_corpus(caps, [], [])
+    client = LLMClient(EchoProvider(), embedder=FakeEmbedder())
+    kb = KnowledgeBase(items={e.evidence_id: e for e in items}, capabilities=caps, keyword=KeywordIndex(items),
+                       vectors=MemoryIndex([e.evidence_id for e in items], client.embed([e.text for e in items])),
+                       notes=[])
+    r = req("<=", "6", "mm", "screen opening")
+    got = retrieve(query_text(r), client.embed([query_text(r)])[0], kb)
+    assert [e.evidence_id for e in got.chosen] == [e.evidence_id for e in find_evidence([r], kb, client)[r.req_id]]
+    assert got.keyword and len(got.vector) == len(items) and {i for i, _ in got.vector} <= set(kb.items)

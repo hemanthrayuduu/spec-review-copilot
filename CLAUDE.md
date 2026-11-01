@@ -26,6 +26,7 @@ uv run pytest
 uv run specreview run <package_dir>
 uv run specreview eval dev
 uv run specreview outputs <run_id>
+uv run specreview knowledge search "<requirement text>"
 uv run specreview serve
 uv run streamlit run app/streamlit_app.py
 ```

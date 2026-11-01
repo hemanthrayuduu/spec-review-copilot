@@ -103,3 +103,9 @@ def test_run_fails_when_every_llm_call_failed(tmp_path: Path, lakeview_pdfs: Pat
     result = CliRunner().invoke(app, ["run", str(lakeview_pdfs), "--run-id", "bad"])
     assert result.exit_code == 1 and "every LLM call failed" in result.output and "401 bad key" in result.output
     assert (tmp_path / "runs/bad/requirements.xlsx").exists()  # outputs are still written for inspection
+
+
+def test_knowledge_search_shows_the_evidence_the_judge_would_get() -> None:
+    result = CliRunner().invoke(app, ["knowledge", "search", "membrane warranty years full replacement"])
+    assert result.exit_code == 0, result.output
+    assert "cap:MBR-32" in result.output and "in memory" in result.output and "settles" in result.output

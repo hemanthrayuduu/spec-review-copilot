@@ -22,6 +22,8 @@ from spec_review.knowledge.azure_search import AzureSearchIndex, SearchError
 from spec_review.knowledge.index import load_knowledge
 from spec_review.llm.check import check_chat, check_docintel, check_embeddings, check_search
 from spec_review.llm.client import LLMConfigError, LLMError, get_client
+from spec_review.match.evidence import retrieve
+from spec_review.match.judge import settles
 from spec_review.outputs.matrix_xlsx import STATUSES
 from spec_review.pipeline import PackageOutputs, ReadOutputs, run_package
 from spec_review.runs import RunWriter, new_run_id
@@ -244,6 +246,36 @@ def knowledge_build() -> None:
         typer.echo(f"Azure AI Search index {settings.azure_search_index}: uploaded {len(kb.items)} items")
     for note in kb.notes:
         typer.echo(f"note       {note}")
+
+
+@knowledge_app.command("search")
+def knowledge_search(query: str) -> None:
+    """Show the evidence the judge would get for this text: keyword and vector ranks, fused by rank (RRF)."""
+    settings = get_settings()
+    try:
+        client = get_client(settings)
+        kb = load_knowledge(settings, client)
+        got = retrieve(query, client.embed([query])[0], kb)
+    except (LLMConfigError, KnowledgeError, SearchError) as e:
+        _fail(str(e))
+    except LLMError as e:
+        _fail(f"embedding failed: {e}")
+    where = f"Azure AI Search index {settings.azure_search_index}" if isinstance(kb.vectors, AzureSearchIndex) \
+        else "in memory"
+    typer.echo(f"Knowledge items: {len(kb.items)}; vectors searched {where}")
+    for note in kb.notes:
+        typer.echo(f"note       {note}")
+    kw = {i: n for n, (i, _) in enumerate(got.keyword, start=1)}
+    vec = {i: (n, s) for n, (i, s) in enumerate(got.vector, start=1)}
+    typer.echo(f"{'#':>2}  {'fused':>7}  {'keyword':>7}  {'vector':>12}  settles  evidence")
+    for n, ev in enumerate(got.chosen, start=1):
+        v = f"{vec[ev.evidence_id][0]} ({vec[ev.evidence_id][1]:.3f})" if ev.evidence_id in vec else "-"
+        typer.echo(f"{n:>2}  {ev.score:.5f}  {kw.get(ev.evidence_id, '-'):>7}  {v:>12}  "
+                   f"{'yes' if settles(ev) else 'no':7}  "
+                   f"{ev.evidence_id} ({ev.source}, {ev.origin}, {ev.basis or '-'}; {ev.ref} p.{ev.page or '-'})")
+        typer.echo(f"    {ev.text[:160]}")
+    typer.echo("Ranks are positions in each list (- = not in its top 20). Only guaranteed or typical capability rows "
+               "settle a status.")
 
 
 @app.command("outputs")
