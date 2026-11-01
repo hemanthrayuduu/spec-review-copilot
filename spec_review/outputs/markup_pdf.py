@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pymupdf
 
+from spec_review.ingest import find_pdf
 from spec_review.review.run_view import Item, RunView, status_label
 
 COLOURS = {"C": (0.0, 0.55, 0.0), "R": (0.9, 0.55, 0.0), "D": (0.85, 0.0, 0.0), "?": (0.45, 0.45, 0.45)}
@@ -41,9 +42,9 @@ def write_markup(view: RunView, package_dir: Path, out_dir: Path) -> tuple[list[
     skipped: list[str] = []
     out_dir.mkdir(parents=True, exist_ok=True)
     for doc_id, items in by_doc.items():
-        source = package_dir / f"{doc_id}.pdf"
-        if not source.is_file():
-            skipped.append(f"{doc_id}: {source} not found, so its {len(items)} items are not marked")
+        source = find_pdf(package_dir, doc_id)
+        if source is None:
+            skipped.append(f"{doc_id}: no PDF for it in {package_dir}, so its {len(items)} items are not marked")
             continue
         with pymupdf.open(source) as doc:
             for it in items:

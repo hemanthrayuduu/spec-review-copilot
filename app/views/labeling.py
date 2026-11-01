@@ -13,7 +13,7 @@ from pydantic import ValidationError  # noqa: E402
 
 from spec_review.config import get_settings  # noqa: E402
 from spec_review.eval.golden import GoldenRequirement  # noqa: E402
-from spec_review.ingest import doc_id_for  # noqa: E402
+from spec_review.ingest import doc_id_for, package_pdfs  # noqa: E402
 from spec_review.labeling import add_requirement, blank_row, load_labels, page_count, page_view  # noqa: E402
 from spec_review.labeling import remove_requirement  # noqa: E402
 from spec_review.models import Category, Operator  # noqa: E402
@@ -36,7 +36,7 @@ package = st.selectbox("Package", packages, key="lab_package")
 if not package:
     st.stop()
 package_dir = root / split / package
-pdfs = sorted(p for p in package_dir.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf")  # as ingest reads
+pdfs = package_pdfs(package_dir)  # the files ingest reads, so labels use its document ids
 if not pdfs:
     st.info(f"{md(split)}/{md(package)} has no PDF files to label.")
     st.stop()

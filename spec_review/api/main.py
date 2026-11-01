@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from spec_review.api.jobs import Job, JobManager, Runner
 from spec_review.config import Settings, get_settings
+from spec_review.ingest import find_pdf
 from spec_review.models import ReviewDecision
 from spec_review.outputs.addendum_diff import after_placeholder, diff_entries
 from spec_review.outputs.bundle import OutputsResult, write_outputs
@@ -247,9 +248,9 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
                                                                                   for b in s.blocks}
         if doc_id not in known or v.info is None:
             raise HTTPException(404, f"no document {doc_id} in run {run_id}")
-        pdf = Path(v.info.package_dir) / f"{doc_id}.pdf"
-        if not pdf.is_file():
-            raise HTTPException(404, f"{doc_id}.pdf is not in the package folder")
+        pdf = find_pdf(Path(v.info.package_dir), doc_id)
+        if pdf is None:
+            raise HTTPException(404, f"no PDF for {doc_id} in the package folder")
         with pymupdf.open(pdf) as doc:
             if not 1 <= page <= len(doc):
                 raise HTTPException(404, f"{doc_id} has {len(doc)} pages")

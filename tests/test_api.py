@@ -177,3 +177,13 @@ def test_page_png_serves_a_document_in_a_subfolder(tmp_path: Path) -> None:
     client = TestClient(create_app(settings, runner=fake_runner))
     r = client.get("/runs/run1/page/sub%2Fspecs/1.png", params={"req_id": R_COMPLY})
     assert r.status_code == 200 and r.content[:4] == b"\x89PNG"
+
+
+def test_page_png_serves_a_pdf_with_an_upper_case_suffix(tmp_path: Path, case_sensitive_disk: None) -> None:
+    """Code review: the page route looked for specs.pdf, so Specs.PDF on a Linux disk gave 404."""
+    settings = api_settings(tmp_path)
+    pkg = make_package(tmp_path)
+    (pkg / "specs.pdf").rename(pkg / "specs.PDF")
+    make_run(settings.runs_dir, pkg)
+    client = TestClient(create_app(settings, runner=fake_runner))
+    assert client.get("/runs/run1/page/specs/1.png").status_code == 200

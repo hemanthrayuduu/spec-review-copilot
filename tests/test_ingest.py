@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from spec_review.ingest import ingest_package
+from spec_review.ingest import find_pdf, ingest_package
 from spec_review.ingest.pdf_local import find_tessdata
 from tests.pdf_fixtures import make_pdf, make_scanned_pdf
 
@@ -168,3 +168,13 @@ def test_failed_docintel_page_is_not_cached(tmp_path: Path) -> None:  # final re
     assert res.pages[0].status == "needs_ocr" and not list((tmp_path / "c").glob("*.json"))
     good = StubDI([("Total Phosphorus 0.1 mg/L monthly average for the permit term", (72, 144, 288, 162))])
     assert ingest_package(tmp_path / "pkg", tessdata=None, cache_dir=tmp_path / "c", docintel=good).pages[0].status == "ocr"
+
+
+def test_find_pdf_is_the_inverse_of_doc_id(tmp_path: Path, case_sensitive_disk: None) -> None:
+    """Code review: callers rebuilt <doc_id>.pdf, which misses Specs.PDF on a case-sensitive disk."""
+    pkg = tmp_path / "pkg"
+    make_pdf(pkg / "Specs.PDF", ["<p>One.</p>"])
+    make_pdf(pkg / "sub" / "rfp.pdf", ["<p>Two.</p>"])
+    assert [d.doc_id for d in ingest_package(pkg, tessdata=None, cache_dir=None).documents] == ["Specs", "sub/rfp"]
+    assert find_pdf(pkg, "Specs") == pkg / "Specs.PDF" and find_pdf(pkg, "sub/rfp") == pkg / "sub" / "rfp.pdf"
+    assert find_pdf(pkg, "specs") is None and find_pdf(pkg, "../pkg/Specs") is None

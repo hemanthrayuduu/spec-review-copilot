@@ -37,6 +37,16 @@ def doc_id_for(package_dir: Path, path: Path) -> str:
     return path.relative_to(package_dir).with_suffix("").as_posix()
 
 
+def package_pdfs(package_dir: Path) -> list[Path]:
+    """Every PDF ingest reads: any file under the package whose suffix is .pdf in any case."""
+    return sorted(p for p in package_dir.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf")
+
+
+def find_pdf(package_dir: Path, doc_id: str) -> Path | None:
+    """The PDF a document id came from, the inverse of doc_id_for: Specs.PDF is found on a case-sensitive disk."""
+    return next((p for p in package_pdfs(package_dir) if doc_id_for(package_dir, p) == doc_id), None)
+
+
 def ingest_package(package_dir: Path, *, tessdata: Path | None, cache_dir: Path | None = Path(".cache/ingest"),
                    docintel: "PageReader | None" = None) -> IngestResult:
     """Read every PDF under package_dir. Other files and unreadable PDFs are listed in skipped, never dropped."""

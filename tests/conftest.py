@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,6 +20,17 @@ def isolated_settings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(config, "ENV_FILE", None)
     for name in Settings.model_fields:
         monkeypatch.delenv(name.upper(), raising=False)
+
+
+@pytest.fixture
+def case_sensitive_disk(monkeypatch: pytest.MonkeyPatch) -> None:
+    """This Mac's disk ignores case; Linux (CI, Azure) does not. Make is_file see only exact file names."""
+    real = Path.is_file
+
+    def is_file(self: Path) -> bool:
+        return real(self) and self.name in os.listdir(self.parent)
+
+    monkeypatch.setattr(Path, "is_file", is_file)
 
 
 @pytest.fixture(scope="session")

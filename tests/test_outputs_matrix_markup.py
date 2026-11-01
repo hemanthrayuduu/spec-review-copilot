@@ -92,3 +92,11 @@ def test_matrix_keeps_text_that_starts_with_an_equals_sign_as_text(tmp_path: Pat
     ws = openpyxl.load_workbook(write_compliance_matrix(view, tmp_path / "m.xlsx"))["Compliance matrix"]
     note = ws.cell(row=2, column=MATRIX_COLUMNS.index("Review note") + 1)
     assert note.value == "=see Q&A 4" and note.data_type == "s"
+
+
+def test_markup_finds_a_pdf_with_an_upper_case_suffix(view: RunView, tmp_path: Path, case_sensitive_disk: None) -> None:
+    """Code review: write_markup looked for specs.pdf, so Specs.PDF on a Linux disk was skipped as not found."""
+    pkg = make_package(tmp_path / "upper")
+    (pkg / "specs.pdf").rename(pkg / "specs.PDF")
+    files, skipped = write_markup(view, pkg, tmp_path / "out")
+    assert [f.name for f in files] == ["specs_marked.pdf"] and skipped == []
