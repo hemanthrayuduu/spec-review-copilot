@@ -25,8 +25,12 @@ uv sync
 uv run pytest
 uv run specreview run <package_dir>
 uv run specreview eval dev
+uv run specreview outputs <run_id>
+uv run specreview serve
 uv run streamlit run app/streamlit_app.py
 ```
+
+The app talks to the API (`specreview serve`, port 8000), so start the API first.
 
 Only run `uv run specreview eval test` when the project owner asks for it in Phase 4.
 
