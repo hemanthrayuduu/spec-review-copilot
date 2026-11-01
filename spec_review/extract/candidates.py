@@ -66,7 +66,7 @@ def _starts(text: str, later: list[Block]) -> list[int]:
 
 
 class SectionSentence(NamedTuple):
-    index: int  # the block the sentence starts in, which gives its document and page
+    start: int  # index of the block the sentence starts in, which gives its document and page
     block: Block
     text: str
     kind: BlockKind  # the paragraph's first block: a list item carried onto the next page is still a list item
