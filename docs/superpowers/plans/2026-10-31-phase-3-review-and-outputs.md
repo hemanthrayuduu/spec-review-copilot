@@ -52,7 +52,7 @@
 - **Git:**
   - Commit after each green test run, ending each message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Never push.
   - Every bug fix comes with a test that would have caught it.
-  - Work on a new branch `phase-3`, cut from main at cab16cd.
+  - Work on a new branch `phase-3`, cut from main at d673b5b.
 
 ## Review Focus
 

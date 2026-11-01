@@ -42,7 +42,7 @@ The knowledge base lives in `data/knowledge/` as committed CSVs, plus a generate
 - **Git:**
   - Commit after each green test run, ending each message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Never push.
   - Every bug fix comes with a test that would have caught it.
-  - Work on a new branch `phase-2` cut from local main at 72fa1ae.
+  - Work on a new branch `phase-2` cut from local main at 5c8c416.
 
 ## Review Focus
 

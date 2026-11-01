@@ -1,7 +1,7 @@
 # Phase 3 execution log: review app and outputs
 
 Plan: `docs/superpowers/plans/2026-10-31-phase-3-review-and-outputs.md`
-Branch: `phase-3`, cut from main at dd8c757. Executed natively, one task at a time, test first.
+Branch: `phase-3`, cut from main at 6a015a4. Executed natively, one task at a time, test first.
 Tests: 561 pass with no network and no keys (`uv run pytest`).
 
 ## How to run it
@@ -112,7 +112,7 @@ None of these block the Phase 3 criteria. I have left them for the owner to deci
 
 ## Final review
 
-A fresh reviewer (Opus) read the whole branch, dd8c757..fcb9581. It found no Critical issues, 5 Important and 14 Minor, with the verdict "with fixes". I raised three of the Minors to Important because of what they do to a user. All eight were fixed in one pass, each with a test that failed first. The suite went from 561 to 572 tests, all passing.
+A fresh reviewer (Opus) read the whole branch, 6a015a4..a110a56. It found no Critical issues, 5 Important and 14 Minor, with the verdict "with fixes". I raised three of the Minors to Important because of what they do to a user. All eight were fixed in one pass, each with a test that failed first. The suite went from 561 to 572 tests, all passing.
 
 1. **An empty or off-page bbox stopped every output.** The addenda stage writes (0, 0, 0, 0) for text it cannot place. The markup now skips such items with a note.
 2. **The addendum diff compared raw strings.** Writing 466100 for 46 61 00, or 2.1.B for 2.01.B, made it lose the before text, and it called a replacement "(deleted)". It now compares keys the way the addenda stage does, and says "(deleted)" only for a deletion, in the report and on the Addenda page.

@@ -1,7 +1,7 @@
 # Phase 2 design: judge each requirement against what the manufacturer offers
 
 Status: approved by the owner, 2026-10-31 ("approved, go ahead with the plan").
-Builds on Phase 1, which is complete on local main at 312be7a.
+Builds on Phase 1, which is complete on local main at ca6fdaa.
 
 ## 1. Intent
 

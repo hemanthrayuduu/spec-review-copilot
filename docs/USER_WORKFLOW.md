@@ -2,7 +2,7 @@
 
 This guide walks the whole product by hand: run a package, review it, produce the bid outputs, and look inside the knowledge index. Each step says what to do and what you should see.
 
-The "Expect" values come from a real run on 2026-11-01, on `main` at df71071, with Azure for the LLM, OCR and search. If you do the steps in order, you should see the same numbers. A model change or a new prompt would move them.
+The "Expect" values come from a real run on 2026-11-01, on `main` at 738e928, with Azure for the LLM, OCR and search. If you do the steps in order, you should see the same numbers. A model change or a new prompt would move them.
 
 ## 0. Before you start
 
