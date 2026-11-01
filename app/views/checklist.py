@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, show_error  # noqa: E402,F401
+from views.common import STATUSES, context, md, show_error  # noqa: E402,F401
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
@@ -51,7 +51,7 @@ if bulk:
                 api.decide(run_id, i["req_id"], i["ai_status"], "", reviewer)
                 saved += 1
         except ApiError as exc:
-            st.error(f"Saved {saved} of {len(bulk)}; the rest were not saved. {exc}")
+            st.error(f"Saved {saved} of {len(bulk)}; the rest were not saved. {md(exc)}")
         else:
             st.rerun()
 
@@ -63,13 +63,14 @@ req_id = st.selectbox("Requirement", list(labels), format_func=labels.__getitem_
 item = next(i for i in shown if i["req_id"] == req_id)
 left, right = st.columns([3, 2])
 with left:
-    st.markdown(f"**{item['section_number'] or '-'} {item['paragraph_path']}** ({item['doc_id']} p.{item['page']})")
-    st.write(item["source_text"])
-    st.markdown(f"**AI status:** {item['ai_status'] or 'not matched'}  \n**Reason:** {item['ai_reason'] or '-'}")
+    st.markdown(f"**{md(item['section_number'] or '-')} {md(item['paragraph_path'])}** "
+                f"({md(item['doc_id'])} p.{item['page']})")
+    st.markdown(md(item["source_text"]))
+    st.markdown(f"**AI status:** {item['ai_status'] or 'not matched'}  \n**Reason:** {md(item['ai_reason'] or '-')}")
     for e in item["evidence"]:
         tag = " · **SYNTHETIC**" if e["origin"] == "synthetic" else ""
-        st.markdown(f"- `{e['evidence_id']}` ({e['basis'] or '-'}, {e['ref']} p.{e['page'] or '-'}){tag}: "
-                    f"{e['text'][:200]}")
+        st.markdown(f"- `{e['evidence_id']}` ({e['basis'] or '-'}, {md(e['ref'])} p.{e['page'] or '-'}){tag}: "
+                    f"{md(e['text'][:200])}")
 with right:
     default = item["final_status"] or "needs_engineer"
     status = st.selectbox("Final status", STATUSES, index=STATUSES.index(default), key=f"cl_final_{req_id}")
@@ -81,4 +82,4 @@ with right:
         except ApiError as exc:
             show_error(exc)
     if item["reviewed"]:
-        st.caption(f"Reviewed by {item['reviewer']}: {item['final_status']}")
+        st.caption(f"Reviewed by {md(item['reviewer'])}: {item['final_status']}")

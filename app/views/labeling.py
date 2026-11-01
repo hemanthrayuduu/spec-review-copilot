@@ -17,6 +17,7 @@ from spec_review.ingest import doc_id_for  # noqa: E402
 from spec_review.labeling import add_requirement, blank_row, load_labels, page_count, page_view  # noqa: E402
 from spec_review.labeling import remove_requirement  # noqa: E402
 from spec_review.models import Category, Operator  # noqa: E402
+from views.common import md  # noqa: E402
 
 CATEGORIES = list(Category.__args__)  # type: ignore[attr-defined]
 OPERATORS = ["", *Operator.__args__]  # type: ignore[attr-defined]
@@ -27,7 +28,7 @@ root = Path(st.session_state.get("labeling_root") or get_settings().raw_dir)
 golden_root = Path(st.session_state.get("labeling_golden") or get_settings().golden_dir)
 splits = sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
 if not splits:
-    st.info(f"No package folders under {root}.")
+    st.info(f"No package folders under {md(root)}.")
     st.stop()
 split = st.selectbox("Split", splits, key="lab_split")
 packages = sorted(p.name for p in (root / split).iterdir() if p.is_dir())
@@ -37,14 +38,14 @@ if not package:
 package_dir = root / split / package
 pdfs = sorted(p for p in package_dir.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf")  # as ingest reads
 if not pdfs:
-    st.info(f"{split}/{package} has no PDF files to label.")
+    st.info(f"{md(split)}/{md(package)} has no PDF files to label.")
     st.stop()
 pdf = st.selectbox("Document", pdfs, format_func=lambda p: doc_id_for(package_dir, p), key="lab_doc")
 doc_id = doc_id_for(package_dir, pdf)
 page = int(st.number_input("Page", min_value=1, value=1, step=1, key="lab_page"))
 pages = page_count(pdf)
 if page > pages:
-    st.warning(f"{doc_id} has {pages} page{'s' if pages != 1 else ''}; pick a page from 1 to {pages}.")
+    st.warning(f"{md(doc_id)} has {pages} page{'s' if pages != 1 else ''}; pick a page from 1 to {pages}.")
     st.stop()
 png, text = page_view(pdf, page)
 left, right = st.columns([3, 2])
@@ -70,17 +71,17 @@ with right.form("lab_form", clear_on_submit=True):
                    mandatory=None if mandatory is None else mandatory == "yes")
         try:
             add_requirement(golden_path, package, GoldenRequirement(**row))
-            st.success(f"Added to {golden_path}")
+            st.success(f"Added to {md(golden_path)}")
         except ValidationError as exc:
-            st.error(f"Not saved: {exc.errors()[0]['loc'][0]} {exc.errors()[0]['msg']}")
+            st.error(f"Not saved: {md(exc.errors()[0]['loc'][0])} {md(exc.errors()[0]['msg'])}")
         except ValueError as exc:
-            st.error(f"Not saved: {exc}")
+            st.error(f"Not saved: {md(exc)}")
 
 labels = load_labels(golden_path, package)
-st.subheader(f"{len(labels.requirements)} labels in {golden_path.name}")
+st.subheader(f"{len(labels.requirements)} labels in {md(golden_path.name)}")
 for n, r in enumerate(labels.requirements):
     a, b = st.columns([8, 1])
-    a.write(f"{r.doc_id} p.{r.page} · {r.section_number or '-'} {r.paragraph_path}: {r.source_text[:100]}")
+    a.markdown(md(f"{r.doc_id} p.{r.page} · {r.section_number or '-'} {r.paragraph_path}: {r.source_text[:100]}"))
     if b.button("Delete", key=f"lab_del_{n}", disabled=bool(labels.traps)):
         remove_requirement(golden_path, n)
         st.rerun()

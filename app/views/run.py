@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, show_error  # noqa: E402,F401
+from views.common import STATUSES, context, md, show_error  # noqa: E402,F401
 
 api, _, _ = context(need_run=False)
 st.header("Run a package")
@@ -41,13 +41,13 @@ def progress() -> None:
         show_error(exc)
         return
     st.progress(job["stages_done"] / job["stages_total"],
-                text=f"{job['package_id']}: {job['status']}, stage {job['stage'] or '-'} "
+                text=f"{md(job['package_id'])}: {job['status']}, stage {job['stage'] or '-'} "
                      f"({job['stages_done']} of {job['stages_total']})")
     if job["status"] == "done":
         st.session_state["run_id"] = job["run_id"]
-        st.success(f"Run {job['run_id']} is ready. Open the Brief or the Checklist.")
+        st.success(f"Run {md(job['run_id'])} is ready. Open the Brief or the Checklist.")
     elif job["status"] == "failed":
-        st.error(f"The run failed: {job['error']}")
+        st.error(f"The run failed: {md(job['error'])}")
 
 
 progress()

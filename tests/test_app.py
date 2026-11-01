@@ -1,6 +1,7 @@
 """The review app, page by page, through AppTest against an in-process API (spec 8.15). No network."""
 
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -109,7 +110,7 @@ def test_source_viewer_shows_the_page_image(api: ApiClient) -> None:
 
 def test_addenda_page_lists_changes(api: ApiClient) -> None:
     at = page("addenda", api)
-    text = " ".join(m.value for m in at.markdown)
+    text = re.sub(r"\\(.)", r"\1", " ".join(m.value for m in at.markdown))  # what the reader sees, escapes removed
     assert not at.exception and "2.01.B" in text and "5 years" in text and "December 15, 2026." in text
 
 
@@ -186,3 +187,32 @@ def test_a_changed_set_of_items_needs_a_new_tick(tmp_path: Path) -> None:
     at.selectbox(key="cl_req").set_value(R_COMPLY).run()
     at.button(key="cl_approve").click().run()  # one of the two is now reviewed
     assert not at.exception and at.button(key="cl_approve_all").disabled
+
+
+TRICKY = ["Liquidated damages of $500 per day, capped at $75,000.",
+          "Use *only* 316 stainless [see 2.03](http://x.example) ![i](http://x.example/i.png)",
+          "# not a heading", "1. not a list", "- not a list", "a_b_c and ~~old~~ <b>bold</b> &amp; :red[x] `code`",
+          r"C:\path\file and 5 > 3 < 4 | pipe"]
+
+
+@pytest.mark.parametrize("text", TRICKY)
+def test_md_shows_untrusted_text_literally(text: str) -> None:
+    """Code review: PDF text and AI reasons went through Markdown; two $ became math, links and images rendered."""
+    from markdown_it import MarkdownIt
+    from views.common import md
+    html = MarkdownIt("commonmark").enable("strikethrough").enable("table").render(md(text))
+    literal = text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+    assert html == f"<p>{literal}</p>\n" and "$" not in md(text).replace("\\$", "")  # \$ keeps Streamlit's math off
+
+
+@pytest.mark.parametrize("name", ["checklist", "source"])
+def test_review_pages_show_dollar_amounts_literally(tmp_path: Path, name: str) -> None:
+    from spec_review.models import MatchReport
+    settings = api_settings(tmp_path)
+    run_dir = make_run(settings.runs_dir, make_package(tmp_path))
+    report = MatchReport.model_validate_json((run_dir / "match.json").read_text())
+    report.results[0] = report.results[0].model_copy(update={"reason": "Damages are $500 a day, not $1,500."})
+    (run_dir / "match.json").write_text(report.model_dump_json())
+    at = page(name, ApiClient("http://testserver", http=TestClient(create_app(settings, runner=fake_runner))))
+    body = " ".join(m.value for m in at.markdown)
+    assert not at.exception and r"\$500" in body and r"\$1,500" in body

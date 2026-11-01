@@ -1,10 +1,21 @@
 """What every review page needs: the API client, the open run, and the reviewer, from the session."""
 
+import re
+
 import streamlit as st
 
 from api_client import ApiClient, ApiError
 
 STATUSES = ("comply", "comply_with_clarification", "deviation", "needs_engineer", "not_applicable")
+_MARKDOWN = re.compile(r"([\\`*_{}\[\]()#+\-.!|~<>$:&])")
+
+
+def md(text: object) -> str:
+    """Untrusted text (PDF lines, AI reasons, notes, file names) shown literally inside Markdown.
+
+    Every Markdown character is escaped, so "$500 ... $1,500" is not math and [x](url) is not a link or an image.
+    """
+    return _MARKDOWN.sub(r"\\\1", str(text))
 
 
 def context(need_run: bool = True) -> tuple[ApiClient, str, str]:
@@ -20,4 +31,4 @@ def context(need_run: bool = True) -> tuple[ApiClient, str, str]:
 
 
 def show_error(exc: ApiError) -> None:
-    st.error(exc.detail if exc.status == 0 else f"The API said: {exc}")
+    st.error(exc.detail if exc.status == 0 else f"The API said: {md(exc)}")  # status 0 is our own message

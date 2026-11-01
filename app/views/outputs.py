@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import context, show_error  # noqa: E402
+from views.common import context, md, show_error  # noqa: E402
 
 api, run_id, _ = context()
 st.header("Outputs")
@@ -29,4 +29,4 @@ if result:
         except ApiError as exc:
             show_error(exc)
     for note in result["skipped"]:
-        st.caption(f"Skipped: {note}")
+        st.caption(f"Skipped: {md(note)}")

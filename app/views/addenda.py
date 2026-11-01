@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import context, show_error  # noqa: E402
+from views.common import context, md, show_error  # noqa: E402
 
 api, run_id, _ = context()
 try:
@@ -20,22 +20,22 @@ st.header("Addenda changes")
 if not changes:
     st.info("This package has no addendum changes.")
 for c in changes:
-    target = f" {c['target_paragraph']} in Section {c['target_section']}" if c["target_paragraph"] else ""
+    target = f" {md(c['target_paragraph'])} in Section {md(c['target_section'])}" if c["target_paragraph"] else ""
     with st.container(border=True):
-        st.markdown(f"**{c['change_id']}: {c['addendum_id']}, {c['action'].replace('_', ' ')}{target}** "
-                    f"({c['doc_id']} p.{c['page']})")
-        st.caption(c["source_text"])
+        st.markdown(f"**{md(c['change_id'])}: {md(c['addendum_id'])}, {c['action'].replace('_', ' ')}{target}** "
+                    f"({md(c['doc_id'])} p.{c['page']})")
+        st.caption(md(c["source_text"]))
         if not c["applied"]:
-            st.warning(f"Not applied: {c['note'] or 'the instruction could not be applied'}")
+            st.warning(f"Not applied: {md(c['note'] or 'the instruction could not be applied')}")
         if c["action"] == "revise_date":
-            st.markdown(f"New date: **{c['new_text']}**")
+            st.markdown(f"New date: **{md(c['new_text'])}**")
         elif c["target_paragraph"]:
             before, after = st.columns(2)
             before.markdown("**Before**")
             for b in c["before"] or [{"text": "(no earlier text found)", "doc_id": "-", "page": "-"}]:
-                before.markdown(f"> {b['text']}  \n({b['doc_id']} p.{b['page']})")
+                before.markdown(f"> {md(b['text'])}  \n({md(b['doc_id'])} p.{b['page']})")
             after.markdown("**After**")
             for b in c["after"] or [{"text": c["after_placeholder"], "doc_id": "-", "page": "-"}]:
-                after.markdown(f"> {b['text']}  \n({b['doc_id']} p.{b['page']})")
+                after.markdown(f"> {md(b['text'])}  \n({md(b['doc_id'])} p.{b['page']})")
             for i in c["items"]:
-                st.markdown(f"- `{i['req_id']}` {i['source_text']} ({i['status_label']})")
+                st.markdown(f"- `{i['req_id']}` {md(i['source_text'])} ({md(i['status_label'])})")

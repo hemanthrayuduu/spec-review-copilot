@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, show_error  # noqa: E402,F401
+from views.common import STATUSES, context, md, show_error  # noqa: E402,F401
 
 api, run_id, _ = context()
 try:
@@ -17,7 +17,7 @@ try:
 except ApiError as exc:
     show_error(exc)
     st.stop()
-st.header(f"Brief: {brief['package_id']}")
+st.header(f"Brief: {md(brief['package_id'])}")
 reviewed = sum(i["reviewed"] for i in items)
 cols = st.columns(4)
 cols[0].metric("Requirements", len(items))
@@ -31,8 +31,8 @@ def cited(rows: list[dict], title: str) -> None:
     if not rows:
         st.write("None found.")
     for r in rows:
-        superseded = f" ~~superseded by {r['superseded_by']}~~" if r.get("superseded_by") else ""
-        st.markdown(f"- {r['text']} ({r['doc_id']} p.{r['page']}){superseded}")
+        superseded = f" ~~superseded by {md(r['superseded_by'])}~~" if r.get("superseded_by") else ""
+        st.markdown(f"- {md(r['text'])} ({md(r['doc_id'])} p.{r['page']}){superseded}")
 
 
 st.subheader("Relevant sections")

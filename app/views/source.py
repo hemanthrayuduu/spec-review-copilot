@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import context, show_error  # noqa: E402
+from views.common import context, md, show_error  # noqa: E402
 
 api, run_id, _ = context()
 try:
@@ -40,9 +40,9 @@ with left:
     except ApiError as exc:
         show_error(exc)
 with right:
-    st.markdown(f"**{item['status_label']}**")
-    st.write(item["source_text"])
-    st.markdown(f"**Reason:** {item['ai_reason'] or '-'}")
+    st.markdown(f"**{md(item['status_label'])}**")
+    st.markdown(md(item["source_text"]))
+    st.markdown(f"**Reason:** {md(item['ai_reason'] or '-')}")
     for e in item["evidence"]:
         tag = " · **SYNTHETIC**" if e["origin"] == "synthetic" else ""
-        st.markdown(f"- `{e['evidence_id']}` ({e['ref']} p.{e['page'] or '-'}){tag}: {e['text'][:200]}")
+        st.markdown(f"- `{e['evidence_id']}` ({md(e['ref'])} p.{e['page'] or '-'}){tag}: {md(e['text'][:200])}")
