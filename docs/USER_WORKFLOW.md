@@ -161,18 +161,39 @@ The labeling helper is for writing golden labels by hand. To practise without to
 GOLDEN_DIR=/tmp/golden-scratch uv run streamlit run app/streamlit_app.py
 ```
 
+The right side has four tabs, one for each kind of label the test scorecard reads:
+
+| Tab | Fields | Scored as |
+|---|---|---|
+| Requirement | section number, paragraph path, source text, category, parameter, operator, value, unit, mandatory, **From addendum** | requirement recall, precision, mandatory recall, citation accuracy |
+| Relevant section | section number (blank if unnumbered), title, first page, last page | section filter recall |
+| Deadline | deadline text, section number | deadline recall |
+| Required form | form title or line, section number | required form recall |
+
 1. Open **Labeling helper (local)**.
    - The first split, `context`, says "context/epa_echo_downloads has no PDF files to label." That is expected.
 2. Pick Split `dev`, Package `lakeview`, Document `addendum_1`, Page 1.
-3. Check that every field is blank. Nothing is ever prefilled.
-4. Type a row: section 46 61 00, paragraph 2.04.B, the 7-year warranty sentence, category `warranty`, Mandatory `yes`.
-5. Click **Add requirement**.
+3. Check that every text field in every tab is blank. Nothing is ever prefilled; only the section tab's page numbers start at the page you're viewing.
+4. In **Requirement**, type section 46 61 00, paragraph 2.04.B and the 7-year warranty sentence, but no category. Click **Add requirement**.
+   - Expect "Not saved: …", with everything you typed still in the form.
+5. Pick category `warranty`, Mandatory `yes`, From addendum `Addendum 1`, and click **Add requirement** again.
+6. In **Relevant section**, type 46 61 00, MEMBRANE FILTRATION EQUIPMENT, pages 1 to 1, and add it.
+7. Add one **Deadline** and one **Required form** the same way.
 
 **Expect:**
-- "Added to /tmp/golden-scratch/dev/lakeview.json" and "1 labels in lakeview.json".
-- In the saved row, `expected_status` and `trap` are empty.
+- After each good save, "Added a … to /tmp/golden-scratch/dev/lakeview.json", and that form comes back blank.
+- The heading reads "1 requirement, 1 relevant section, 1 deadline, 1 required form in lakeview.json".
+- Each kind has its own list below, with **Delete** on every row.
+- In the saved requirement, `from_addendum` is "Addendum 1", while `expected_status` and `trap` are empty.
 
 **Without `GOLDEN_DIR`**, the helper writes to `data/golden/`. It refuses to change the frozen Lakeview file, saying it "is generated (it records planted traps) and frozen; change its generator instead".
+
+**Labeling the test set** (spec section 9, labeling protocol). Pick Split `test`; labels go to `data/golden/test/<package>.json`.
+- **Relevant sections:** every section that covers the product lines, plus bidding instructions, bid forms, submittals, warranties and domestic content.
+- **Requirements:** only inside relevant sections, including ones reached through cross references. One record per obligation.
+- **Pages:** the PDF page number shown in the helper, not the printed page label.
+- **Addenda:** a requirement an addendum changed is labeled once, in its final form, with **From addendum** set (for example "Addendum 3").
+- **Deadlines and forms:** wherever they appear in the package.
 
 ## 9. Search the knowledge index
 
