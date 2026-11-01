@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from spec_review.eval.golden import GoldenPackage
 from spec_review.ingest import ingest_package
 from spec_review.segment.addenda import apply_addenda, find_addendum_docs, parse_addendum, split_addendum
@@ -230,3 +232,25 @@ def test_cover_mentioning_an_addendum_is_not_an_addendum_document() -> None:  # 
     book = blocks_from(["TECHNICAL SPECIFICATIONS", "Conformed set incorporating Addendum No. 2",
                         "1. General information."], doc="specs")
     assert find_addendum_docs(book) == {}
+
+
+@pytest.mark.parametrize("title,number", [("ADDENDUM 2", 2), ("ADDENDUM #3", 3), ("Addendum No. One", 1),
+                                          ("ADDENDUM NUMBER 4", 4), ("ADDENDUM NO.5", 5), ("ADDENDUM TWELVE", 12)])
+def test_addendum_titles_are_found_in_their_common_forms(title: str, number: int) -> None:
+    """Code review: only "ADDENDUM NO. n" and "ADDENDUM NUMBER n" were found; other addenda were never applied."""
+    assert find_addendum_docs(blocks_from([title, "1. Delete paragraph 2.04.B."], doc="add")) == {"add": number}
+
+
+def test_a_word_after_addendum_is_not_a_number() -> None:
+    assert find_addendum_docs(blocks_from(["ADDENDUM NOTES", "ADDENDUM Oneida County"], doc="x")) == {}
+
+
+def test_reissued_section_stamped_in_another_form_replaces_the_old_one() -> None:
+    """Code review: the reissue stamp check also only knew "ADDENDUM NO. n"."""
+    base = split_sections(blocks_from(BASE) + blocks_from(["SECTION 46 61 00", "MEMBRANES", "ISSUED WITH ADDENDUM #2",
+                                                           "A. New text."], doc="add2_46_61_00"))
+    add = blocks_from(["ADDENDUM #2", "1. Delete Section 46 61 00 in its entirety and replace with the attached "
+                       "Section 46 61 00."], doc="addendum_2")
+    secs, changes = apply_addenda(base, parse_addendum("addendum_2", 2, add), add)
+    assert changes[0].action == "replace_section" and changes[0].applied
+    assert [(s.doc_id, s.superseded_by) for s in secs] == [("specs", "Addendum 2"), ("add2_46_61_00", None)]

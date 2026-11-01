@@ -7,7 +7,12 @@ from spec_review.models import AddendumAction, AddendumChange, BBox, Block, Sect
 from spec_review.segment.paths import PART_RE, display_number, path_key, section_key
 from spec_review.segment.sections import CSI_NUMBER, match_header, split_sections
 
-ADDENDUM_TITLE_RE = re.compile(r"\s*ADDENDUM\s+(?:NO\.?|NUMBER)\s*(\d+)\b", re.IGNORECASE)
+NUMBER_WORDS = ("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+                "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty")
+# ADDENDUM NO. 2, ADDENDUM NUMBER 2, ADDENDUM #2, ADDENDUM 2, Addendum No. Two
+ADDENDUM_NUMBER = rf"ADDENDUM\s+(?:NO\.?\s*|NUMBER\s*|#\s*)?(\d+|{'|'.join(NUMBER_WORDS)})\b"
+ADDENDUM_TITLE_RE = re.compile(rf"\s*{ADDENDUM_NUMBER}", re.IGNORECASE)
+ADDENDUM_STAMP_RE = re.compile(ADDENDUM_NUMBER, re.IGNORECASE)
 TITLE_BLOCKS = 15
 REPLACEMENT_BLOCKS = 20
 ITEM_RE = re.compile(r"^(\d+)\.\s+")
@@ -35,8 +40,13 @@ PATTERNS: tuple[tuple[re.Pattern[str], AddendumAction], ...] = tuple((re.compile
 ))
 
 
+def addendum_number(token: str) -> int:
+    return int(token) if token.isdigit() else NUMBER_WORDS.index(token.lower()) + 1
+
+
 def find_addendum_docs(blocks: list[Block]) -> dict[str, int]:
-    """doc_id → addendum number, for documents with a block that starts "ADDENDUM NO. n" among their first blocks.
+    """doc_id → addendum number, for documents with a block that starts with a title such as "ADDENDUM NO. 2",
+    "ADDENDUM #2", "ADDENDUM 2" or "Addendum No. Two" among their first blocks.
 
     The title must start a block ("Conformed set incorporating Addendum No. 2" on a spec book's cover is not
     one) and come before any section header (a reissued section stamped with the addendum number is a
@@ -54,7 +64,7 @@ def find_addendum_docs(blocks: list[Block]) -> dict[str, int]:
                 break
             m = ADDENDUM_TITLE_RE.match(b.text)
             if m:
-                out[doc_id] = int(m.group(1))
+                out[doc_id] = addendum_number(m.group(1))
                 break
     return out
 
@@ -165,6 +175,11 @@ def split_addendum(doc_id: str, number: int, blocks: list[Block]) -> tuple[list[
     return parse_addendum(doc_id, number, blocks[:start]), split_sections(attached) if attached else []
 
 
+def _stamped(text: str, number: int) -> bool:
+    """Text such as "ISSUED WITH ADDENDUM NO. 2" names this addendum."""
+    return any(addendum_number(m.group(1)) == number for m in ADDENDUM_STAMP_RE.finditer(text))
+
+
 def _order(c: AddendumChange) -> tuple[int, int]:
     return int(c.addendum_id.split()[-1]), int(c.change_id.rsplit("-", 1)[1])
 
@@ -235,10 +250,9 @@ def apply_addenda(sections: list[Section], changes: list[AddendumChange], addend
         elif c.action == "replace_section" and c.target_section:
             key = section_key(c.target_section)
             same = [i for i, s in enumerate(secs) if s.number and section_key(s.number) == key and s.superseded_by is None]
-            stamp = re.compile(rf"ADDENDUM\s+(?:NO\.?|NUMBER)\s*{_order(c)[0]}\b", re.IGNORECASE)
             # The replacement is attached to this addendum, or sits in a document stamped with its number.
             new = [i for i in same if any(b.from_addendum == c.addendum_id for b in secs[i].blocks)
-                   or any(stamp.search(b.text) for b in by_doc[secs[i].doc_id][:REPLACEMENT_BLOCKS])]
+                   or any(_stamped(b.text, _order(c)[0]) for b in by_doc[secs[i].doc_id][:REPLACEMENT_BLOCKS])]
             if len(new) == 1:
                 for i in same:
                     if i != new[0]:
