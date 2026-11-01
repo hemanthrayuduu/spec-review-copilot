@@ -11,12 +11,12 @@ from streamlit.testing.v1 import AppTest
 
 from api_fixtures import api_settings, fake_runner
 from pdf_fixtures import make_pdf
-from run_fixtures import R_COMPLY, R_DEVIATION, make_package, make_run
+from run_fixtures import R_COMPLY, R_DEVIATION, R_OPEN, make_package, make_run
 from spec_review.api.main import create_app
 
 ROOT = Path(__file__).parents[1]
 sys.path.insert(0, str(ROOT / "app"))
-from api_client import ApiClient  # noqa: E402
+from api_client import ApiClient, ApiError  # noqa: E402
 
 
 @pytest.fixture
@@ -35,6 +35,10 @@ def page(name: str, api: ApiClient | None, **state: Any) -> AppTest:
     for k, v in state.items():
         at.session_state[k] = v
     return at.run()
+
+
+def confirm(at: AppTest) -> None:
+    next(c for c in at.checkbox if c.key.startswith("cl_approve_confirm_")).check().run()
 
 
 def item(api: ApiClient, req_id: str) -> dict[str, Any]:
@@ -56,8 +60,39 @@ def test_checklist_approve_saves_a_decision(api: ApiClient) -> None:
 def test_approve_all_shown_reviews_the_filtered_rows(api: ApiClient) -> None:
     at = page("checklist", api)
     at.multiselect(key="cl_status").set_value(["comply"]).run()
+    confirm(at)
     at.button(key="cl_approve_all").click().run()
     assert item(api, R_COMPLY)["reviewed"] and not item(api, R_DEVIATION)["reviewed"]
+
+
+def test_approve_all_leaves_needs_engineer_and_deviation_items_to_the_engineer(api: ApiClient) -> None:
+    """Code review: one click saved every unread AI status, needs_engineer and deviation included (rule 4)."""
+    at = page("checklist", api)
+    confirm(at)
+    at.button(key="cl_approve_all").click().run()
+    assert item(api, R_COMPLY)["reviewed"]
+    assert not item(api, R_DEVIATION)["reviewed"] and not item(api, R_OPEN)["reviewed"]
+
+
+def test_approve_all_waits_for_a_confirmation_of_the_items_shown(api: ApiClient) -> None:
+    at = page("checklist", api)
+    assert at.button(key="cl_approve_all").disabled
+    confirm(at)
+    assert not at.button(key="cl_approve_all").disabled
+    at.multiselect(key="cl_status").set_value(["comply", "not_applicable"]).run()  # same items, same tick
+    assert not at.button(key="cl_approve_all").disabled
+
+
+def test_approve_all_reports_an_api_error_instead_of_crashing(api: ApiClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Code review: an ApiError partway through the loop escaped as a traceback."""
+    def fail(*args: object, **kwargs: object) -> None:
+        raise ApiError(409, "run run1 is still in progress")
+
+    monkeypatch.setattr(api, "decide", fail)
+    at = page("checklist", api)
+    confirm(at)
+    at.button(key="cl_approve_all").click().run()
+    assert not at.exception and any("0 of 1" in e.value for e in at.error)
 
 
 def test_checklist_without_a_reviewer_cannot_save(api: ApiClient) -> None:
@@ -135,3 +170,19 @@ def test_labeling_page_uses_the_ingest_doc_id_for_nested_and_uppercase_pdfs(tmp_
     at.button[0].click().run()
     saved = json.loads((tmp_path / "golden/dev/pkgx.json").read_text())
     assert not at.exception and [r["doc_id"] for r in saved["requirements"]] == ["sub/Specs"]
+
+
+def test_a_changed_set_of_items_needs_a_new_tick(tmp_path: Path) -> None:
+    """The tick confirms the items shown when it was given, not whatever the list shows later."""
+    from spec_review.models import MatchReport
+    settings = api_settings(tmp_path)
+    run_dir = make_run(settings.runs_dir, make_package(tmp_path))
+    report = MatchReport.model_validate_json((run_dir / "match.json").read_text())
+    report.results[2] = report.results[2].model_copy(update={"status": "comply"})  # two comply items
+    (run_dir / "match.json").write_text(report.model_dump_json())
+    at = page("checklist", ApiClient("http://testserver", http=TestClient(create_app(settings, runner=fake_runner))))
+    confirm(at)
+    assert not at.button(key="cl_approve_all").disabled
+    at.selectbox(key="cl_req").set_value(R_COMPLY).run()
+    at.button(key="cl_approve").click().run()  # one of the two is now reviewed
+    assert not at.exception and at.button(key="cl_approve_all").disabled

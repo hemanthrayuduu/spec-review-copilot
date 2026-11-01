@@ -1,5 +1,6 @@
 """The checklist: every requirement, its AI status and evidence, and the engineer's decision (spec 8.15)."""
 
+import hashlib
 import sys
 from pathlib import Path
 
@@ -9,6 +10,8 @@ import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
 from views.common import STATUSES, context, show_error  # noqa: E402,F401
+
+BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
 api, run_id, reviewer = context()
 try:
@@ -35,12 +38,22 @@ st.dataframe([{"Code": i["code"], "Status": i["status_label"], "Section": i["sec
 
 if not reviewer:
     st.warning("Enter your name as Reviewer in the sidebar to save decisions.")
-if shown and st.button(f"Approve all shown ({sum(not i['reviewed'] and bool(i['ai_status']) for i in shown)} "
-                       "unreviewed, AI status as is)", key="cl_approve_all", disabled=not reviewer):
-    for i in shown:
-        if not i["reviewed"] and i["ai_status"]:
-            api.decide(run_id, i["req_id"], i["ai_status"], "", reviewer)
-    st.rerun()
+# Bulk approval is for spot-checked routine items. Needs-engineer and deviation items are decided one by one.
+bulk = [i for i in shown if not i["reviewed"] and i["ai_status"] in BULK_STATUSES]
+if bulk:
+    batch = hashlib.sha1("|".join(i["req_id"] for i in bulk).encode()).hexdigest()[:10]  # a new set needs a new tick
+    confirmed = st.checkbox(f"I checked the {len(bulk)} unreviewed comply, clarification and not-applicable items "
+                            "shown; approve them with their AI status", key=f"cl_approve_confirm_{batch}")
+    if st.button(f"Approve all shown ({len(bulk)})", key="cl_approve_all", disabled=not (reviewer and confirmed)):
+        saved = 0
+        try:
+            for i in bulk:
+                api.decide(run_id, i["req_id"], i["ai_status"], "", reviewer)
+                saved += 1
+        except ApiError as exc:
+            st.error(f"Saved {saved} of {len(bulk)}; the rest were not saved. {exc}")
+        else:
+            st.rerun()
 
 if not shown:
     st.stop()
