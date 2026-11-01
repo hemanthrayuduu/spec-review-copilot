@@ -29,7 +29,7 @@ from spec_review.runs import RunWriter, new_run_id
 
 PAGE_DPI = 110
 log = logging.getLogger(__name__)
-_RUN_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
+_RUN_ID = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9_.-]*$")  # no leading dot: ".", ".." and hidden folders are not runs
 
 
 def safe_name(name: str) -> str:
@@ -154,7 +154,8 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
 
     def run_dir(run_id: str) -> Path:
         path = settings.runs_dir / run_id
-        if not _RUN_ID.match(run_id) or not path.is_dir() or path.is_symlink():
+        if (not _RUN_ID.match(run_id) or not path.is_dir() or path.is_symlink()
+                or path.resolve().parent != settings.runs_dir.resolve()):
             raise HTTPException(404, f"no run {run_id}")
         return path
 

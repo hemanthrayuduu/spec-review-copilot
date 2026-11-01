@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from urllib.parse import quote
 
+import pytest
 from fastapi.testclient import TestClient
 
 from api_fixtures import api_settings, client_with_run, failing_runner, fake_runner
@@ -187,3 +188,11 @@ def test_page_png_serves_a_pdf_with_an_upper_case_suffix(tmp_path: Path, case_se
     make_run(settings.runs_dir, pkg)
     client = TestClient(create_app(settings, runner=fake_runner))
     assert client.get("/runs/run1/page/specs/1.png").status_code == 200
+
+
+@pytest.mark.parametrize("run_id", ["%2e%2e", "%2e", ".hidden"])
+def test_a_dot_name_is_never_a_run(tmp_path: Path, run_id: str) -> None:
+    """Code review: run id ".." passed the check and pointed at the folder above runs/."""
+    client, settings = client_with_run(tmp_path)
+    (settings.runs_dir / ".hidden").mkdir()
+    assert client.get(f"/runs/{run_id}/decisions/x/history").status_code == 404
