@@ -129,3 +129,11 @@ def test_outputs_generate_and_download(tmp_path: Path) -> None:
     r = client.get("/runs/run1/outputs/addendum_diff.md")
     assert r.status_code == 200 and "7 years" in r.text
     assert client.get("/runs/run1/outputs/run.json").status_code == 404
+
+
+def test_addenda_route_pairs_before_and_after(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    [replace, date] = client.get("/runs/run1/addenda").json()
+    assert replace["target_paragraph"] == "2.01.B" and "5 years" in replace["before"][0]["text"]
+    assert "7 years" in replace["after"][0]["text"] and replace["items"][0]["req_id"] == R_DEVIATION
+    assert date["action"] == "revise_date" and date["new_text"] == "December 15, 2026."

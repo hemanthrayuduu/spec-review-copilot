@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from spec_review.api.jobs import Job, JobManager, Runner
 from spec_review.config import Settings, get_settings
 from spec_review.models import ReviewDecision
+from spec_review.outputs.addendum_diff import diff_entries
 from spec_review.outputs.bundle import OutputsResult, write_outputs
 from spec_review.pipeline import PIPELINE_STAGES, run_package
 from spec_review.review.run_view import Item, RunView, load_run, status_label
@@ -60,6 +61,35 @@ class EvidenceOut(BaseModel):
     text: str
     origin: str
     basis: str | None
+
+
+class TextAt(BaseModel):
+    text: str
+    doc_id: str
+    page: int
+
+
+class AddendumItem(BaseModel):
+    req_id: str
+    source_text: str
+    status_label: str
+
+
+class AddendumOut(BaseModel):
+    change_id: str
+    addendum_id: str
+    action: str
+    target_section: str | None
+    target_paragraph: str | None
+    doc_id: str
+    page: int
+    source_text: str
+    new_text: str | None
+    applied: bool
+    note: str
+    before: list[TextAt]
+    after: list[TextAt]
+    items: list[AddendumItem]
 
 
 class ItemOut(BaseModel):
@@ -178,6 +208,21 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
     @app.get("/runs/{run_id}/items")
     def items(run_id: str) -> list[ItemOut]:
         return [_item_out(i) for i in view(run_id).items]
+
+    @app.get("/runs/{run_id}/addenda")
+    def addenda(run_id: str) -> list[AddendumOut]:
+        out = []
+        for e in diff_entries(view(run_id)):
+            c = e.change
+            out.append(AddendumOut(
+                change_id=c.change_id, addendum_id=c.addendum_id, action=c.action, target_section=c.target_section,
+                target_paragraph=c.target_paragraph, doc_id=c.doc_id, page=c.page, source_text=c.source_text,
+                new_text=c.new_text, applied=c.applied, note=c.note,
+                before=[TextAt(text=b.text, doc_id=b.doc_id, page=b.page) for b in e.before],
+                after=[TextAt(text=b.text, doc_id=b.doc_id, page=b.page) for b in e.after],
+                items=[AddendumItem(req_id=i.req.req_id, source_text=i.req.source_text, status_label=status_label(i))
+                       for i in e.items]))
+        return out
 
     @app.get("/runs/{run_id}/page/{doc_id}/{page}.png")
     def page_png(run_id: str, doc_id: str, page: int, req_id: str | None = None) -> Response:

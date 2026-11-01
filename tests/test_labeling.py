@@ -8,7 +8,7 @@ from spec_review.eval.golden import GoldenRequirement, load_golden
 from spec_review.labeling import add_requirement, blank_row, page_view, remove_requirement
 
 ROOT = Path(__file__).parents[1]
-LABEL_FILES = [ROOT / "spec_review/labeling.py"]  # Task 8 adds the app page
+LABEL_FILES = [ROOT / "spec_review/labeling.py", ROOT / "app/views/labeling.py"]
 
 
 def test_blank_row_prefills_nothing_but_the_page() -> None:
