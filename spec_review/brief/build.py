@@ -39,6 +39,9 @@ FORM_TITLE = re.compile(r"\b(?:FORMS?|BOND|AFFIDAVIT|CERTIFICATION|CERTIFICATE|Q
 FORM_LINE = re.compile(r"^(FORM|ATTACHMENT|EXHIBIT|APPENDIX)\s+([A-Z0-9]{1,4})\s*[-:–—]\s*\S", re.I)
 FORM_MENTION = re.compile(r"\b(Form|Attachment|Exhibit|Appendix)\s+([A-Z0-9]{1,4})\b")
 FORM_HEADING_WORDS = 12
+# "domestic wastewater" and "domestic water piping" are plant vocabulary, not a domestic-content clause.
+DOMESTIC_NOT_CONTENT = (r"waste\s*water|wastewater|sewage|sewer|sanitary|water|waste|strength|flows?|users?|customers?|"
+                        r"use|service|connections?|wells?|industrial|commercial")
 FLAG_PATTERNS: list[tuple[RedFlagType, re.Pattern[str]]] = [
     ("named_manufacturer", re.compile(r"\bor\s+(?:an\s+)?(?:approved\s+)?equals?\b|\b(?:acceptable|approved)\s+"
                                       r"manufacturers?\b|\bbasis\s+of\s+design\b", re.I)),
@@ -46,7 +49,8 @@ FLAG_PATTERNS: list[tuple[RedFlagType, re.Pattern[str]]] = [
     ("bond", re.compile(r"\b(?:performance|payment|bid|maintenance|warranty)\s+bonds?\b", re.I)),
     ("liquidated_damages", re.compile(r"\bliquidated\s+damages\b", re.I)),
     ("domestic_content", re.compile(r"\bAmerican\s+Iron\s+and\s+Steel\b|\bAIS\b|\bBuild\s+America\b|"
-                                    r"\bBuy\s+American?\b|\bBABA\b|\bdomestic(?:ally)?\b", re.I)),
+                                    r"\bBuy\s+American?\b|\bBABA\b|\bdomestic(?:ally)?\b"
+                                    rf"(?![\s/-]+(?:(?:and|or)\s+)?(?:{DOMESTIC_NOT_CONTENT})\b)", re.I)),
     # A count, at most two describing words, then what is counted: "at least three (3) similar installations".
     ("experience_minimum", re.compile(r"\b(?:at\s+least|minimum\s+of|not\s+less\s+than|no\s+(?:fewer|less)\s+than)\s+"
                                       r"\w+\s+(?:\(\d+\)\s+)?(?:(?!days?\b|hours?\b|weeks?\b|months?\b)[\w-]+\s+){0,2}?"

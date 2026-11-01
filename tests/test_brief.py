@@ -116,3 +116,18 @@ def test_trigger_free_deadline_and_red_flag_still_reach_the_brief() -> None:  # 
                     ExtractResult(package_id="p"), PermitResult(package_id="p"))
     assert [(d.text, d.page) for d in b.deadlines] == [(texts[0], 7)]
     assert [(r.flag_type, r.page) for r in b.red_flags] == [("liquidated_damages", 7)]
+
+
+def test_domestic_content_flag_ignores_domestic_wastewater_and_sewage() -> None:
+    """Code review: "domestic" alone fired on standard water and wastewater phrases and crowded out Buy America."""
+    from spec_review.brief.build import FLAG_PATTERNS
+    rx = dict(FLAG_PATTERNS)["domestic_content"]
+    for text in ("The plant treats domestic wastewater from the Town.", "The pumps are rated for domestic sewage service.",
+                 "Provide domestic water piping to the operations building.", "Design for domestic-strength wastewater.",
+                 "The influent is domestic and industrial wastewater.", "Peak domestic flows reach 4.2 MGD."):
+        assert not rx.search(text), text
+    for text in ("Iron and steel products shall be produced domestically.",
+                 "Manufactured products shall meet the domestic content requirements.",
+                 "The domestic preference requirements of 2 CFR 184 apply.", "All construction materials shall be domestic.",
+                 "Build America, Buy America applies to this project."):
+        assert rx.search(text), text
