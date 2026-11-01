@@ -1,5 +1,6 @@
 """The review app, page by page, through AppTest against an in-process API (spec 8.15). No network."""
 
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -120,3 +121,17 @@ def test_labeling_page_handles_a_folder_without_pdfs_and_a_page_past_the_end(tmp
     at.selectbox(key="lab_split").set_value("dev").run()
     at.number_input(key="lab_page").set_value(5).run()
     assert not at.exception and any("1 page" in w.value for w in at.warning)
+
+
+def test_labeling_page_uses_the_ingest_doc_id_for_nested_and_uppercase_pdfs(tmp_path: Path) -> None:
+    """Final review: a nested PDF was labeled "Specs" where ingest says "sub/Specs", and .PDF files were not listed."""
+    make_pdf(tmp_path / "raw/dev/pkgx/sub/Specs.PDF", ["<p>Screens shall be stainless.</p>"])
+    at = page("labeling", None, labeling_root=str(tmp_path / "raw"), labeling_golden=str(tmp_path / "golden"))
+    assert not at.exception and at.selectbox(key="lab_doc").options == ["sub/Specs"]
+    at.text_area(key="lab_source").input("Screens shall be stainless.")
+    at.text_input(key="lab_path").input("2.01.A")
+    at.selectbox(key="lab_category").set_value("material")
+    at.radio(key="lab_mandatory").set_value("yes")
+    at.button[0].click().run()
+    saved = json.loads((tmp_path / "golden/dev/pkgx.json").read_text())
+    assert not at.exception and [r["doc_id"] for r in saved["requirements"]] == ["sub/Specs"]

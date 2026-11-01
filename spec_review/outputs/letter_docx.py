@@ -33,6 +33,16 @@ def _items(document: docx.document.Document, items: list[Item]) -> None:
         document.add_paragraph(f"Our position: {_position(it)}")
 
 
+def _open_sentence(view: RunView) -> str:
+    n = sum(i.final_status in (None, "needs_engineer") for i in view.items)
+    if not n:
+        return ""
+    one = n == 1
+    return (f" {n} requirement{'' if one else 's'} remain{'s' if one else ''} open (still needing an engineer or "
+            f"not yet matched) and {'is' if one else 'are'} not accepted by this letter; see the clarification "
+            "questions.")
+
+
 def write_letter(view: RunView, path: Path) -> Path:
     package = view.info.package_id if view.info else view.brief.package_id
     document = docx.Document()
@@ -42,8 +52,8 @@ def write_letter(view: RunView, path: Path) -> Path:
     document.add_paragraph(f"Date: {date.today().isoformat()}")
     if view.draft_banner:
         document.add_paragraph().add_run(view.draft_banner).bold = True
-    document.add_paragraph("We have reviewed the bid documents and offer the following exceptions and "
-                           "clarifications. All other requirements are accepted as written.")
+    document.add_paragraph(f"We have reviewed the bid documents and offer the following exceptions and "
+                           f"clarifications.{_open_sentence(view)} All other requirements are accepted as written.")
     document.add_heading("Exceptions", level=2)
     _items(document, [i for i in view.items if i.final_status == "deviation"])
     document.add_heading("Clarifications", level=2)

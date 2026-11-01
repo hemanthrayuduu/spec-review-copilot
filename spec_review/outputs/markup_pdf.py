@@ -12,8 +12,12 @@ HIGHLIGHTS = {"C": (0.75, 0.95, 0.75), "R": (1.0, 0.9, 0.6), "D": (1.0, 0.75, 0.
 MARGIN = 36  # points from the right edge
 
 
-def _mark(page: pymupdf.Page, item: Item) -> None:
-    rect = pymupdf.Rect(item.req.bbox) & page.rect
+def marked_name(doc_id: str) -> str:
+    """A flat file name, so a document in a package subfolder (doc_id sub/specs) lands in the outputs folder."""
+    return f"{doc_id.replace('/', '__')}_marked.pdf"
+
+
+def _mark(page: pymupdf.Page, item: Item, rect: pymupdf.Rect) -> None:
     code = item.code
     highlight = page.add_highlight_annot(rect)
     highlight.set_colors(stroke=HIGHLIGHTS.get(code, (0.9, 0.9, 0.9)))
@@ -47,11 +51,13 @@ def write_markup(view: RunView, package_dir: Path, out_dir: Path) -> tuple[list[
                     skipped.append(f"{it.req.req_id}: no position on the page")
                 elif not 1 <= it.req.page <= len(doc):
                     skipped.append(f"{it.req.req_id}: page {it.req.page} is past the end of {doc_id}")
+                elif (rect := pymupdf.Rect(it.req.bbox) & doc[it.req.page - 1].rect).is_empty:
+                    skipped.append(f"{it.req.req_id}: no position on the page (bbox {it.req.bbox})")
                 else:
-                    _mark(doc[it.req.page - 1], it)
+                    _mark(doc[it.req.page - 1], it, rect)
             if view.draft_banner:
                 doc[0].insert_text((36, 24), view.draft_banner, fontsize=9, fontname="hebo", color=(0.8, 0.0, 0.0))
-            path = out_dir / f"{doc_id}_marked.pdf"
+            path = out_dir / marked_name(doc_id)
             doc.save(path, garbage=3, deflate=True)
         files.append(path)
     return files, skipped

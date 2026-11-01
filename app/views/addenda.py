@@ -35,7 +35,7 @@ for c in changes:
             for b in c["before"] or [{"text": "(no earlier text found)", "doc_id": "-", "page": "-"}]:
                 before.markdown(f"> {b['text']}  \n({b['doc_id']} p.{b['page']})")
             after.markdown("**After**")
-            for b in c["after"] or [{"text": "(deleted)", "doc_id": "-", "page": "-"}]:
+            for b in c["after"] or [{"text": c["after_placeholder"], "doc_id": "-", "page": "-"}]:
                 after.markdown(f"> {b['text']}  \n({b['doc_id']} p.{b['page']})")
             for i in c["items"]:
                 st.markdown(f"- `{i['req_id']}` {i['source_text']} ({i['status_label']})")

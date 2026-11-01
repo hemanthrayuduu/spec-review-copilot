@@ -32,6 +32,11 @@ class _Document:
     tables: TableExtraction
 
 
+def doc_id_for(package_dir: Path, path: Path) -> str:
+    """A PDF's document id: its path inside the package without the suffix, so sub/Specs.PDF is sub/Specs (spec 7)."""
+    return path.relative_to(package_dir).with_suffix("").as_posix()
+
+
 def ingest_package(package_dir: Path, *, tessdata: Path | None, cache_dir: Path | None = Path(".cache/ingest"),
                    docintel: "PageReader | None" = None) -> IngestResult:
     """Read every PDF under package_dir. Other files and unreadable PDFs are listed in skipped, never dropped."""
@@ -41,7 +46,7 @@ def ingest_package(package_dir: Path, *, tessdata: Path | None, cache_dir: Path 
         if path.suffix.lower() != ".pdf":
             result.skipped.append(SkippedFile(path=rel.as_posix(), reason="not a PDF"))
             continue
-        doc_id = rel.with_suffix("").as_posix()
+        doc_id = doc_id_for(package_dir, path)
         try:
             doc = _read_cached(path, doc_id, tessdata, cache_dir, docintel)
         except UnreadablePdf as e:

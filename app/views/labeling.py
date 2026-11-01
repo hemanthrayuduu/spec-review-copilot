@@ -13,6 +13,7 @@ from pydantic import ValidationError  # noqa: E402
 
 from spec_review.config import get_settings  # noqa: E402
 from spec_review.eval.golden import GoldenRequirement  # noqa: E402
+from spec_review.ingest import doc_id_for  # noqa: E402
 from spec_review.labeling import add_requirement, blank_row, load_labels, page_count, page_view  # noqa: E402
 from spec_review.labeling import remove_requirement  # noqa: E402
 from spec_review.models import Category, Operator  # noqa: E402
@@ -33,24 +34,26 @@ packages = sorted(p.name for p in (root / split).iterdir() if p.is_dir())
 package = st.selectbox("Package", packages, key="lab_package")
 if not package:
     st.stop()
-pdfs = sorted(p for p in (root / split / package).rglob("*.pdf"))
+package_dir = root / split / package
+pdfs = sorted(p for p in package_dir.rglob("*") if p.is_file() and p.suffix.lower() == ".pdf")  # as ingest reads
 if not pdfs:
     st.info(f"{split}/{package} has no PDF files to label.")
     st.stop()
-pdf = st.selectbox("Document", pdfs, format_func=lambda p: p.stem, key="lab_doc")
+pdf = st.selectbox("Document", pdfs, format_func=lambda p: doc_id_for(package_dir, p), key="lab_doc")
+doc_id = doc_id_for(package_dir, pdf)
 page = int(st.number_input("Page", min_value=1, value=1, step=1, key="lab_page"))
 pages = page_count(pdf)
 if page > pages:
-    st.warning(f"{pdf.stem} has {pages} page{'s' if pages != 1 else ''}; pick a page from 1 to {pages}.")
+    st.warning(f"{doc_id} has {pages} page{'s' if pages != 1 else ''}; pick a page from 1 to {pages}.")
     st.stop()
 png, text = page_view(pdf, page)
 left, right = st.columns([3, 2])
-left.image(png, caption=f"{pdf.stem} page {page}", use_container_width=True)
+left.image(png, caption=f"{doc_id} page {page}", use_container_width=True)
 with left.expander("Page text"):
     st.text(text)
 
 golden_path = golden_root / split / f"{package}.json"
-row = blank_row(pdf.stem, page)
+row = blank_row(doc_id, page)
 with right.form("lab_form", clear_on_submit=True):
     section = st.text_input("Section number", key="lab_section")
     path = st.text_input("Paragraph path", key="lab_path")

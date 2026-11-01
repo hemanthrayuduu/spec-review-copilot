@@ -1,12 +1,15 @@
 """The API service: jobs, runs, items, decisions, page images, and outputs (Phase 3, spec 5 layer 2)."""
 
+import json
 import time
 from pathlib import Path
 from urllib.parse import quote
 
-from api_fixtures import client_with_run, failing_runner
-from run_fixtures import R_COMPLY, R_DEVIATION
-from spec_review.api.main import safe_name
+from fastapi.testclient import TestClient
+
+from api_fixtures import api_settings, client_with_run, failing_runner, fake_runner
+from run_fixtures import R_COMPLY, R_DEVIATION, make_package, make_run
+from spec_review.api.main import create_app, safe_name
 
 def _pdf_bytes(tmp_path: Path) -> bytes:
     from pdf_fixtures import make_pdf
@@ -137,3 +140,40 @@ def test_addenda_route_pairs_before_and_after(tmp_path: Path) -> None:
     assert replace["target_paragraph"] == "2.01.B" and "5 years" in replace["before"][0]["text"]
     assert "7 years" in replace["after"][0]["text"] and replace["items"][0]["req_id"] == R_DEVIATION
     assert date["action"] == "revise_date" and date["new_text"] == "December 15, 2026."
+    assert replace["after_placeholder"] == "(no new text found)"  # final review: "(deleted)" only for a deletion
+
+
+def test_upload_keeps_two_files_whose_safe_names_collide(tmp_path: Path) -> None:
+    """Final review: "Spec (1).pdf" and "Spec [1].pdf" both became Spec__1_.pdf, and one file was lost."""
+    client, settings = client_with_run(tmp_path)
+    pdf = _pdf_bytes(tmp_path)
+    r = client.post("/jobs/upload", data={"package_name": "x"},
+                    files=[("files", ("Spec (1).pdf", pdf, "application/pdf")),
+                           ("files", ("Spec [1].pdf", pdf + b"\n", "application/pdf"))])
+    assert r.status_code == 200, r.text
+    assert sorted(p.name for p in settings.uploads_dir.rglob("*.pdf")) == ["Spec__1_.pdf", "Spec__1__2.pdf"]
+
+
+def test_runs_skip_a_folder_with_an_unreadable_run_file(tmp_path: Path) -> None:
+    """Final review: one broken run.json made GET /runs fail, which emptied the app's run picker."""
+    client, settings = client_with_run(tmp_path)
+    (settings.runs_dir / "broken").mkdir()
+    (settings.runs_dir / "broken" / "run.json").write_text("{")
+    r = client.get("/runs")
+    assert r.status_code == 200 and [x["run_id"] for x in r.json()] == ["run1"]
+
+
+def test_page_png_serves_a_document_in_a_subfolder(tmp_path: Path) -> None:
+    """Final review: doc_id "sub/specs" (spec 7) could not reach the page route."""
+    settings = api_settings(tmp_path)
+    pkg = make_package(tmp_path)
+    (pkg / "sub").mkdir()
+    (pkg / "specs.pdf").rename(pkg / "sub" / "specs.pdf")
+    run_dir = make_run(settings.runs_dir, pkg)
+    extract = json.loads((run_dir / "extract.json").read_text())
+    for req in extract["requirements"]:
+        req["doc_id"] = "sub/specs"
+    (run_dir / "extract.json").write_text(json.dumps(extract))
+    client = TestClient(create_app(settings, runner=fake_runner))
+    r = client.get("/runs/run1/page/sub%2Fspecs/1.png", params={"req_id": R_COMPLY})
+    assert r.status_code == 200 and r.content[:4] == b"\x89PNG"

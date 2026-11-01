@@ -5,6 +5,7 @@ Start it with `uv run specreview serve`.
 """
 
 import json
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
@@ -18,7 +19,7 @@ from pydantic import BaseModel
 from spec_review.api.jobs import Job, JobManager, Runner
 from spec_review.config import Settings, get_settings
 from spec_review.models import ReviewDecision
-from spec_review.outputs.addendum_diff import diff_entries
+from spec_review.outputs.addendum_diff import after_placeholder, diff_entries
 from spec_review.outputs.bundle import OutputsResult, write_outputs
 from spec_review.pipeline import PIPELINE_STAGES, run_package
 from spec_review.review.run_view import Item, RunView, load_run, status_label
@@ -26,6 +27,7 @@ from spec_review.review.store import ExceptionContext, ReviewStore
 from spec_review.runs import RunWriter, new_run_id
 
 PAGE_DPI = 110
+log = logging.getLogger(__name__)
 _RUN_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
@@ -35,6 +37,15 @@ def safe_name(name: str) -> str:
     clean = re.sub(r"[^A-Za-z0-9._-]", "_", base).lstrip(".")
     stem = clean[:-4] if clean.lower().endswith(".pdf") else clean
     return f"{stem or 'file'}.pdf"
+
+
+def _unique(folder: Path, name: str) -> Path:
+    """Spec (1).pdf and Spec [1].pdf share a safe name; the second becomes Spec__1__2.pdf instead of overwriting."""
+    path, n = folder / name, 1
+    while path.exists():
+        n += 1
+        path = folder / f"{name[:-4]}_{n}.pdf"
+    return path
 
 
 def _slug(text: str) -> str:
@@ -89,6 +100,7 @@ class AddendumOut(BaseModel):
     note: str
     before: list[TextAt]
     after: list[TextAt]
+    after_placeholder: str  # what After says when no new text was found
     items: list[AddendumItem]
 
 
@@ -165,7 +177,7 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
             total += len(data)
             if total > limit:
                 raise HTTPException(413, f"the upload is over {settings.max_upload_mb} MB")
-            (folder / safe_name(f.filename or "file.pdf")).write_bytes(data)
+            _unique(folder, safe_name(f.filename or "file.pdf")).write_bytes(data)
         return jobs.submit(folder)
 
     @app.post("/jobs/sample")
@@ -188,14 +200,17 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
         for path in settings.runs_dir.glob("*/run.json") if settings.runs_dir.is_dir() else []:
             if path.parent.is_symlink():
                 continue
-            info = json.loads(path.read_text())
-            extract = path.parent / "extract.json"
-            n = len(json.loads(extract.read_text())["requirements"]) if extract.is_file() else 0
-            match = path.parent / "match.json"
-            matched = match.is_file() and not json.loads(match.read_text()).get("skipped", False)
-            out.append(RunSummary(run_id=info["run_id"], package_id=info["package_id"], created=info["created"],
-                                  requirements=n, matched=matched,
-                                  unreviewed=max(0, n - len(store.latest(info["run_id"])))))
+            try:
+                info = json.loads(path.read_text())
+                extract = path.parent / "extract.json"
+                n = len(json.loads(extract.read_text())["requirements"]) if extract.is_file() else 0
+                match = path.parent / "match.json"
+                matched = match.is_file() and not json.loads(match.read_text()).get("skipped", False)
+                out.append(RunSummary(run_id=info["run_id"], package_id=info["package_id"], created=info["created"],
+                                      requirements=n, matched=matched,
+                                      unreviewed=max(0, n - len(store.latest(info["run_id"])))))
+            except (OSError, ValueError, KeyError, TypeError) as e:  # one broken folder never empties the list
+                log.warning("skipping run folder %s: %s: %s", path.parent.name, type(e).__name__, e)
         return sorted(out, key=lambda r: r.created, reverse=True)
 
     @app.get("/runs/{run_id}/stage/{stage}")
@@ -220,11 +235,12 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
                 new_text=c.new_text, applied=c.applied, note=c.note,
                 before=[TextAt(text=b.text, doc_id=b.doc_id, page=b.page) for b in e.before],
                 after=[TextAt(text=b.text, doc_id=b.doc_id, page=b.page) for b in e.after],
+                after_placeholder=after_placeholder(c.action),
                 items=[AddendumItem(req_id=i.req.req_id, source_text=i.req.source_text, status_label=status_label(i))
                        for i in e.items]))
         return out
 
-    @app.get("/runs/{run_id}/page/{doc_id}/{page}.png")
+    @app.get("/runs/{run_id}/page/{doc_id:path}/{page}.png")
     def page_png(run_id: str, doc_id: str, page: int, req_id: str | None = None) -> Response:
         v = view(run_id)
         known = {i.req.doc_id for i in v.items} | {c.doc_id for c in v.addenda} | {b.doc_id for s in v.sections

@@ -23,7 +23,13 @@ def write_questions(view: RunView, path: Path) -> Path:
     lines = [f"# Clarification questions: {package}", ""]
     if view.draft_banner:
         lines += [f"**{view.draft_banner}**", ""]
-    if not open_items:
+    unmatched = sum(i.final_status is None for i in view.items)
+    if unmatched:
+        one = unmatched == 1
+        lines += [f"{unmatched} requirement{'' if one else 's'} {'was' if one else 'were'} not matched against the "
+                  f"knowledge base, so {'it has' if one else 'they have'} no question here yet. Review "
+                  f"{'it' if one else 'them'} in the checklist.", ""]
+    if not open_items and not unmatched:
         lines.append("No open questions.")
     n = 0
     for section, group in groupby(sorted(open_items, key=lambda i: i.req.section_number or ""),

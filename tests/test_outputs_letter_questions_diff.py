@@ -96,3 +96,36 @@ def test_cli_outputs_writes_the_folder(tmp_path: Path, monkeypatch: pytest.Monke
     result = CliRunner().invoke(app, ["outputs", "run1"])
     assert result.exit_code == 0, result.output
     assert (runs / "run1/outputs/compliance_matrix.xlsx").is_file() and "addendum_diff.md" in result.output
+
+
+def test_letter_does_not_accept_the_open_items(view: RunView, tmp_path: Path) -> None:
+    """Final review: "All other requirements are accepted as written" also covered needs_engineer items."""
+    text = _text(write_letter(view, tmp_path / "l.docx"))
+    assert "1 requirement remains open" in text and "not accepted by this letter" in text
+    unmatched = _text(write_letter(load_run(make_run(tmp_path / "r2", None, with_match=False), {}), tmp_path / "u.docx"))
+    assert "3 requirements remain open" in unmatched
+
+
+def test_questions_say_how_many_items_were_not_matched(tmp_path: Path) -> None:
+    """Final review: a run with no match said "No open questions." for three unsettled items."""
+    view = load_run(make_run(tmp_path / "runs", None, with_match=False), {})
+    text = write_questions(view, tmp_path / "q.md").read_text()
+    assert "No open questions." not in text and "3 requirements were not matched" in text
+
+
+def test_addendum_diff_matches_numbers_written_differently(view: RunView, tmp_path: Path) -> None:
+    """Final review: the addenda stage matches 466100 to 46 61 00 and 2.1.B to 2.01.B; the diff compared raw strings."""
+    view.addenda[0] = view.addenda[0].model_copy(update={"target_section": "466100", "target_paragraph": "2.1.B"})
+    replace = diff_entries(view)[0]
+    assert replace.before and replace.after and [i.req.req_id for i in replace.items] == [R_DEVIATION]
+    text = write_addendum_diff(view, tmp_path / "d.md").read_text()
+    assert "(deleted)" not in text and "(no earlier text found)" not in text
+
+
+def test_addendum_diff_says_deleted_only_for_a_deletion(view: RunView, tmp_path: Path) -> None:
+    """Final review: a replacement whose new text was not found was reported as "(deleted)"."""
+    view.sections[0] = view.sections[0].model_copy(update={"blocks": view.sections[0].blocks[:1]})
+    text = write_addendum_diff(view, tmp_path / "d.md").read_text()
+    assert "(deleted)" not in text and "(no new text found)" in text
+    view.addenda[0] = view.addenda[0].model_copy(update={"action": "delete_paragraph", "new_text": None})
+    assert "(deleted)" in write_addendum_diff(view, tmp_path / "d2.md").read_text()

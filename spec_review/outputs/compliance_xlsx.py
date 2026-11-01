@@ -38,6 +38,9 @@ def write_compliance_matrix(view: RunView, path: Path) -> Path:
         cell.font = Font(bold=True)
     for n, it in enumerate(view.items, start=1):
         ws.append(_row(n, it))
+        for cell in ws[n + 1]:
+            if isinstance(cell.value, str) and cell.value.startswith("="):
+                cell.data_type = "s"  # PDF text and notes are untrusted; never a formula
         if fill := FILLS.get(it.code):
             ws.cell(row=n + 1, column=2).fill = PatternFill("solid", fgColor=fill)
     for i, name in enumerate(MATRIX_COLUMNS, start=1):
