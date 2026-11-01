@@ -110,6 +110,21 @@ Confusing:
 
 None of these block the Phase 3 criteria. I have left them for the owner to decide on for Phase 4.
 
+## Final review
+
+A fresh reviewer (Opus) read the whole branch, dd8c757..fcb9581. It found no Critical issues, 5 Important and 14 Minor, with the verdict "with fixes". I raised three of the Minors to Important because of what they do to a user. All eight were fixed in one pass, each with a test that failed first. The suite went from 561 to 572 tests, all passing.
+
+1. **An empty or off-page bbox stopped every output.** The addenda stage writes (0, 0, 0, 0) for text it cannot place. The markup now skips such items with a note.
+2. **The addendum diff compared raw strings.** Writing 466100 for 46 61 00, or 2.1.B for 2.01.B, made it lose the before text, and it called a replacement "(deleted)". It now compares keys the way the addenda stage does, and says "(deleted)" only for a deletion, in the report and on the Addenda page.
+3. **The letter accepted open items.** On Lakeview it now says: "122 requirements remain open ... and are not accepted by this letter; see the clarification questions." The questions file also says how many items were not matched.
+4. **A document in a package subfolder (doc_id `sub/specs`) crashed the markup and could not reach the page route.**
+5. **The labeling helper gave a different doc_id than ingest for nested PDFs, and skipped `.PDF` files.** Test labels made with it could never have matched.
+6. **Raised to Important:** two uploaded files with the same safe name overwrote each other.
+7. **Raised to Important:** one unreadable `run.json` emptied the app's run list.
+8. **Raised to Important:** text starting with "=" became an Excel formula.
+
+The remaining Minors are deferred, in the ledger and in the hand-off message.
+
 ## Rulings
 
 - **Task 5:** `OutputsResult` lives in `spec_review/outputs/bundle.py`, not in `models.py`, because it is an output summary, not a stage contract. Cost if wrong: none.
