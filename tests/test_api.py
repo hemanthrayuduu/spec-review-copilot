@@ -1,0 +1,131 @@
+"""The API service: jobs, runs, items, decisions, page images, and outputs (Phase 3, spec 5 layer 2)."""
+
+import time
+from pathlib import Path
+from urllib.parse import quote
+
+from api_fixtures import client_with_run, failing_runner
+from run_fixtures import R_COMPLY, R_DEVIATION
+from spec_review.api.main import safe_name
+
+def _pdf_bytes(tmp_path: Path) -> bytes:
+    from pdf_fixtures import make_pdf
+    return make_pdf(tmp_path / "up.pdf", ["<p>Screens shall be stainless.</p>"]).read_bytes()
+
+
+def _wait(client, job_id: str) -> dict:  # type: ignore[no-untyped-def]
+    for _ in range(200):
+        job = client.get(f"/jobs/{job_id}").json()
+        if job["status"] in ("done", "failed"):
+            return job
+        time.sleep(0.02)
+    raise AssertionError("job did not finish")
+
+
+def test_upload_runs_a_job_and_reports_progress(tmp_path: Path) -> None:
+    client, settings = client_with_run(tmp_path)
+    r = client.post("/jobs/upload", data={"package_name": "My Package"},
+                    files=[("files", ("specs.pdf", _pdf_bytes(tmp_path), "application/pdf"))])
+    assert r.status_code == 200, r.text
+    job = _wait(client, r.json()["job_id"])
+    assert job["status"] == "done" and job["stages_done"] == 3 and job["run_id"]
+    assert job["stages_total"] == 13 and job["stage"] == "addenda"
+    assert any(p.name.startswith("my_package-") for p in settings.uploads_dir.iterdir())
+
+
+def test_upload_names_are_made_safe_and_non_pdfs_refused(tmp_path: Path) -> None:  # Review Focus 1
+    client, settings = client_with_run(tmp_path)
+    r = client.post("/jobs/upload", data={"package_name": "x"},
+                    files=[("files", ("../../etc/x.pdf", _pdf_bytes(tmp_path), "application/pdf"))])
+    assert r.status_code == 200 and not (tmp_path / "etc").exists()
+    saved = [p for p in settings.uploads_dir.rglob("*.pdf")]
+    assert [p.name for p in saved] == ["x.pdf"] and all(settings.uploads_dir in p.parents for p in saved)
+    bad = client.post("/jobs/upload", data={"package_name": "x"}, files=[("files", ("notes.txt", b"hi", "text/plain"))])
+    assert bad.status_code == 400
+
+
+def test_safe_name() -> None:
+    assert safe_name("../../etc/My Spec (final).PDF") == "My_Spec__final_.pdf"
+    assert safe_name("a/b\\c.pdf") == "c.pdf" and safe_name("..hidden.pdf") == "hidden.pdf"
+
+
+def test_sample_refuses_paths_outside_dev(tmp_path: Path) -> None:
+    client, settings = client_with_run(tmp_path)
+    assert client.post("/jobs/sample", json={"package": "../../test/x"}).status_code == 400
+    (settings.raw_dir / "dev" / "lakeview").mkdir(parents=True)
+    r = client.post("/jobs/sample", json={"package": "lakeview"})
+    assert r.status_code == 200 and _wait(client, r.json()["job_id"])["status"] == "done"
+
+
+def test_a_failed_job_reports_its_error(tmp_path: Path) -> None:
+    client, settings = client_with_run(tmp_path, runner=failing_runner)
+    (settings.raw_dir / "dev" / "lakeview").mkdir(parents=True)
+    job = _wait(client, client.post("/jobs/sample", json={"package": "lakeview"}).json()["job_id"])
+    assert job["status"] == "failed" and job["error"] == "RuntimeError: extraction exploded"
+
+
+def test_unknown_job_is_404(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    assert client.get("/jobs/nope").status_code == 404
+
+
+def test_runs_list_the_finished_run(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    [run] = client.get("/runs").json()
+    assert (run["run_id"], run["package_id"], run["requirements"], run["matched"], run["unreviewed"]) == \
+        ("run1", "pkg", 3, True, 3)
+
+
+def test_stage_files_are_served_by_name_only(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    assert client.get("/runs/run1/stage/match").json()["package_id"] == "pkg"
+    assert client.get("/runs/run1/stage/secrets").status_code == 404
+    assert client.get("/runs/..%2F..%2Fetc/stage/match").status_code == 404
+
+
+def test_items_show_the_saved_decision(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    r = client.post("/runs/run1/decisions", json={"req_id": R_COMPLY, "final_status": "deviation", "reviewer": "hr",
+                                                  "note": "panels are 304L"})
+    assert r.status_code == 200
+    item = next(i for i in client.get("/runs/run1/items").json() if i["req_id"] == R_COMPLY)
+    assert (item["final_status"], item["reviewed"], item["code"], item["note"], item["ai_status"]) == \
+        ("deviation", True, "D", "panels are 304L", "comply")
+    assert [d["final_status"] for d in client.get(f"/runs/run1/decisions/{quote(R_COMPLY, safe='')}/history").json()] == ["deviation"]
+
+
+def test_an_approved_deviation_lands_in_review_exceptions(tmp_path: Path) -> None:
+    client, settings = client_with_run(tmp_path)
+    client.post("/runs/run1/decisions", json={"req_id": R_DEVIATION, "final_status": "deviation", "reviewer": "hr"})
+    assert R_DEVIATION in (settings.knowledge_dir / "review_exceptions.csv").read_text()
+
+
+def test_decision_for_an_unknown_requirement_is_404_and_writes_nothing(tmp_path: Path) -> None:  # Review Focus 2
+    client, _ = client_with_run(tmp_path)
+    r = client.post("/runs/run1/decisions", json={"req_id": "nope", "final_status": "comply", "reviewer": "hr"})
+    assert r.status_code == 404 and client.get("/runs/run1/decisions/nope/history").json() == []
+
+
+def test_decision_with_a_bad_status_is_422(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    r = client.post("/runs/run1/decisions", json={"req_id": R_COMPLY, "final_status": "maybe", "reviewer": "hr"})
+    assert r.status_code == 422
+
+
+def test_page_png_renders_with_a_highlight(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    plain = client.get("/runs/run1/page/specs/1.png")
+    r = client.get("/runs/run1/page/specs/1.png", params={"req_id": R_COMPLY})
+    assert r.status_code == 200 and r.headers["content-type"] == "image/png" and r.content[:4] == b"\x89PNG"
+    assert r.content != plain.content  # the highlight changed the image
+    assert client.get("/runs/run1/page/specs/9.png").status_code == 404
+    assert client.get("/runs/run1/page/..%2Fsecret/1.png").status_code == 404
+
+
+def test_outputs_generate_and_download(tmp_path: Path) -> None:
+    client, _ = client_with_run(tmp_path)
+    res = client.post("/runs/run1/outputs").json()
+    assert "compliance_matrix.xlsx" in res["files"] and "specs_marked.pdf" in res["files"]
+    r = client.get("/runs/run1/outputs/addendum_diff.md")
+    assert r.status_code == 200 and "7 years" in r.text
+    assert client.get("/runs/run1/outputs/run.json").status_code == 404

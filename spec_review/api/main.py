@@ -1,0 +1,237 @@
+"""The API service (spec 5, layer 2): runs packages as background jobs and serves results to the review app.
+
+It owns the run folders, the review database, and the uploads, so the app needs nothing but HTTP.
+Start it with `uv run specreview serve`.
+"""
+
+import json
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import Annotated, Any
+
+import pymupdf
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, Response
+from pydantic import BaseModel
+
+from spec_review.api.jobs import Job, JobManager, Runner
+from spec_review.config import Settings, get_settings
+from spec_review.models import ReviewDecision
+from spec_review.outputs.bundle import OutputsResult, write_outputs
+from spec_review.pipeline import PIPELINE_STAGES, run_package
+from spec_review.review.run_view import Item, RunView, load_run, status_label
+from spec_review.review.store import ExceptionContext, ReviewStore
+from spec_review.runs import RunWriter, new_run_id
+
+PAGE_DPI = 110
+_RUN_ID = re.compile(r"^[A-Za-z0-9_.-]+$")
+
+
+def safe_name(name: str) -> str:
+    """A file name with no path parts, only [A-Za-z0-9._-], no leading dots, and a lowercase .pdf suffix."""
+    base = re.split(r"[\\/]", name)[-1]
+    clean = re.sub(r"[^A-Za-z0-9._-]", "_", base).lstrip(".")
+    stem = clean[:-4] if clean.lower().endswith(".pdf") else clean
+    return f"{stem or 'file'}.pdf"
+
+
+def _slug(text: str) -> str:
+    return re.sub(r"[^a-z0-9._-]+", "_", text.lower()).strip("._") or "package"
+
+
+class SampleRequest(BaseModel):
+    package: str
+
+
+class RunSummary(BaseModel):
+    run_id: str
+    package_id: str
+    created: datetime
+    requirements: int
+    matched: bool
+    unreviewed: int
+
+
+class EvidenceOut(BaseModel):
+    evidence_id: str
+    ref: str
+    page: int | None
+    text: str
+    origin: str
+    basis: str | None
+
+
+class ItemOut(BaseModel):
+    req_id: str
+    doc_id: str
+    page: int
+    section_number: str | None
+    paragraph_path: str
+    category: str
+    mandatory: bool
+    source_text: str
+    ai_status: str | None
+    ai_reason: str | None
+    evidence: list[EvidenceOut]
+    final_status: str | None
+    status_label: str
+    reviewed: bool
+    reviewer: str | None
+    code: str
+    note: str
+    uses_synthetic: bool
+    from_addendum: str | None
+
+
+def _item_out(it: Item) -> ItemOut:
+    r, res, d = it.req, it.result, it.decision
+    return ItemOut(req_id=r.req_id, doc_id=r.doc_id, page=r.page, section_number=r.section_number,
+                   paragraph_path=r.paragraph_path, category=r.category, mandatory=r.mandatory,
+                   source_text=r.source_text, ai_status=res.status if res else None,
+                   ai_reason=res.reason if res else None,
+                   evidence=[EvidenceOut(evidence_id=e.evidence_id, ref=e.ref, page=e.page, text=e.text,
+                                         origin=e.origin, basis=e.basis) for e in it.evidence],
+                   final_status=it.final_status, status_label=status_label(it), reviewed=it.reviewed,
+                   reviewer=d.reviewer if d else None, code=it.code, note=d.note if d else "",
+                   uses_synthetic=bool(res and res.uses_synthetic), from_addendum=r.from_addendum)
+
+
+def create_app(settings: Settings | None = None, *, runner: Runner | None = None) -> FastAPI:
+    """The app; `specreview serve` runs it with uvicorn's factory mode, so importing this module has no side effects."""
+    settings = settings or get_settings()
+    run_with_settings = settings
+
+    def default_runner(package_dir: Path, writer: RunWriter) -> object:
+        return run_package(package_dir, writer, run_with_settings)
+
+    jobs = JobManager(settings.runs_dir, runner or default_runner)
+    store = ReviewStore(settings.review_db, settings.knowledge_dir / "review_exceptions.csv")
+    app = FastAPI(title="Spec Review Copilot API", version="0.3")
+
+    def run_dir(run_id: str) -> Path:
+        path = settings.runs_dir / run_id
+        if not _RUN_ID.match(run_id) or not path.is_dir() or path.is_symlink():
+            raise HTTPException(404, f"no run {run_id}")
+        return path
+
+    def view(run_id: str) -> RunView:
+        path = run_dir(run_id)
+        if not (path / "extract.json").is_file():
+            raise HTTPException(409, f"run {run_id} has no requirements yet")
+        return load_run(path, store.latest(run_id))
+
+    @app.post("/jobs/upload")
+    async def upload(files: Annotated[list[UploadFile], File()], package_name: Annotated[str, Form()]) -> Job:
+        limit = settings.max_upload_mb * 1_000_000
+        for f in files:
+            if not (f.filename or "").lower().endswith(".pdf"):
+                raise HTTPException(400, f"only PDF files are accepted, not {f.filename!r}")
+        folder = settings.uploads_dir / f"{_slug(package_name)}-{new_run_id()}"
+        folder.mkdir(parents=True, exist_ok=False)
+        total = 0
+        for f in files:
+            data = await f.read()
+            total += len(data)
+            if total > limit:
+                raise HTTPException(413, f"the upload is over {settings.max_upload_mb} MB")
+            (folder / safe_name(f.filename or "file.pdf")).write_bytes(data)
+        return jobs.submit(folder)
+
+    @app.post("/jobs/sample")
+    def sample(req: SampleRequest) -> Job:
+        root = (settings.raw_dir / "dev").resolve()
+        path = (root / req.package).resolve()
+        if root not in path.parents or not path.is_dir():
+            raise HTTPException(400, f"{req.package!r} is not a sample package under data/raw/dev")
+        return jobs.submit(path)
+
+    @app.get("/jobs/{job_id}")
+    def job(job_id: str) -> Job:
+        if (found := jobs.get(job_id)) is None:
+            raise HTTPException(404, f"no job {job_id}")
+        return found
+
+    @app.get("/runs")
+    def runs() -> list[RunSummary]:
+        out = []
+        for path in settings.runs_dir.glob("*/run.json") if settings.runs_dir.is_dir() else []:
+            if path.parent.is_symlink():
+                continue
+            info = json.loads(path.read_text())
+            extract = path.parent / "extract.json"
+            n = len(json.loads(extract.read_text())["requirements"]) if extract.is_file() else 0
+            match = path.parent / "match.json"
+            matched = match.is_file() and not json.loads(match.read_text()).get("skipped", False)
+            out.append(RunSummary(run_id=info["run_id"], package_id=info["package_id"], created=info["created"],
+                                  requirements=n, matched=matched,
+                                  unreviewed=max(0, n - len(store.latest(info["run_id"])))))
+        return sorted(out, key=lambda r: r.created, reverse=True)
+
+    @app.get("/runs/{run_id}/stage/{stage}")
+    def stage(run_id: str, stage: str) -> JSONResponse:
+        path = run_dir(run_id) / f"{stage}.json"
+        if stage not in PIPELINE_STAGES or not path.is_file():
+            raise HTTPException(404, f"no {stage} for run {run_id}")
+        return JSONResponse(json.loads(path.read_text()))
+
+    @app.get("/runs/{run_id}/items")
+    def items(run_id: str) -> list[ItemOut]:
+        return [_item_out(i) for i in view(run_id).items]
+
+    @app.get("/runs/{run_id}/page/{doc_id}/{page}.png")
+    def page_png(run_id: str, doc_id: str, page: int, req_id: str | None = None) -> Response:
+        v = view(run_id)
+        known = {i.req.doc_id for i in v.items} | {c.doc_id for c in v.addenda} | {b.doc_id for s in v.sections
+                                                                                  for b in s.blocks}
+        if doc_id not in known or v.info is None:
+            raise HTTPException(404, f"no document {doc_id} in run {run_id}")
+        pdf = Path(v.info.package_dir) / f"{doc_id}.pdf"
+        if not pdf.is_file():
+            raise HTTPException(404, f"{doc_id}.pdf is not in the package folder")
+        with pymupdf.open(pdf) as doc:
+            if not 1 <= page <= len(doc):
+                raise HTTPException(404, f"{doc_id} has {len(doc)} pages")
+            pg = doc[page - 1]
+            if req_id is not None:
+                req = next((i.req for i in v.items if i.req.req_id == req_id), None)
+                if req is not None and req.bbox is not None and req.doc_id == doc_id and req.page == page:
+                    pg.draw_rect(pymupdf.Rect(req.bbox) + (-3, -3, 3, 3), color=(0.85, 0, 0), width=2)
+            png = pg.get_pixmap(dpi=PAGE_DPI).tobytes("png")
+        return Response(png, media_type="image/png")
+
+    @app.post("/runs/{run_id}/decisions")
+    def decide(run_id: str, decision: ReviewDecision) -> dict[str, Any]:
+        v = view(run_id)
+        try:
+            it = v.item(decision.req_id)
+        except KeyError:
+            raise HTTPException(404, f"no requirement {decision.req_id} in run {run_id}") from None
+        r = it.req
+        store.save(run_id, decision, context=ExceptionContext(
+            package_id=v.info.package_id if v.info else v.brief.package_id, doc_id=r.doc_id, page=r.page,
+            section_number=r.section_number, paragraph_path=r.paragraph_path, requirement=r.source_text,
+            ai_status=it.result.status if it.result else "not matched"))
+        return {"saved": decision.req_id}
+
+    @app.get("/runs/{run_id}/decisions/{req_id}/history")
+    def history(run_id: str, req_id: str) -> list[ReviewDecision]:
+        run_dir(run_id)
+        return store.history(run_id, req_id)
+
+    @app.post("/runs/{run_id}/outputs")
+    def outputs(run_id: str) -> OutputsResult:
+        result = write_outputs(view(run_id), run_dir(run_id) / "outputs")
+        (run_dir(run_id) / "outputs" / "outputs.json").write_text(result.model_dump_json(indent=2))
+        return result
+
+    @app.get("/runs/{run_id}/outputs/{name}")
+    def download(run_id: str, name: str) -> FileResponse:
+        folder = run_dir(run_id) / "outputs"
+        listing = folder / "outputs.json"
+        files = OutputsResult.model_validate_json(listing.read_text()).files if listing.is_file() else []
+        if name not in files:
+            raise HTTPException(404, f"no output {name} for run {run_id}; generate the outputs first")
+        return FileResponse(folder / name, filename=name)
+
+    return app

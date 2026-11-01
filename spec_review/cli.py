@@ -264,3 +264,10 @@ def outputs_cmd(run_id: str) -> None:
         typer.echo(f"skipped    {note}")
     if result.draft_banner:
         typer.echo(result.draft_banner)
+
+
+@app.command("serve")
+def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
+    """Run the API service that the review app talks to."""
+    import uvicorn
+    uvicorn.run("spec_review.api.main:create_app", factory=True, host=host, port=port)
