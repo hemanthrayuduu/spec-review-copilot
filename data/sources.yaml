@@ -1,5 +1,7 @@
 # Public data sources for the prototype.
-# role: dev, test, stretch, context, knowledge, reference
+# role: dev, test, demo, stretch, context, knowledge, reference
+# demo: real public packages with no labels, for showing the tool (owner decision 2026-11-01).
+# The test set is synthetic (scripts/make_cedar_falls.py), so no downloaded source is role test.
 # kind: file (direct download) or landing_page (download attachments by hand)
 # Raw files are never committed. Respect each owner's terms; use for testing only.
 
@@ -30,19 +32,19 @@ sources:
     notes: Public domain federal guide specs. Download the Division 46 ZIP from this page (direct link https://legacy.wbdg.org/FFC/DOD/UFGS/UFGS%20DIVISION%2046.zip) and unzip it into its folder.
 
   manor_wwtp_phase2:
-    role: test
+    role: demo
     kind: file
     url: https://www.manortx.gov/DocumentCenter/View/2830/16474_Final_Specs---3-6-2026
     notes: Full wastewater plant spec book, Manor TX (March 2026). Needle in a haystack test.
 
   sandy_membrane_rfp:
-    role: test
+    role: demo
     kind: landing_page
     url: https://www.ci.sandy.or.us/publicworks/page/membrane-equipment-upgraded-water-tx-plant
     notes: Download the RFP, all addenda, and the notice of intent to award from this page. Addenda merge test.
 
   avila_beach_mbr_rfp:
-    role: test
+    role: demo
     kind: file
     url: https://www.avilabeachcsd.org/files/fa6aff98f/Request+for+Proposals+Membrane+Bioreactor+System.pdf
     notes: MBR preselection RFP with scoring table and technical data forms

@@ -6,7 +6,7 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, HttpUrl
 
-Role = Literal["dev", "test", "stretch", "context", "knowledge", "reference"]
+Role = Literal["dev", "test", "demo", "stretch", "context", "knowledge", "reference"]  # demo: real, unlabeled
 
 
 class Source(BaseModel):
