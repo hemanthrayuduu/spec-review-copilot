@@ -44,7 +44,13 @@ with st.sidebar:
         st.session_state["reviewer"] = who
         st.caption(f"Signed in as {who}")
     else:
-        st.session_state["reviewer"] = st.text_input("Reviewer", st.session_state.get("reviewer", ""))
+        name = st.text_input("Reviewer", st.session_state.get("reviewer") or st.query_params.get("reviewer", ""),
+                             key="reviewer_name").strip()
+        st.session_state["reviewer"] = name
+        if name:  # a reload starts a new session, so the address keeps the name
+            st.query_params["reviewer"] = name
+        else:
+            st.query_params.pop("reviewer", None)
     st.caption("The tool drafts; the engineer decides. Nothing is final until reviewed.")
 
 st.navigation([st.Page(p.path, title=p.title, icon=p.icon, default=p.default) for p in page_specs(hosted)]).run()

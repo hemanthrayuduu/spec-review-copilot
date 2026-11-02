@@ -46,6 +46,9 @@ def progress() -> None:
     if job["status"] == "done":
         st.session_state["run_id"] = job["run_id"]
         st.success(f"Run {md(job['run_id'])} is ready. Open the Brief or the Checklist.")
+        if st.session_state.get("job_listed") != job_id:  # this refresh redraws only itself; the sidebar's
+            st.session_state["job_listed"] = job_id      # run picker needs one whole-app redraw to list the run
+            st.rerun()
     elif job["status"] == "failed":
         st.error(f"The run failed: {md(job['error'])}")
 

@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, md, show_error  # noqa: E402,F401
+from views.common import STATUSES, context, item_label, md, show_error  # noqa: E402,F401
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
@@ -57,8 +57,7 @@ if bulk:
 
 if not shown:
     st.stop()
-labels = {i["req_id"]: f"[{i['code'] or '-'}] {i['section_number'] or '-'} {i['paragraph_path']}: "
-                       f"{i['source_text'][:90]}" for i in shown}
+labels = {i["req_id"]: item_label(i) for i in shown}
 req_id = st.selectbox("Requirement", list(labels), format_func=labels.__getitem__, key="cl_req")
 item = next(i for i in shown if i["req_id"] == req_id)
 left, right = st.columns([3, 2])

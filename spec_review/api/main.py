@@ -114,6 +114,10 @@ class ItemOut(BaseModel):
     category: str
     mandatory: bool
     source_text: str
+    parameter: str | None
+    operator: str | None
+    value: str | None
+    unit: str | None
     ai_status: str | None
     ai_reason: str | None
     evidence: list[EvidenceOut]
@@ -131,7 +135,8 @@ def _item_out(it: Item) -> ItemOut:
     r, res, d = it.req, it.result, it.decision
     return ItemOut(req_id=r.req_id, doc_id=r.doc_id, page=r.page, section_number=r.section_number,
                    paragraph_path=r.paragraph_path, category=r.category, mandatory=r.mandatory,
-                   source_text=r.source_text, ai_status=res.status if res else None,
+                   source_text=r.source_text, parameter=r.parameter, operator=r.operator, value=r.value, unit=r.unit,
+                   ai_status=res.status if res else None,
                    ai_reason=res.reason if res else None,
                    evidence=[EvidenceOut(evidence_id=e.evidence_id, ref=e.ref, page=e.page, text=e.text,
                                          origin=e.origin, basis=e.basis) for e in it.evidence],

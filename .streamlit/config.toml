@@ -1,0 +1,6 @@
+# The review app, locally, in Docker, and hosted.
+[client]
+toolbarMode = "minimal"  # no Deploy button
+
+[browser]
+gatherUsageStats = false

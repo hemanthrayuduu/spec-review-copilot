@@ -1,6 +1,8 @@
 """What every review page needs: the API client, the open run, and the reviewer, from the session."""
 
 import re
+from collections.abc import Mapping
+from typing import Any
 
 import streamlit as st
 
@@ -32,3 +34,12 @@ def context(need_run: bool = True) -> tuple[ApiClient, str, str]:
 
 def show_error(exc: ApiError) -> None:
     st.error(exc.detail if exc.status == 0 else f"The API said: {md(exc)}")  # status 0 is our own message
+
+
+
+def item_label(item: Mapping[str, Any]) -> str:
+    """The checklist picker's line: where the item is, its parameter and value, then the sentence. Two values
+    from one sentence, like a pump's flow and head, would otherwise look the same."""
+    what = " ".join(str(x) for x in (item.get("parameter"), item.get("value"), item.get("unit")) if x)
+    where = f"[{item['code'] or '-'}] {item['section_number'] or '-'} {item['paragraph_path']}: "
+    return where + (f"{what} · " if what else "") + item["source_text"][:90]
