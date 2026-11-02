@@ -1,4 +1,5 @@
 import os
+from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -12,6 +13,16 @@ if TYPE_CHECKING:
     from spec_review.models import CrossRef, Section
     from spec_review.pipeline import ReadOutputs
     from spec_review.review.run_view import RunView
+
+
+@pytest.fixture(autouse=True, scope="session")
+def isolated_environment() -> Iterator[None]:
+    """Before any fixture of any scope runs: no developer .env, no keys or providers from the shell (rule 7)."""
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(config, "ENV_FILE", None)
+        for name in Settings.model_fields:
+            mp.delenv(name.upper(), raising=False)
+        yield
 
 
 @pytest.fixture(autouse=True)
