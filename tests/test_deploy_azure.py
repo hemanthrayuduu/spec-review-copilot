@@ -2,6 +2,7 @@
 
 import json
 import stat
+from pathlib import Path
 
 import pytest
 
@@ -127,3 +128,89 @@ def test_apps_are_not_pointed_at_an_image_the_registry_does_not_have(monkeypatch
     monkeypatch.setattr(dz, "az", lambda *a, check=True, subscription=True: None)
     with pytest.raises(SystemExit, match="image step"):
         dz.require_image(f"{dz.ACR}.azurecr.io/{dz.REPOSITORY}:d2588fd")
+
+
+class FakeAz:
+    """Stands in for the Azure CLI in the app and api steps; records every call."""
+
+    def __init__(self, exists: bool, allowed: str = "", fail: tuple[str, ...] = ()) -> None:
+        self.exists, self.allowed, self.fail = exists, allowed, fail
+        self.calls: list[tuple[str, ...]] = []
+        self.specs: list[dict] = []
+
+    def __call__(self, *args: str, check: bool = True, subscription: bool = True) -> str | None:
+        self.calls.append(args)
+        if self.fail and args[:len(self.fail)] == self.fail:
+            if check:
+                raise SystemExit("az failed")
+            return None
+        if args[:2] == ("containerapp", "show"):
+            if args[args.index("--query") + 1] == "id":
+                return "/app" if self.exists else None
+            return self.allowed
+        if args[:2] == ("containerapp", "create"):
+            self.specs.append(json.loads(Path(args[args.index("--yaml") + 1]).read_text()))
+            self.exists, self.allowed = True, allowed_in(self.specs[-1])
+            return ""
+        if args[:2] == ("containerapp", "update") and "--set-env-vars" in args:
+            self.allowed = args[args.index("--set-env-vars") + 1].split("=", 1)[1]
+            return ""
+        return {("ad", "app"): "client-1", ("containerapp", "env"): "env.example"}.get(args[:2], "x")
+
+    def index(self, *prefix: str) -> int:
+        return next(i for i, c in enumerate(self.calls) if c[:len(prefix)] == prefix)
+
+
+@pytest.fixture
+def fake_az(monkeypatch: pytest.MonkeyPatch):  # type: ignore[no-untyped-def]
+    def make(**kw: object) -> FakeAz:
+        fake = FakeAz(**kw)  # type: ignore[arg-type]
+        monkeypatch.setattr(dz, "az", fake)
+        monkeypatch.setattr(dz, "TAG", "abc1234")
+        return fake
+    return make
+
+
+def allowed_in(spec: dict) -> str:
+    env = spec["properties"]["template"]["containers"][0]["env"]
+    return next(e["value"] for e in env if e["name"] == "ALLOWED_USERS")
+
+
+def test_a_new_app_admits_nobody_until_sign_in_is_on(fake_az) -> None:  # type: ignore[no-untyped-def]
+    """Review: the app was public with the real allowlist before Easy Auth was on, so a forged header got in."""
+    fake = fake_az(exists=False)
+    dz.app(["Owner@X.org"])
+    assert allowed_in(fake.specs[0]) == ""
+    assert fake.index("containerapp", "update") > fake.index("containerapp", "auth", "update")
+    assert fake.allowed == "owner@x.org"
+
+
+def test_a_failed_sign_in_step_leaves_a_new_app_admitting_nobody(fake_az) -> None:  # type: ignore[no-untyped-def]
+    fake = fake_az(exists=False, fail=("containerapp", "auth", "update"))
+    with pytest.raises(SystemExit):
+        dz.app(["owner@x.org"])
+    assert fake.allowed == "" and not [c for c in fake.calls if "--set-env-vars" in c]
+
+
+def test_a_redeploy_keeps_and_reports_the_live_allowlist(fake_az, capsys) -> None:  # type: ignore[no-untyped-def]
+    """Review: a redeploy printed the --allow list although the app kept the one grant_access.sh set."""
+    fake = fake_az(exists=True, allowed="guest@y.org,owner@x.org")
+    dz.app([])
+    shown = capsys.readouterr().out
+    assert "guest@y.org" in shown and "grant_access.sh" in shown
+    assert not [c for c in fake.calls if "--set-env-vars" in c]
+
+
+def test_a_new_app_needs_an_allow_email(fake_az) -> None:  # type: ignore[no-untyped-def]
+    fake_az(exists=False)
+    with pytest.raises(SystemExit, match="--allow"):
+        dz.app([])
+
+
+def test_an_api_redeploy_says_env_changes_are_not_applied(fake_az, monkeypatch, tmp_path, capsys) -> None:  # type: ignore[no-untyped-def]
+    (tmp_path / ".env").write_text("AZURE_OPENAI_KEY=sk-new\n")
+    monkeypatch.setattr(dz, "REPO_ROOT", tmp_path)
+    fake_az(exists=True)
+    dz.api()
+    shown = capsys.readouterr().out
+    assert "not re-applied" in shown and "sk-new" not in shown

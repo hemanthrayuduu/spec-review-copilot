@@ -91,7 +91,8 @@ def test_clearing_the_reviewer_takes_it_out_of_the_address(api: ApiClient, monke
 def test_toolbar_is_minimal_so_there_is_no_deploy_button() -> None:
     config = tomllib.loads((ROOT / ".streamlit/config.toml").read_text())
     assert config["client"]["toolbarMode"] == "minimal"
-    assert ".streamlit" not in (ROOT / ".dockerignore").read_text()  # the image and the hosted app use it too
+    ignored = {x.strip() for x in (ROOT / ".dockerignore").read_text().splitlines()}
+    assert not ignored & {".streamlit", ".streamlit/", "**/.streamlit", ".streamlit/config.toml"}  # it ships
 
 
 def test_items_carry_the_parameter_value_and_unit(api: ApiClient) -> None:
@@ -112,3 +113,28 @@ def test_checklist_label_without_a_parameter_keeps_its_old_shape() -> None:
     item = {"code": "", "section_number": None, "paragraph_path": "1.05", "source_text": "Submit shop drawings.",
             "parameter": None, "operator": None, "value": None, "unit": None}
     assert item_label(item) == "[-] - 1.05: Submit shop drawings."
+
+
+def test_a_running_job_keeps_the_api_awake_from_any_page(api: ApiClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Review: hosted, the API scales to zero after minutes without requests, which ended a job left running
+    while the engineer read another page. The sidebar now checks the job while it runs."""
+    polled: list[str] = []
+    monkeypatch.setattr(api, "job", lambda job_id: polled.append(job_id) or {
+        "job_id": job_id, "package_id": "big", "status": "running", "stage": "extract", "stages_done": 4,
+        "stages_total": 13, "run_id": None, "error": None})
+    monkeypatch.setenv("API_URL", "http://testserver")
+    at = AppTest.from_file(MAIN, default_timeout=60)
+    at.session_state["api"], at.session_state["job_id"] = api, "job-1"
+    at.run()
+    assert not at.exception and polled == ["job-1"]
+    assert any("4 of 13" in c.value for c in at.sidebar.caption)
+
+
+def test_a_finished_job_is_no_longer_checked_from_the_sidebar(api: ApiClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    polled: list[str] = []
+    monkeypatch.setattr(api, "job", lambda job_id: polled.append(job_id) or {})
+    monkeypatch.setenv("API_URL", "http://testserver")
+    at = AppTest.from_file(MAIN, default_timeout=60)
+    at.session_state["api"], at.session_state["job_id"], at.session_state["job_listed"] = api, "job-1", "job-1"
+    at.run()
+    assert not at.exception and polled == []

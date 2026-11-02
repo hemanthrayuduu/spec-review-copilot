@@ -283,6 +283,9 @@ def _create_or_update(name: str, spec: dict[str, Any]) -> None:
 def api() -> None:
     from dotenv import dotenv_values
 
+    if exists("containerapp", "show", "-n", API, "-g", RG):
+        step(f"{API} exists: only its image changes. Settings and keys in .env are not re-applied; change a key "
+             f"with `az containerapp secret set -n {API}`")
     secrets, env = api_environment(dotenv_values(REPO_ROOT / ".env"))
     step(f"{API}: {len(secrets)} keys as secrets, {len(env) - len(secrets)} plain settings")
     _create_or_update(API, api_spec(env_id=_env_id(), image=require_image(image_ref(TAG)),
@@ -291,11 +294,15 @@ def api() -> None:
 
 
 def app(allowed: Sequence[str]) -> None:
+    """The review app. A new app admits nobody until sign-in is on: until then a forged
+    X-MS-CLIENT-PRINCIPAL-NAME header would reach it. An existing app gets only a new image."""
+    created = not exists("containerapp", "show", "-n", APP, "-g", RG)
+    if created and not allowed:
+        raise SystemExit("Name at least one --allow email for the new app.")
     domain = out("containerapp", "env", "show", "-n", ENV_NAME, "-g", RG, "--query", "properties.defaultDomain",
                  "-o", "tsv")
     fqdn = f"{APP}.{domain}"
     client_id = _sign_in_registration(f"https://{fqdn}/.auth/login/aad/callback")
-    created = not exists("containerapp", "show", "-n", APP, "-g", RG)
     secret = ""
     if created:  # a fresh client secret goes straight into the new app, never to the screen
         step(f"sign-in secret for {SIGN_IN_NAME} (1 year)")
@@ -303,7 +310,7 @@ def app(allowed: Sequence[str]) -> None:
                      "--years", "1", "--query", "password", "-o", "tsv", subscription=False)
     _create_or_update(APP, app_spec(env_id=_env_id(), image=require_image(image_ref(TAG)),
                                     identity_id=_identity_id(),
-                                    api_url=f"https://{API}.internal.{domain}", allowed=allowed,
+                                    api_url=f"https://{API}.internal.{domain}", allowed=[],
                                     auth_secret=secret))
     step(f"{APP}: Microsoft sign-in required for every request")
     az("containerapp", "auth", "microsoft", "update", "-n", APP, "-g", RG, "--client-id", client_id,
@@ -312,7 +319,16 @@ def app(allowed: Sequence[str]) -> None:
     az("containerapp", "auth", "update", "-n", APP, "-g", RG, "--enabled", "true",
        "--unauthenticated-client-action", "RedirectToLoginPage", "--redirect-provider", "azureactivedirectory",
        "--require-https", "true", "-o", "none")
-    print(f"\nThe app: https://{fqdn}\nAllowed: {', '.join(a.lower() for a in allowed)}")
+    if created:
+        step(f"{APP}: sign-in is on, so the allowed emails go in now")
+        az("containerapp", "update", "-n", APP, "-g", RG, "--set-env-vars",
+           "ALLOWED_USERS=" + ",".join(a.strip().lower() for a in allowed), "-o", "none")
+    elif allowed:
+        step("--allow applies only to a new app; this one keeps its list. Change it with scripts/grant_access.sh")
+    live = out("containerapp", "show", "-n", APP, "-g", RG, "--query",
+               "properties.template.containers[0].env[?name=='ALLOWED_USERS'].value | [0]", "-o", "tsv")
+    live = "" if live == "None" else live
+    print(f"\nThe app: https://{fqdn}\nAllowed now: {live or '<nobody>'} (scripts/grant_access.sh add|remove|list)")
 
 
 def _sign_in_registration(redirect_uri: str) -> str:
@@ -340,7 +356,8 @@ def main(argv: Sequence[str] | None = None) -> None:
     global SUB, TAG
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("steps", nargs="*", metavar="step", help=f"any of {', '.join(STEPS)} (default: all)")
-    parser.add_argument("--allow", action="append", default=[], help="an email that may use the app (repeatable)")
+    parser.add_argument("--allow", action="append", default=[],
+                        help="for a new app: an email that may use it (repeatable); later, use grant_access.sh")
     parser.add_argument("--tag", help="for api and app: an image tag already in the registry (default: this commit)")
     args = parser.parse_args(argv)
     TAG = args.tag
@@ -350,8 +367,6 @@ def main(argv: Sequence[str] | None = None) -> None:
     steps = args.steps or list(STEPS)
     if unknown := sorted(set(steps) - set(STEPS)):
         raise SystemExit(f"Unknown step {', '.join(unknown)}; the steps are {', '.join(STEPS)}.")
-    if "app" in steps and not args.allow:
-        raise SystemExit("Name at least one --allow email for the app.")
     for name in [s for s in STEPS if s in steps]:
         print(f"[{name}]", flush=True)
         if name == "app":

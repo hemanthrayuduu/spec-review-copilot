@@ -1,5 +1,7 @@
 # Secrets, history and local state never go into an image
 .env
+**/.env*
+**/.streamlit/secrets.toml
 .git
 .venv
 .claude/

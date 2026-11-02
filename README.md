@@ -137,7 +137,8 @@ uv run streamlit run app/streamlit_app.py        # app on port 8501
 
 **Docker:** `docker compose up --build` runs the API and the app together. With no `.env` it runs in mock mode.
 With Azure set in `.env`, the Lakeview sample replays its cached replies at $0. Runs and uploads are kept in
-Docker volumes.
+Docker volumes. Both ports are published on this machine only (127.0.0.1), because the API spends the `.env`
+keys.
 
 [`docs/USER_WORKFLOW.md`](docs/USER_WORKFLOW.md) walks through a full review, with what to expect at each step.
 
@@ -158,6 +159,8 @@ flowchart LR
 
 - **Deploy:** `AZURE_SUBSCRIPTION_ID=<id> uv run python scripts/deploy_azure.py --allow you@example.edu` creates
   the resources step by step (`base`, `image`, `api`, `app`). Each step can be rerun.
+  - A new app admits nobody until sign-in is on. Then the `--allow` emails go in.
+  - A rerun changes only the image. It keeps the allowlist, keys, and sign-in, and prints what is live.
   - Keys from `.env` become Container Apps secrets and are never printed.
   - Local paths stay on your machine.
 - **Grant access:** `scripts/grant_access.sh add|remove|list <email>`.
@@ -199,6 +202,8 @@ tests/              pytest; mock mode, no network
   exceptions. Comply is never a guarantee.
 - **One process:** jobs run in a thread inside the API. If the API restarts mid-run, that run is lost. The
   hosted API runs one replica, because SQLite has a single writer.
+  - While a job runs, the app checks it from every page, which keeps the hosted API awake.
+  - If the browser is closed for about 5 minutes mid-run, the API scales to zero and the job ends.
 - **Access by email:** the allowlist trusts the account name that Microsoft sign-in reports. Production should
   key access on tenant and object IDs.
 - **The labeling helper** is local only. The deviations log `review_exceptions.csv` lives in the container and

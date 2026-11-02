@@ -21,6 +21,26 @@ if not allowed:
     st.warning(who)
     st.stop()
 
+
+@st.fragment(run_every="10s")
+def watch_job() -> None:
+    """While a job runs, check it from every page. Hosted, the API scales to zero after minutes without
+    requests, which would end the job; a finished job redraws the app once so the run picker lists it."""
+    job_id = st.session_state.get("job_id")
+    if not job_id or st.session_state.get("job_listed") == job_id:
+        return
+    try:
+        job = api.job(job_id)
+    except ApiError:
+        return
+    if job["status"] in ("queued", "running"):
+        st.caption(f"Running {job['package_id']}: stage {job['stages_done']} of {job['stages_total']}")
+    elif job["status"] == "done":
+        st.session_state["run_id"] = job["run_id"]
+        st.session_state["job_listed"] = job_id
+        st.rerun()
+
+
 with st.sidebar:
     st.title("Spec Review Copilot")
     default_url = os.environ.get("API_URL", "http://127.0.0.1:8000")
@@ -52,5 +72,7 @@ with st.sidebar:
         else:
             st.query_params.pop("reviewer", None)
     st.caption("The tool drafts; the engineer decides. Nothing is final until reviewed.")
+    watch_job()  # inside the sidebar: a fragment's own reruns may write only where it was called
+
 
 st.navigation([st.Page(p.path, title=p.title, icon=p.icon, default=p.default) for p in page_specs(hosted)]).run()
