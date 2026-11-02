@@ -12,3 +12,4 @@ dist/
 data/uploads/
 data/knowledge/review_exceptions.csv
 .playwright-mcp/
+.claude/worktrees/

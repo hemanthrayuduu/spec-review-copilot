@@ -165,6 +165,10 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
             raise HTTPException(409, f"run {run_id} has no requirements yet")
         return load_run(path, store.latest(run_id))
 
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
     @app.post("/jobs/upload")
     async def upload(files: Annotated[list[UploadFile], File()], package_name: Annotated[str, Form()]) -> Job:
         limit = settings.max_upload_mb * 1_000_000

@@ -196,3 +196,10 @@ def test_a_dot_name_is_never_a_run(tmp_path: Path, run_id: str) -> None:
     client, settings = client_with_run(tmp_path)
     (settings.runs_dir / ".hidden").mkdir()
     assert client.get(f"/runs/{run_id}/decisions/x/history").status_code == 404
+
+
+def test_health_answers_without_touching_runs(tmp_path: Path) -> None:
+    """Phase 4: container health checks and the hosted app probe this route."""
+    client, _ = client_with_run(tmp_path)
+    r = client.get("/health")
+    assert r.status_code == 200 and r.json() == {"status": "ok"}

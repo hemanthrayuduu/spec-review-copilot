@@ -1,11 +1,14 @@
 """Run folders: every stage writes runs/<run_id>/<stage>.json so each step can be inspected."""
 
+import logging
 import os
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
 from pydantic import BaseModel
+
+logger = logging.getLogger("spec_review.runs")
 
 
 def new_run_id(now: datetime | None = None) -> str:
@@ -33,5 +36,9 @@ class RunWriter:
         self.run_dir.mkdir(parents=True, exist_ok=True)
         tmp = self.root / f".latest-{os.getpid()}"
         tmp.unlink(missing_ok=True)
-        tmp.symlink_to(self.run_dir.name, target_is_directory=True)
+        try:
+            tmp.symlink_to(self.run_dir.name, target_is_directory=True)
+        except OSError as exc:  # an Azure Files (SMB) share has no symlinks; the run itself is complete
+            logger.info("runs/latest not updated: %s", exc)
+            return
         os.replace(tmp, self.root / "latest")
