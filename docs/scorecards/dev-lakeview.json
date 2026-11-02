@@ -1,0 +1,1001 @@
+{
+  "package_id": "lakeview",
+  "split": "dev",
+  "section_recall": 1.0,
+  "sections_missed": [],
+  "pages_kept_ratio": 0.183,
+  "silent_drops": 0,
+  "needs_ocr_pages": 0,
+  "pages_ocr": 1,
+  "pages_blank": 1,
+  "addenda_applied": 3,
+  "addenda_unparsed": 0,
+  "unresolved_xrefs": 0,
+  "candidate_recall": 1.0,
+  "candidates_missed": [],
+  "candidates_without_disposition": 0,
+  "requirement_recall": 0.9655,
+  "requirement_precision": 0.7022,
+  "mandatory_recall": 0.9638,
+  "requirements_missed": [
+    "rfp:4:4.1: The Supplier shall submit a list of at least three (3) insta",
+    "rfp:7:7.3: Liquidated damages of $1,500 per day shall be assessed for e",
+    "rfp:7:7.6: Payment shall be made as follows: 90 percent on delivery and",
+    "rfp:7:7.7: The Supplier shall maintain commercial general liability ins",
+    "specs:01 33 00:1.05.A: Shop drawings shall be drawn to scale",
+    "specs:01 33 00:1.05.A: shall show dimensions, materials, equipment weights, and anc",
+    "specs:46 61 00:3.04.B: The pressure decay rate shall not exceed 0.5 psi in 10 minut",
+    "specs:46 61 00:3.06.C: Collect composite permeate samples three times per week for "
+  ],
+  "citation_accuracy": 1.0,
+  "quote_pass_rate": 1.0,
+  "number_pass_rate": 1.0,
+  "deadline_recall": 1.0,
+  "form_recall": 1.0,
+  "red_flag_recall": 1.0,
+  "permit_limit_recall": 1.0,
+  "brief_missed": [],
+  "traps": [
+    {
+      "trap": 1,
+      "description": "Mandatory field-service requirement buried at 46 61 00 paragraph 3.08.C.7, in the last quarter of the section",
+      "golden": 1,
+      "matched": 1,
+      "req_ids": [
+        "specs#8:g30:r9"
+      ]
+    },
+    {
+      "trap": 2,
+      "description": "O&M manual requirement in 01 33 00 paragraph 1.06.B, reached through the reference in 46 61 00 paragraph 1.05.A",
+      "golden": 1,
+      "matched": 1,
+      "req_ids": [
+        "specs#2:g6:r2"
+      ]
+    },
+    {
+      "trap": 3,
+      "description": "Requirement in a design-criteria table row after a page break: Maximum transmembrane pressure 12 psi",
+      "golden": 39,
+      "matched": 39,
+      "req_ids": [
+        "specs#8:g11:r3",
+        "specs#8:g11:r4",
+        "specs#8:g11:r5",
+        "specs#8:g11:r6",
+        "specs#8:g11:r7",
+        "specs#8:g11:r8",
+        "specs#8:g11:r9",
+        "specs#8:g11:r10",
+        "specs#8:g11:r11",
+        "specs#8:g11:r12",
+        "specs#8:g11:r13",
+        "specs#8:g11:r14",
+        "specs#8:g11:r15",
+        "specs#8:g11:r16",
+        "specs#8:g11:r17",
+        "specs#8:g11:r18",
+        "specs#8:g11:r19",
+        "specs#8:g11:r20",
+        "specs#8:g11:r21",
+        "specs#8:g11:r22",
+        "specs#8:g11:r23",
+        "specs#8:g11:r24",
+        "specs#8:g11:r25",
+        "specs#8:g11:r26",
+        "specs#8:g11:r27",
+        "specs#8:g11:r28",
+        "specs#8:g11:r29",
+        "specs#8:g11:r30",
+        "specs#8:g11:r31",
+        "specs#8:g11:r32",
+        "specs#8:g11:r33",
+        "specs#8:g11:r34",
+        "specs#8:g11:r35",
+        "specs#8:g11:r36",
+        "specs#8:g11:r37",
+        "specs#8:g11:r38",
+        "specs#8:g11:r39",
+        "specs#8:g11:r40",
+        "specs#8:g11:r41"
+      ]
+    },
+    {
+      "trap": 4,
+      "description": "Named competitor Brightwater Systems Model BS-300 with an or-equal clause at 46 21 00 paragraph 2.01.A",
+      "golden": 1,
+      "matched": 1,
+      "req_ids": [
+        "specs#6:g7:r1"
+      ]
+    },
+    {
+      "trap": 5,
+      "description": "Effluent total phosphorus of 0.1 mg/L where the product literature supports below 0.2 mg/L; expected needs_engineer",
+      "golden": 1,
+      "matched": 1,
+      "req_ids": [
+        "specs#8:g11:r1"
+      ]
+    },
+    {
+      "trap": 6,
+      "description": "A 'should' statement at 46 43 00 paragraph 2.03.C that must not be marked mandatory",
+      "golden": 1,
+      "matched": 1,
+      "req_ids": [
+        "specs#7:g8:r3"
+      ]
+    },
+    {
+      "trap": 7,
+      "description": "Addendum 1 replaces 46 61 00 paragraph 2.04.B: the 5-year module warranty becomes 7 years",
+      "golden": 1,
+      "matched": 1,
+      "req_ids": [
+        "specs#8:g13:r2"
+      ]
+    }
+  ],
+  "dispositions": {
+    "requirement": 318,
+    "not_requirement": 31,
+    "needs_engineer": 0
+  },
+  "llm": {
+    "provider": "azure",
+    "deployment": "gpt-5-mini",
+    "model": "gpt-5-mini-2025-08-07",
+    "reasoning_effort": "minimal",
+    "judge_reasoning_effort": "low",
+    "prompt_versions": [
+      "extract_v2",
+      "permit_v1",
+      "judge_v4"
+    ],
+    "calls": 398,
+    "cached": 398,
+    "failed": 0,
+    "input_tokens": 732919,
+    "output_tokens": 128654,
+    "cost_usd": 0.0,
+    "latency_ms": 820.9
+  },
+  "notes": [
+    "Provider azure, deployment gpt-5-mini, model gpt-5-mini-2025-08-07, reasoning effort minimal; prompts extract_v2, permit_v1, judge_v4."
+  ],
+  "status": {
+    "labeled": 232,
+    "matched": 224,
+    "correct": 185,
+    "accuracy_matched": 0.8259,
+    "accuracy_all": 0.7974,
+    "accuracy_grouped": 0.8259,
+    "confusion": {
+      "comply": {
+        "comply": 41,
+        "needs_engineer": 14,
+        "missing": 1,
+        "deviation": 2,
+        "not_applicable": 1
+      },
+      "not_applicable": {
+        "not_applicable": 39,
+        "needs_engineer": 5,
+        "comply": 1,
+        "missing": 1
+      },
+      "needs_engineer": {
+        "missing": 4,
+        "not_applicable": 5,
+        "needs_engineer": 82,
+        "deviation": 5,
+        "comply": 1,
+        "comply_with_clarification": 1
+      },
+      "deviation": {
+        "deviation": 17,
+        "missing": 2,
+        "needs_engineer": 2
+      },
+      "comply_with_clarification": {
+        "deviation": 1,
+        "comply_with_clarification": 6,
+        "needs_engineer": 1
+      }
+    },
+    "wrong": [
+      {
+        "doc_id": "rfp",
+        "page": 2,
+        "section_number": "2",
+        "paragraph_path": "2.2",
+        "text": "The Supplier shall provide equipment design, fabrication, delivery to the site, installation supervision, startup, testi",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The supplier provides guaranteed on-site field service (installation check, startup) and operator training, and guaranteed delivery lead times, but the evidence does not show guaranteed commitments for equipment design and fabrication. Product brochures mention engineering services, but those are product documents (not guaranteed capability rows) so an engineer must confirm design/fabrication obligations. Dropped evidence ids not in the evidence list: doc:ovivo_ifas.",
+        "evidence_ids": [
+          "cap:GEN-11",
+          "cap:GEN-12",
+          "cap:GEN-09"
+        ],
+        "gated_from": null,
+        "req_id": "rfp#3:g1:r2"
+      },
+      {
+        "doc_id": "rfp",
+        "page": 3,
+        "section_number": "4",
+        "paragraph_path": "4.1",
+        "text": "The Supplier shall submit a list of at least three (3) installations of the proposed membrane system in municipal wastew",
+        "expected": "needs_engineer",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "rfp",
+        "page": 3,
+        "section_number": "4",
+        "paragraph_path": "4.4",
+        "text": "The Supplier should identify the location of its nearest parts warehouse.",
+        "expected": "needs_engineer",
+        "predicted": "not_applicable",
+        "method": "llm",
+        "reason": "This is a submittal request for supplier information (location of nearest parts warehouse), not an obligation on the manufacturer's equipment, services, or terms. The requirement therefore does not apply to product capabilities and needs no evidence.",
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": "rfp#5:g1:r4"
+      },
+      {
+        "doc_id": "rfp",
+        "page": 3,
+        "section_number": "5",
+        "paragraph_path": "5.6",
+        "text": "The cost of pilot testing shall be included in the proposal price.",
+        "expected": "comply_with_clarification",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "The requirement mandates that pilot-testing cost be included in the proposal price, but the supplier’s guaranteed capability states pilot rental and operator support are billed separately. Therefore the supplier’s terms do not meet the requirement as written.",
+        "evidence_ids": [
+          "cap:MBR-47",
+          "pe:PE-07"
+        ],
+        "gated_from": null,
+        "req_id": "rfp#6:g1:r6"
+      },
+      {
+        "doc_id": "rfp",
+        "page": 4,
+        "section_number": "7",
+        "paragraph_path": "7.3",
+        "text": "Liquidated damages of $1,500 per day shall be assessed for each day that equipment delivery is late.",
+        "expected": "deviation",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "rfp",
+        "page": 4,
+        "section_number": "7",
+        "paragraph_path": "7.5",
+        "text": "The Supplier shall submit a BABA certification letter with the shop drawings.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The supplier materials show they can supply BABA-compliant equipment (cap:GEN-15) and when shop drawings are submitted (cap:GEN-08), but none of the guaranteed capability rows state the supplier will provide a BABA certification letter specifically or that it will be included with the shop drawings. The evidence is therefore insufficient to confirm the required submittal; engineering clarification is needed to confirm the certificate will be provided with the shop drawings.",
+        "evidence_ids": [
+          "cap:GEN-15",
+          "cap:GEN-08"
+        ],
+        "gated_from": null,
+        "req_id": "rfp#8:g1:r5"
+      },
+      {
+        "doc_id": "rfp",
+        "page": 4,
+        "section_number": "7",
+        "paragraph_path": "7.6",
+        "text": "Payment shall be made as follows: 90 percent on delivery and 10 percent on final acceptance.",
+        "expected": "deviation",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "rfp",
+        "page": 4,
+        "section_number": "7",
+        "paragraph_path": "7.7",
+        "text": "The Supplier shall maintain commercial general liability insurance of not less than $2,000,000 per occurrence.",
+        "expected": "comply",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "rfp",
+        "page": 4,
+        "section_number": "7",
+        "paragraph_path": "7.8",
+        "text": "The Supplier shall name the Owner and the Engineer as additional insureds on its liability policies.",
+        "expected": "needs_engineer",
+        "predicted": "not_applicable",
+        "method": "llm",
+        "reason": "The requirement concerns the supplier’s liability insurance coverage (contractual commercial term), not a capability of the manufacturer’s equipment or technical services. Therefore it is outside the scope of equipment capability evidence.",
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": "rfp#8:g1:r8"
+      },
+      {
+        "doc_id": "specs",
+        "page": 3,
+        "section_number": "01 33 00",
+        "paragraph_path": "1.03.C",
+        "text": "Submittals should be organized by specification paragraph.",
+        "expected": "needs_engineer",
+        "predicted": "not_applicable",
+        "method": "llm",
+        "reason": "The requirement concerns how submittals are to be organized (a procedural instruction for submitted documents), not a capability, product feature, or contractual term of the manufacturer. It does not place an obligation on the manufacturer's equipment, services, or terms to demonstrate compliance.",
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": "specs#2:g3:r3"
+      },
+      {
+        "doc_id": "specs",
+        "page": 3,
+        "section_number": "01 33 00",
+        "paragraph_path": "1.04.A",
+        "text": "Each submittal shall be transmitted electronically in PDF format with a transmittal form.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The supplier guarantees submittals are searchable PDF files but the evidence does not state that a transmittal form will be provided with each electronic submittal. The requirement for a transmittal form is not addressed in the provided capability rows, so engineering clarification is needed.",
+        "evidence_ids": [
+          "cap:GEN-16"
+        ],
+        "gated_from": null,
+        "req_id": "specs#2:g4:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 3,
+        "section_number": "01 33 00",
+        "paragraph_path": "1.05.A",
+        "text": "Shop drawings shall be drawn to scale",
+        "expected": "needs_engineer",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "specs",
+        "page": 3,
+        "section_number": "01 33 00",
+        "paragraph_path": "1.05.A",
+        "text": "shall show dimensions, materials, equipment weights, and anchor bolt locations",
+        "expected": "needs_engineer",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "specs",
+        "page": 129,
+        "section_number": "46 21 00",
+        "paragraph_path": "1.04.B",
+        "text": "Submit hydraulic calculations showing the headloss through each screen at peak hour flow with the screen 30 percent blin",
+        "expected": "needs_engineer",
+        "predicted": "not_applicable",
+        "method": "llm",
+        "reason": "The requirement mandates submission of hydraulic calculations (a submittal/work by the contractor/engineer) rather than imposing a capability or guaranteed performance on the manufacturer's equipment. Therefore the manufacturer's product evidence is not relevant to this procedural submittal requirement.",
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": "specs#6:g4:r2"
+      },
+      {
+        "doc_id": "specs",
+        "page": 130,
+        "section_number": "46 21 00",
+        "paragraph_path": "2.01.D",
+        "text": "Headloss through a clean screen shall not exceed 6 inches at peak hour flow.",
+        "expected": "needs_engineer",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "The supplier’s published typical clean-screen headloss (250–400 mm / 10–16 in) exceeds the specified maximum of 6 in, so the product does not meet the requirement as stated. No guaranteed capability was provided showing headloss ≤6 in at peak hour flow.",
+        "evidence_ids": [
+          "cap:SCR-05"
+        ],
+        "gated_from": null,
+        "req_id": "specs#6:g7:r4"
+      },
+      {
+        "doc_id": "specs",
+        "page": 132,
+        "section_number": "46 43 00",
+        "paragraph_path": "1.03.A",
+        "text": "Each clarifier shall be designed for a peak hour flow of 2.5 MGD.",
+        "expected": "not_applicable",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The supplied capability rows do not state a guaranteed or typical clarifier design capacity in MGD; no evidence shows a clarifier is offered or guaranteed for a peak hour flow of 2.5 MGD. An engineer decision or supplier clarification is needed to confirm sizing/capacity for 2.5 MGD.",
+        "evidence_ids": [
+          "cap:CLR-09",
+          "doc:ovivo_reactor_clarifier:p3:c1",
+          "cap:SCR-03"
+        ],
+        "gated_from": null,
+        "req_id": "specs#7:g3:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 132,
+        "section_number": "46 43 00",
+        "paragraph_path": "1.05.A",
+        "text": "The clarifier drives shall be warranted for 5 years from substantial completion.",
+        "expected": "deviation",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The evidence set contains no guaranteed statement that clarifier drives are warranted for 5 years from substantial completion; available entries discuss drive longevity, service-life ratings, and motor specs but not a warranty term. An engineer decision or additional manufacturer warranty documentation is needed to verify the 5-year warranty requirement.",
+        "evidence_ids": [
+          "cap:CLR-04",
+          "cap:CLR-01",
+          "doc:ovivo_reactor_clarifier:p3:c1",
+          "cap:CLR-08"
+        ],
+        "gated_from": null,
+        "req_id": "specs#7:g5:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 133,
+        "section_number": "46 43 00",
+        "paragraph_path": "3.01.A",
+        "text": "Install the mechanisms under the supervision of the manufacturer's representative.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The specification requires installation under the manufacturer's representative's supervision (a manufacturer's service). The available evidence includes a product brochure stating Ovivo offers experienced field service technicians to assist with installation, but there is no guaranteed capability row (basis = guaranteed/typical) that commits to providing manufacturer representative supervision as a subcontractor service per the spec, so an engineer decision or vendor clarification is needed.",
+        "evidence_ids": [
+          "doc:ovivo_reactor_clarifier:p3:c1"
+        ],
+        "gated_from": null,
+        "req_id": "specs#7:g13:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 133,
+        "section_number": "46 43 00",
+        "paragraph_path": "3.02.B",
+        "text": "Operate each mechanism with water for not less than 24 hours and record the drive torque.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "No guaranteed capability or service statement says the manufacturer will operate each mechanism with water for not less than 24 hours and record drive torque; the provided capability rows describe ratings, alarms, and torque ranges but not performing the wet-test or recording procedure. The product document notes torque indication is available but is not a guaranteed service stating the required 24-hour wet operation and torque recording.",
+        "evidence_ids": [
+          "cap:CLR-03",
+          "cap:CLR-04",
+          "cap:CLR-05",
+          "cap:CLR-06",
+          "cap:CLR-08",
+          "doc:ovivo_reactor_clarifier:p3:c1"
+        ],
+        "gated_from": null,
+        "req_id": "specs#7:g14:r2"
+      },
+      {
+        "doc_id": "specs",
+        "page": 136,
+        "section_number": "46 61 00",
+        "paragraph_path": "1.05.C",
+        "text": "The membrane system shall be designed to accept flow equalization basin return flows of up to 0.5 MGD without exceeding ",
+        "expected": "not_applicable",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The evidence provides guaranteed design net flux values (gfd) but does not state membrane area or how those fluxes correspond to accepting an additional 0.5 MGD return flow, so compliance cannot be determined from the provided data. An engineering calculation (or guaranteed statement relating MGD flow handling to net flux or membrane area) is required to assess compliance.",
+        "evidence_ids": [
+          "cap:MBR-20",
+          "cap:MBR-21"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g5:r5"
+      },
+      {
+        "doc_id": "specs",
+        "page": 136,
+        "section_number": "46 61 00",
+        "paragraph_path": "1.06.A",
+        "text": "Submit operation and maintenance manuals per Section 01 33 00.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "No capability row explicitly states the manufacturer will submit O&M manuals per Section 01 33 00. cap:GEN-18 references an O&M manual’s contents (spare parts) but does not commit to submitting the O&M manual per the specified section, so the evidence is inconclusive.",
+        "evidence_ids": [
+          "cap:GEN-18",
+          "cap:GEN-11",
+          "cap:GEN-12"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g6:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 136,
+        "section_number": "46 61 00",
+        "paragraph_path": "1.08.B",
+        "text": "Store membrane modules indoors at temperatures between 40 and 95 degrees F.",
+        "expected": "not_applicable",
+        "predicted": "comply",
+        "method": "llm",
+        "reason": "A guaranteed capability states dry SiC modules can be stored from -20 to 50 °C (−4 to 122 °F), which encompasses the required indoor storage range of 40 to 95 °F. Therefore the manufacturer's stated storage capability meets the specification requirement.",
+        "evidence_ids": [
+          "cap:MBR-37"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g8:r2"
+      },
+      {
+        "doc_id": "specs",
+        "page": 136,
+        "section_number": "46 61 00",
+        "paragraph_path": "1.08.C",
+        "text": "Membrane modules shall not be allowed to dry out after wetting.",
+        "expected": "not_applicable",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The provided capability rows do not state any guarantee or feature that membrane modules will be prevented from drying out after they have been wetted. Evidence shows storage of dry modules and spare quantities and factory/field tests, but no guaranteed provision to keep wetted modules from drying, so the engineer must clarify or require a guarantee.",
+        "evidence_ids": [
+          "cap:MBR-37",
+          "cap:MBR-45",
+          "cap:MBR-46",
+          "doc:ovivo_sic_fsm_datasheet_2017:p7:c1"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g8:r3"
+      },
+      {
+        "doc_id": "specs",
+        "page": 136,
+        "section_number": "46 61 00",
+        "paragraph_path": "1.09.A",
+        "text": "The membrane system, except the membrane modules, shall be warranted against defects in materials and workmanship for 2 ",
+        "expected": "deviation",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The requirement applies to the membrane system (excluding membrane modules) and asks for a 2-year warranty from substantial completion. The provided capability rows only state warranties for the membrane modules (cap:MBR-32) or give general/typical lifetime claims (cap:MBR-13, cap:MBR-33) and do not state a guaranteed 2-year system warranty from substantial completion, so the evidence does not confirm compliance.",
+        "evidence_ids": [
+          "cap:MBR-32",
+          "cap:MBR-13",
+          "cap:MBR-33"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g9:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 137,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.02.B",
+        "text": "Parameter: Maximum net flux, design average flow, all trains in service; Value: 12 gfd",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The supplier’s guaranteed design net flux is given as a selectable range of 10 to 25 gfd (so it may be set below 12 gfd or above it), but there is no guaranteed commitment that the installed/design value will be <=12 gfd. Further typical flux data indicate much higher typical fluxes, so an engineer decision or explicit guaranteed selection is needed.",
+        "evidence_ids": [
+          "cap:MBR-20",
+          "cap:MBR-12"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g11:r22"
+      },
+      {
+        "doc_id": "specs",
+        "page": 137,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.02.B",
+        "text": "Parameter: Maximum net flux, peak day flow, all trains in service; Value: 18 gfd",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "Evidence shows the supplier guarantees average-day net flux in the 10–25 gfd range and a guaranteed peak-hour capability up to 40 gfd, but none of the capability rows explicitly guarantee the net flux at peak-day flow (all trains in service) will be ≤18 gfd. The available rows are ambiguous for the specific ‘peak day’ condition, so an engineering clarification or guaranteed statement for peak-day flux is needed.",
+        "evidence_ids": [
+          "cap:MBR-20",
+          "cap:MBR-21"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g11:r23"
+      },
+      {
+        "doc_id": "specs",
+        "page": 137,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.02.B",
+        "text": "Parameter: Maximum membrane tank side water depth; Value: 13 feet",
+        "expected": "comply",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "The manufacturer guarantees the product fits membrane tanks with side water depths from 9 to 14 ft, which has a maximum of 14 ft and therefore exceeds the specified maximum of 13 ft. This does not meet the requirement as written.",
+        "evidence_ids": [
+          "cap:MBR-38"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g11:r27"
+      },
+      {
+        "doc_id": "specs",
+        "page": 137,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.02.B",
+        "text": "Parameter: Dissolved oxygen in membrane tanks, minimum; Value: 2.0 mg/L",
+        "expected": "not_applicable",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "No capability or guaranteed performance evidence states dissolved oxygen in membrane tanks or the ability to maintain a minimum DO of 2.0 mg/L, so compliance cannot be determined from the provided documents.",
+        "evidence_ids": [
+          "cap:MBR-16",
+          "cap:MBR-31",
+          "cap:MBR-05",
+          "cap:MBR-29",
+          "cap:MBR-38"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g11:r36"
+      },
+      {
+        "doc_id": "specs",
+        "page": 137,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.02.B",
+        "text": "Parameter: Membrane tank freeboard, minimum; Value: 18 inches",
+        "expected": "not_applicable",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "No capability evidence states the membrane tank freeboard dimension or a minimum freeboard of 18 inches. The only relevant capability (tank side water depth) gives water depth (9–14 ft) but does not specify freeboard, so the supplier’s compliance cannot be confirmed from the provided evidence.",
+        "evidence_ids": [
+          "cap:MBR-38"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g11:r37"
+      },
+      {
+        "doc_id": "specs",
+        "page": 138,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.03.D",
+        "text": "Each cassette shall weigh not more than 4,000 pounds when lifted wet from the tank.",
+        "expected": "needs_engineer",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "The manufacturer guarantees wet cassette lifting weight up to 6,000 lb, which exceeds the specified maximum of 4,000 lb. Therefore the equipment does not meet the requirement as written.",
+        "evidence_ids": [
+          "cap:MBR-39"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g12:r4"
+      },
+      {
+        "doc_id": "specs",
+        "page": 138,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.04.C",
+        "text": "Each module shall be tested for integrity at the factory before shipment.",
+        "expected": "needs_engineer",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "The supplier’s guaranteed factory test is a clean-water permeability test on every module, while the supplier specifies the integrity (pressure-decay) test as a field test. Therefore the supplier’s factory testing does not meet the requirement that each module be tested for integrity at the factory before shipment.",
+        "evidence_ids": [
+          "cap:MBR-46"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g13:r3"
+      },
+      {
+        "doc_id": "specs",
+        "page": 138,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.05.E",
+        "text": "Permeate pumps shall be capable of reverse flow for backpulsing.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "No capability row explicitly states that permeate pumps are capable of reverse flow for backpulsing. The provided capability evidence covers turndown, flow meter accuracy, flux, backwash pressure, and backpulse timing but does not state reverse-flow pump capability, so an engineer clarification from the vendor is required.",
+        "evidence_ids": [
+          "cap:MBR-35",
+          "cap:MBR-43",
+          "cap:MBR-20",
+          "cap:MBR-06",
+          "cap:MBR-44",
+          "doc:ovivo_sic_fsm_datasheet_2017:p8:c1"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g14:r5"
+      },
+      {
+        "doc_id": "specs",
+        "page": 138,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.07.A",
+        "text": "Provide a chemical cleaning system for maintenance and recovery cleaning with sodium hypochlorite and citric acid.",
+        "expected": "needs_engineer",
+        "predicted": "comply",
+        "method": "llm",
+        "reason": "Guaranteed capability rows state the membranes are cleaned using sodium hypochlorite for maintenance and recovery cleaning and citric acid for recovery cleaning, matching the requirement to provide chemical cleaning with those chemicals. The cited evidence explicitly specifies hypochlorite for maintenance and recovery and citric acid for recovery cleaning.",
+        "evidence_ids": [
+          "cap:MBR-24",
+          "cap:MBR-25",
+          "cap:MBR-26",
+          "cap:MBR-27"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g16:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 139,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.09.A",
+        "text": "Provide a programmable logic controller (PLC) control panel in a NEMA 12 enclosure for indoor installation.",
+        "expected": "comply",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "Manufacturer documentation states the PLC control panel is supplied in a NEMA 4X enclosure rather than the specified NEMA 12 enclosure. The evidence shows a mismatch in the enclosure NEMA rating (4X vs 12).",
+        "evidence_ids": [
+          "cap:MBR-40",
+          "cap:SCR-16"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g18:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 139,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.10.D",
+        "text": "Relaxation or backpulse shall occur every 10 to 15 minutes, adjustable by the operator.",
+        "expected": "needs_engineer",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "The vendor data show a typical backpulse interval of every 8–12 minutes (not 10–15 minutes) and do not state the operator-adjustable 10–15 minute range required. Therefore the provided capability does not meet the specified 10–15 minute, operator-adjustable interval.",
+        "evidence_ids": [
+          "cap:MBR-44",
+          "cap:MBR-40"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g19:r4"
+      },
+      {
+        "doc_id": "specs",
+        "page": 140,
+        "section_number": "46 61 00",
+        "paragraph_path": "2.12.B",
+        "text": "Submerged components shall be stainless steel or plastic and shall not be painted.",
+        "expected": "needs_engineer",
+        "predicted": "deviation",
+        "method": "llm",
+        "reason": "Some product lines meet the requirement (e.g., cassette frames and submerged fasteners are Type 316/316L stainless steel), but the manufacturer also lists submerged carbon steel with a two-coat epoxy system, which is painted/coated and not stainless or plastic, so the equipment does not universally meet the clause. The differing materials for submerged components require deviation.",
+        "evidence_ids": [
+          "cap:MBR-34",
+          "cap:CLR-11",
+          "cap:CLR-10"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g21:r2"
+      },
+      {
+        "doc_id": "specs",
+        "page": 140,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.04.B",
+        "text": "The pressure decay rate shall not exceed 0.5 psi in 10 minutes.",
+        "expected": "needs_engineer",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "specs",
+        "page": 140,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.06.A",
+        "text": "Conduct a performance test of 30 days after the biological process has reached steady state.",
+        "expected": "needs_engineer",
+        "predicted": "comply_with_clarification",
+        "method": "llm",
+        "reason": "The manufacturer offers a containerized pilot guaranteed for 60–120 days, which covers the required 30-day performance test; however the pilot rental and operator/support are billed separately and would need to be confirmed in the bid terms. Clarify cost and included services for the 30-day test.",
+        "evidence_ids": [
+          "cap:MBR-47"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g28:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 140,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.06.C",
+        "text": "Collect composite permeate samples three times per week for total phosphorus and TSS.",
+        "expected": "not_applicable",
+        "predicted": null,
+        "method": null,
+        "reason": null,
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": null
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.07.A",
+        "text": "Seed the membrane tanks with mixed liquor from the existing plant under the direction of the manufacturer's representati",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The specification requires the manufacturer's representative to direct seeding of membrane tanks, which is a service obligation. None of the provided capability rows (cap:GEN-19, cap:MBR-05, cap:MBR-46, cap:MBR-38, cap:MBR-35) or product documents state that the manufacturer will provide or direct seeding of tanks, so the evidence does not confirm the required service.",
+        "evidence_ids": [
+          "cap:GEN-19",
+          "cap:MBR-05",
+          "cap:MBR-46",
+          "cap:MBR-38",
+          "cap:MBR-35"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g29:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.07.B",
+        "text": "Operate the system in manual mode for not less than 48 hours before switching to automatic control.",
+        "expected": "needs_engineer",
+        "predicted": "not_applicable",
+        "method": "llm",
+        "reason": "The requirement specifies how the system must be operated (manual mode for at least 48 hours) which is an operational/testing obligation, not a manufacturer product specification or guaranteed capability. It therefore does not place a direct obligation on the manufacturer’s equipment, services, or terms.",
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": "specs#8:g29:r2"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.08.A",
+        "text": "Provide a manufacturer's process engineer on site during the performance test.",
+        "expected": "comply_with_clarification",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "No capability entry explicitly commits a manufacturer’s process engineer to be on site during the performance test. The available guaranteed capabilities describe field service days and testing but do not state that a manufacturer's process engineer will be present for the performance test, so an engineer review is needed to confirm this obligation.",
+        "evidence_ids": [
+          "cap:GEN-11",
+          "cap:MBR-46",
+          "cap:GEN-02"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g30:r1"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.08.C.1",
+        "text": "Inspection of each membrane tank before cassettes are installed.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The requirement mandates inspection of each membrane tank before cassettes are installed, but no guaranteed capability statement explicitly commits to providing access or inspection prior to cassette installation. Product literature mentions “easy access” for inspection (doc:ovivo_filterboxx_sic_mbr) but there is no guaranteed capability row stating the manufacturer will allow or provide inspection before installation, so the engineer must clarify or obtain a guaranteed provision. Dropped evidence ids not in the evidence list: doc:ovivo_filterboxx_sic_mbr.",
+        "evidence_ids": [
+          "cap:MBR-38",
+          "cap:MBR-46"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g30:r3"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.08.C.4",
+        "text": "Calibration checks of the transmembrane pressure and turbidity instruments.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The requirement mandates calibration checks of transmembrane pressure and turbidity instruments, but none of the guaranteed capability rows state that the manufacturer performs or provides calibration checks for these instruments. Additional clarification from the manufacturer is needed to confirm whether calibration checks are supplied or can be supplied as part of equipment delivery or commissioning.",
+        "evidence_ids": [
+          "cap:MBR-28",
+          "cap:MBR-29",
+          "cap:MBR-46",
+          "cap:MBR-43",
+          "doc:ovivo_sic_fsm_datasheet_2017:p5:c1"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g30:r6"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.08.C.5",
+        "text": "Verification of the PLC programming and alarm setpoints.",
+        "expected": "comply",
+        "predicted": "not_applicable",
+        "method": "llm",
+        "reason": "The requirement requests verification (testing/piloting) of PLC programming and alarm setpoints, which is an action/service (work by contractor/owner) rather than a product capability. Such verification obligations fall outside manufacturer equipment capability claims and are therefore not applicable to product capability evidence.",
+        "evidence_ids": [],
+        "gated_from": null,
+        "req_id": "specs#8:g30:r7"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.08.C.6",
+        "text": "Supervision of the first maintenance clean.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The specification requires the vendor to provide supervision of the first maintenance clean, but none of the guaranteed capability rows state that the manufacturer will supervise the first maintenance clean. Evidence shows maintenance intervals, chemicals, and factory/field tests, but no commitment to on-site supervision of the initial clean.",
+        "evidence_ids": [
+          "cap:MBR-24",
+          "cap:MBR-25",
+          "cap:MBR-26",
+          "cap:MBR-46",
+          "doc:ovivo_sic_fsm_datasheet_2017:p4:c1",
+          "doc:ovivo_sic_fsm_datasheet_2017:p8:c1"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g30:r8"
+      },
+      {
+        "doc_id": "specs",
+        "page": 141,
+        "section_number": "46 61 00",
+        "paragraph_path": "3.08.C.8",
+        "text": "Assistance with the performance test and the test report.",
+        "expected": "comply",
+        "predicted": "needs_engineer",
+        "method": "llm",
+        "reason": "The specification requires the manufacturer to provide assistance with the performance test and the test report, but none of the guaranteed capability rows state that the manufacturer will provide test assistance or produce the test report. Available capability entries discuss tests performed (e.g., factory/field tests and witness notice) but do not commit to providing assistance or preparing the test report, so the engineer must clarify or obtain a formal commitment.",
+        "evidence_ids": [
+          "cap:MBR-46",
+          "cap:GEN-17",
+          "cap:MBR-29"
+        ],
+        "gated_from": null,
+        "req_id": "specs#8:g30:r10"
+      }
+    ],
+    "trap5": "needs_engineer",
+    "rule": 2,
+    "judge": 317,
+    "gated": 0,
+    "synthetic": 194
+  },
+  "uncited_results": 0,
+  "judge_failed": 0,
+  "match_skipped": false
+}
