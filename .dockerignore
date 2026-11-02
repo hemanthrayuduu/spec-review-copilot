@@ -2,6 +2,7 @@
 .env
 .git
 .venv
+.claude/
 **/__pycache__
 .pytest_cache
 .playwright-mcp
