@@ -100,3 +100,22 @@ def test_markup_finds_a_pdf_with_an_upper_case_suffix(view: RunView, tmp_path: P
     (pkg / "specs.pdf").rename(pkg / "specs.PDF")
     files, skipped = write_markup(view, pkg, tmp_path / "out")
     assert [f.name for f in files] == ["specs_marked.pdf"] and skipped == []
+
+
+def test_matrix_writes_a_note_or_reason_with_control_characters(tmp_path: Path, package_dir: Path) -> None:
+    """Avila Beach, hosted: a control character in the text stopped the workbook with IllegalCharacterError."""
+    view = load_run(make_run(tmp_path / "runs", package_dir),
+                    {R_COMPLY: ReviewDecision(req_id=R_COMPLY, final_status="comply", reviewer="hr",
+                                              note="We don\x19t need\x0cthis.")})
+    ws = openpyxl.load_workbook(write_compliance_matrix(view, tmp_path / "m.xlsx"))["Compliance matrix"]
+    assert ws.cell(row=2, column=MATRIX_COLUMNS.index("Review note") + 1).value == "We don’t need this."
+
+
+def test_markup_note_shows_the_dash_the_model_wrote_without_its_high_byte(tmp_path: Path, package_dir: Path) -> None:
+    """Avila Beach, hosted: model text carried \\u0013 for an en dash; the margin note showed a broken glyph."""
+    view = load_run(make_run(tmp_path / "runs", package_dir),
+                    {R_COMPLY: ReviewDecision(req_id=R_COMPLY, final_status="comply", reviewer="hr",
+                                              note="Panels 2 \x13 6 mm.")})
+    files, _ = write_markup(view, package_dir, tmp_path / "out")
+    notes = [a.info["content"] for a in pymupdf.open(files[0])[0].annots() if a.type[1] == "Text"]
+    assert any("Panels 2 – 6 mm." in n for n in notes) and not any("\x13" in n for n in notes)

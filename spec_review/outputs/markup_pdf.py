@@ -6,6 +6,7 @@ from pathlib import Path
 import pymupdf
 
 from spec_review.ingest import find_pdf
+from spec_review.outputs.cells import printable
 from spec_review.review.run_view import Item, RunView, status_label
 
 COLOURS = {"C": (0.0, 0.55, 0.0), "R": (0.9, 0.55, 0.0), "D": (0.85, 0.0, 0.0), "?": (0.45, 0.45, 0.45)}
@@ -28,7 +29,7 @@ def _mark(page: pymupdf.Page, item: Item, rect: pymupdf.Rect) -> None:
                          color=COLOURS[code])
     reason = item.decision.note if item.decision and item.decision.note else \
         (item.result.reason if item.result else "")
-    note = page.add_text_annot((page.rect.width - 18, rect.y0), f"{status_label(item)}: {reason}".strip(": "))
+    note = page.add_text_annot((page.rect.width - 18, rect.y0), printable(f"{status_label(item)}: {reason}".strip(": ")))
     note.set_info(title=item.req.req_id)
     note.update()
 

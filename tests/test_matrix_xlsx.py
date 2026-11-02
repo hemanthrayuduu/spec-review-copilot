@@ -94,3 +94,14 @@ def test_text_starting_with_an_equals_sign_stays_text(tmp_path: Path) -> None:
     wb = openpyxl.load_workbook(write_requirements_xlsx(tmp_path / "r.xlsx", **out))
     cells = [c for ws in wb for row in ws.iter_rows() for c in row if isinstance(c.value, str) and c.value[:1] == "="]
     assert {c.value for c in cells} == {bad, "=1+1"} and all(c.data_type == "s" for c in cells)
+
+
+def test_a_control_character_from_the_model_does_not_stop_the_workbook(tmp_path: Path) -> None:
+    """Avila Beach, hosted: the model wrote the page's en dash as \\u0013, openpyxl refused the cell, and the run
+    failed at its last step with IllegalCharacterError."""
+    out = small_outputs()
+    out["extract"].requirements[0] = out["extract"].requirements[0].model_copy(
+        update={"source_text": "Proposal Form \x13 Section 3;", "value": "Proposal Form \x13 Section 3"})
+    wb = openpyxl.load_workbook(write_requirements_xlsx(tmp_path / "r.xlsx", **out))
+    texts = {c.value for row in wb["Requirements"].iter_rows() for c in row if isinstance(c.value, str)}
+    assert {"Proposal Form – Section 3;", "Proposal Form – Section 3"} <= texts

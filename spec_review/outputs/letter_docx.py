@@ -8,6 +8,7 @@ from pathlib import Path
 
 import docx
 
+from spec_review.outputs.cells import printable
 from spec_review.review.run_view import Item, RunView
 
 LETTERHEAD = "[Manufacturer name]"
@@ -27,10 +28,10 @@ def _items(document: docx.document.Document, items: list[Item]) -> None:
     for n, it in enumerate(items, start=1):
         r = it.req
         head = document.add_paragraph()
-        head.add_run(f"{n}. Section {r.section_number or '-'}, paragraph {r.paragraph_path} "
-                     f"({r.doc_id} p.{r.page})").bold = True
-        document.add_paragraph(f"The specification requires: “{r.source_text}”")
-        document.add_paragraph(f"Our position: {_position(it)}")
+        head.add_run(printable(f"{n}. Section {r.section_number or '-'}, paragraph {r.paragraph_path} "
+                               f"({r.doc_id} p.{r.page})")).bold = True
+        document.add_paragraph(printable(f"The specification requires: “{r.source_text}”"))
+        document.add_paragraph(printable(f"Our position: {_position(it)}"))
 
 
 def _open_sentence(view: RunView) -> str:
@@ -48,7 +49,7 @@ def write_letter(view: RunView, path: Path) -> Path:
     document = docx.Document()
     document.add_paragraph().add_run(LETTERHEAD).bold = True
     document.add_heading("Exceptions and Clarifications", level=1)
-    document.add_paragraph(f"Project: {package}")
+    document.add_paragraph(printable(f"Project: {package}"))
     document.add_paragraph(f"Date: {date.today().isoformat()}")
     if view.draft_banner:
         document.add_paragraph().add_run(view.draft_banner).bold = True

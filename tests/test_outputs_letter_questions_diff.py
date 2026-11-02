@@ -129,3 +129,11 @@ def test_addendum_diff_says_deleted_only_for_a_deletion(view: RunView, tmp_path:
     assert "(deleted)" not in text and "(no new text found)" in text
     view.addenda[0] = view.addenda[0].model_copy(update={"action": "delete_paragraph", "new_text": None})
     assert "(deleted)" in write_addendum_diff(view, tmp_path / "d2.md").read_text()
+
+
+def test_letter_writes_text_with_control_characters(tmp_path: Path) -> None:
+    """Avila Beach, hosted: lxml refuses control characters, so a model-written \\u0013 would stop the letter."""
+    view = load_run(make_run(tmp_path / "runs", make_package(tmp_path)),
+                    {R_DEVIATION: ReviewDecision(req_id=R_DEVIATION, final_status="deviation", reviewer="hr",
+                                                 note="Full replacement \x13 5 years.")})
+    assert "Full replacement – 5 years." in _text(write_letter(view, tmp_path / "l.docx"))
