@@ -236,10 +236,20 @@ def git(*args: str) -> str:
     return subprocess.run(["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=True).stdout
 
 
-def image_ref() -> str:
-    tag = image_tag(status=git("status", "--porcelain", "--untracked-files=no"),
-                    sha=git("rev-parse", "--short", "HEAD").strip())
+def image_ref(tag: str | None = None) -> str:
+    """The image for a named tag, or for the current commit."""
+    if tag is None:
+        tag = image_tag(status=git("status", "--porcelain", "--untracked-files=no"),
+                        sha=git("rev-parse", "--short", "HEAD").strip())
     return f"{ACR}.azurecr.io/{REPOSITORY}:{tag}"
+
+
+def require_image(ref: str) -> str:
+    repository_tag = ref.split("/", 1)[1]
+    if az("acr", "repository", "show", "-n", ACR, "--image", repository_tag, "-o", "none", check=False) is None:
+        raise SystemExit(f"The registry has no {repository_tag}. Run the image step for this commit, "
+                         "or pass --tag with a tag the registry has.")
+    return ref
 
 
 def image() -> None:
@@ -275,7 +285,8 @@ def api() -> None:
 
     secrets, env = api_environment(dotenv_values(REPO_ROOT / ".env"))
     step(f"{API}: {len(secrets)} keys as secrets, {len(env) - len(secrets)} plain settings")
-    _create_or_update(API, api_spec(env_id=_env_id(), image=image_ref(), identity_id=_identity_id(),
+    _create_or_update(API, api_spec(env_id=_env_id(), image=require_image(image_ref(TAG)),
+                                    identity_id=_identity_id(),
                                     secrets=secrets, env=env))
 
 
@@ -290,7 +301,8 @@ def app(allowed: Sequence[str]) -> None:
         step(f"sign-in secret for {SIGN_IN_NAME} (1 year)")
         secret = out("ad", "app", "credential", "reset", "--id", client_id, "--display-name", "easyauth",
                      "--years", "1", "--query", "password", "-o", "tsv", subscription=False)
-    _create_or_update(APP, app_spec(env_id=_env_id(), image=image_ref(), identity_id=_identity_id(),
+    _create_or_update(APP, app_spec(env_id=_env_id(), image=require_image(image_ref(TAG)),
+                                    identity_id=_identity_id(),
                                     api_url=f"https://{API}.internal.{domain}", allowed=allowed,
                                     auth_secret=secret))
     step(f"{APP}: Microsoft sign-in required for every request")
@@ -321,14 +333,17 @@ def _sign_in_registration(redirect_uri: str) -> str:
 
 
 SUB = ""
+TAG: str | None = None  # --tag: an image already in the registry; default: the current commit
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    global SUB
+    global SUB, TAG
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("steps", nargs="*", metavar="step", help=f"any of {', '.join(STEPS)} (default: all)")
     parser.add_argument("--allow", action="append", default=[], help="an email that may use the app (repeatable)")
+    parser.add_argument("--tag", help="for api and app: an image tag already in the registry (default: this commit)")
     args = parser.parse_args(argv)
+    TAG = args.tag
     SUB = os.environ.get("AZURE_SUBSCRIPTION_ID", "")
     if not SUB:
         raise SystemExit("Set AZURE_SUBSCRIPTION_ID to the subscription that hosts the demo.")

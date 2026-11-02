@@ -116,3 +116,14 @@ def test_sign_in_registration_takes_any_microsoft_account_even_when_it_already_e
                     "web": {"redirectUris": ["https://app.example/.auth/login/aad/callback"],
                             "implicitGrantSettings": {"enableIdTokenIssuance": True}}}
     assert "applications(appId='client-123')" in patch[0][patch[0].index("--url") + 1]
+
+
+def test_a_named_tag_is_used_as_is_without_asking_git(monkeypatch) -> None:
+    monkeypatch.setattr(dz, "git", lambda *a: pytest.fail("git was asked"))
+    assert dz.image_ref("b4edfd4") == f"{dz.ACR}.azurecr.io/{dz.REPOSITORY}:b4edfd4"
+
+
+def test_apps_are_not_pointed_at_an_image_the_registry_does_not_have(monkeypatch) -> None:
+    monkeypatch.setattr(dz, "az", lambda *a, check=True, subscription=True: None)
+    with pytest.raises(SystemExit, match="image step"):
+        dz.require_image(f"{dz.ACR}.azurecr.io/{dz.REPOSITORY}:d2588fd")
