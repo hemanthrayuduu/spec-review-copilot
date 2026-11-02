@@ -1,0 +1,23 @@
+# Secrets, history and local state never go into an image
+.env
+.git
+.venv
+**/__pycache__
+.pytest_cache
+.playwright-mcp
+.vscode
+.superpowers
+runs/
+data/uploads/
+data/knowledge/review_exceptions.csv
+
+# Raw packages are not redistributed: only the Lakeview sample and the knowledge documents
+data/raw/*
+!data/raw/dev/
+data/raw/dev/*
+!data/raw/dev/lakeview/
+!data/raw/knowledge/
+
+# Not needed at runtime
+tests/
+docs/demo/

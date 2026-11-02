@@ -1,0 +1,36 @@
+# The API and the review app on this machine (Phase 4): docker compose up --build
+# With no .env everything runs in mock mode. With Azure set in .env, the Lakeview sample replays cached replies at $0.
+services:
+  api:
+    build: .
+    image: spec-review-copilot
+    command: ["specreview", "serve", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - runs:/app/runs
+      - uploads:/app/data/uploads
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+  app:
+    image: spec-review-copilot
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.headless", "true", "--server.address", "0.0.0.0",
+              "--server.port", "8501", "--browser.gatherUsageStats", "false"]
+    environment:
+      API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${APP_PORT:-8501}:8501"
+
+volumes:
+  runs:
+  uploads:
