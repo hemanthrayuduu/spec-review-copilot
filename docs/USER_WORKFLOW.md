@@ -44,8 +44,7 @@ Lakeview is a fictional package with an addendum and seven planted traps. The de
 
 **Expect:**
 - A progress bar, then "lakeview: done, stage coverage (13 of 13)" and "Run <run id> is ready", within about 30 s.
-- **Reload the browser once.** The Run picker only lists a new run after a reload. Pick "lakeview · <run id> · 319 items, 319 to review".
-- The reload also clears **Reviewer**, so type your name again.
+- The Run picker switches to the new run on its own: "lakeview · <run id> · 319 items, 319 to review".
 
 ## 2. Brief
 
@@ -95,8 +94,8 @@ Open **Checklist**. Do these four steps in order; the counts build on each other
 You should see "51 reviewed". A new last row appears in `data/knowledge/review_exceptions.csv`, citing rfp p.4, paragraph 7.3, with your note.
 
 **d. Turn a needs-engineer item into a clarification.**
-1. Pick "[?] 46 21 00 2.03.B: Each booster pump shall deliver not less than 40 gpm at 80 psi."
-   - This sentence appears **twice**: one item is the flow (40 gpm or more), the other the pressure (80 psi). The list doesn't say which is which; either one works for this test.
+1. Pick "[?] 46 21 00 2.03.B: flow 40 gpm · Each booster pump shall deliver not less than 40 gpm at 80 psi."
+   - The same sentence also gives "pressure 80 psi", the second item. Either one works for this test.
 2. Set **Final status** to `comply_with_clarification`.
 3. Type the note "A booster pump sized for 40 gpm at 80 psi is offered at added cost." and click **Approve**.
 
@@ -275,15 +274,18 @@ Use the address that `scripts/deploy_azure.py` printed. It ends in `azurecontain
 
 ## Known rough edges
 
-None of these is a bug to report. They are logged for Phase 4.
+None of these is a bug to report.
 
-- A new run appears in the Run picker only after a reload, and a reload clears **Reviewer**.
 - `/brief` shows "Page not found"; the Brief is the home page, at `/`.
-- Streamlit's **Deploy** button in the top bar does nothing useful here.
-- The Outputs page is slow to redraw.
 - The letter and the questions reuse the AI's reasons, including ids like `cap:GEN-04`. "(fictional demo data)" is added to positions that rest on synthetic rows, even when the text is your own note.
-- One sentence with two values shows as two identical lines in the checklist (the booster pump in step 3d).
-- The labeling page says "1 labels".
+
+Fixed in Phase 4 (2026-11-02):
+- A finished run now appears in the run picker right away.
+- **Reviewer** is kept in the address (`?reviewer=…`), so it survives a reload.
+- The **Deploy** button is gone.
+- The Outputs page fetches a file only when you click its button.
+- Checklist labels show the parameter and value. The booster pump's two items read "flow 40 gpm" and "pressure 80 psi".
+- The labeling page counts correctly ("1 requirement").
 
 ## Start the review data over
 
