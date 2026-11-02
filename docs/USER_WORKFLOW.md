@@ -253,6 +253,26 @@ uv run specreview eval dev
 | Citation accuracy | 1.0 |
 | Traps | 7 of 7, with the phosphorus trap `needs_engineer` |
 
+## 12. The hosted copy
+
+Use the address that `scripts/deploy_azure.py` printed. It ends in `azurecontainerapps.io`.
+
+1. Open it in a private window. **Expect** the Microsoft sign-in page. Sign in with an allowed email.
+2. **Expect** the Brief, with "Signed in as <your email>" in the sidebar. There is no API box and no Labeling
+   helper page. The first visit after an idle spell can take a minute while the apps start.
+3. Pick the Lakeview run in the run picker, or run the sample on **Run a package**. **Expect** about a minute
+   and $0, because the replies are cached in the image.
+4. Mark one item on the Checklist. **Expect** the decision to show under your email.
+5. Restart the API, then reload the page. **Expect** your decision to still be there.
+
+   ```
+   az containerapp revision restart -n ca-specreview-api -g rg-specreview-demo-gwc --revision <active revision>
+   ```
+6. Sign in with an account that isn't on the list, such as a personal Microsoft account. **Expect** "You are
+   signed in as … Ask the owner for access."
+7. Grant or remove access with `scripts/grant_access.sh add|remove|list <email>`. The change rolls out in about a
+   minute.
+
 ## Known rough edges
 
 None of these is a bug to report. They are logged for Phase 4.
