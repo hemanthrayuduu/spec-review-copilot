@@ -142,6 +142,13 @@ def app_spec(*, env_id: str, image: str, identity_id: str, api_url: str, allowed
     }
 
 
+def environment_create_args() -> list[str]:
+    """Workload-profiles mode with only the Consumption profile: no fixed fee, and unlike the Express mode the
+    preview CLI picks by default, it can mount the file share."""
+    return ["containerapp", "env", "create", "-n", ENV_NAME, "-g", RG, "-l", LOCATION,
+            "--environment-mode", "WorkloadProfiles", "--logs-destination", "none"]
+
+
 def write_spec(spec: Mapping[str, Any], folder: Path) -> Path:
     """The spec as YAML (JSON is YAML), readable only by this user because it may hold keys."""
     fd, name = tempfile.mkstemp(suffix=".yaml", dir=folder)
@@ -218,8 +225,7 @@ def base() -> None:
            "-n", folder, "-o", "none", subscription=False)
     if not exists("containerapp", "env", "show", "-n", ENV_NAME, "-g", RG):
         step(f"Container Apps environment {ENV_NAME} (consumption, no log workspace)")
-        az("containerapp", "env", "create", "-n", ENV_NAME, "-g", RG, "-l", LOCATION, "--logs-destination", "none",
-           "-o", "none")
+        az(*environment_create_args(), "-o", "none")
     step(f"environment storage {SHARE} -> {STORAGE}/{SHARE}")
     az("containerapp", "env", "storage", "set", "-n", ENV_NAME, "-g", RG, "--storage-name", SHARE,
        "--azure-file-account-name", STORAGE, "--azure-file-account-key", key, "--azure-file-share-name", SHARE,

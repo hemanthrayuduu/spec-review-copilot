@@ -91,3 +91,9 @@ def test_image_tag_is_the_commit_and_refuses_uncommitted_changes() -> None:
     assert dz.image_tag(status="", sha="b05cc90") == "b05cc90"
     with pytest.raises(SystemExit, match="commit"):
         dz.image_tag(status=" M app/access.py\n", sha="b05cc90")
+
+
+def test_environment_is_not_express_because_express_cannot_mount_the_share() -> None:
+    args = dz.environment_create_args()
+    assert args[args.index("--environment-mode") + 1] == "WorkloadProfiles"  # the preview CLI defaults to Express
+    assert args[args.index("--logs-destination") + 1] == "none"
