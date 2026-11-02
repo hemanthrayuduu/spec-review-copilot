@@ -1,5 +1,6 @@
 """The Azure deploy script's pure parts: which settings reach the cloud, and how (Phase 4 hosting)."""
 
+import json
 import stat
 
 import pytest
@@ -97,3 +98,21 @@ def test_environment_is_not_express_because_express_cannot_mount_the_share() -> 
     args = dz.environment_create_args()
     assert args[args.index("--environment-mode") + 1] == "WorkloadProfiles"  # the preview CLI defaults to Express
     assert args[args.index("--logs-destination") + 1] == "none"
+
+
+def test_sign_in_registration_takes_any_microsoft_account_even_when_it_already_exists(monkeypatch) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    def fake_az(*args: str, check: bool = True, subscription: bool = True) -> str:
+        calls.append(args)
+        return "client-123" if args[:3] == ("ad", "app", "list") else ""
+
+    monkeypatch.setattr(dz, "az", fake_az)
+    assert dz._sign_in_registration("https://app.example/.auth/login/aad/callback") == "client-123"
+    patch = [c for c in calls if c[:3] == ("rest", "--method", "PATCH")]
+    assert len(patch) == 1
+    body = json.loads(patch[0][patch[0].index("--body") + 1])
+    assert body == {"signInAudience": "AzureADandPersonalMicrosoftAccount", "api": {"requestedAccessTokenVersion": 2},
+                    "web": {"redirectUris": ["https://app.example/.auth/login/aad/callback"],
+                            "implicitGrantSettings": {"enableIdTokenIssuance": True}}}
+    assert "applications(appId='client-123')" in patch[0][patch[0].index("--url") + 1]

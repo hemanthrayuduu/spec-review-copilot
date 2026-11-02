@@ -304,18 +304,19 @@ def app(allowed: Sequence[str]) -> None:
 
 
 def _sign_in_registration(redirect_uri: str) -> str:
-    """The Entra app registration for Microsoft sign-in: work, school, and personal Microsoft accounts."""
-    found = out("ad", "app", "list", "--display-name", SIGN_IN_NAME, "--query", "[0].appId", "-o", "tsv",
-                subscription=False)
-    if found:
-        return found
-    step(f"app registration {SIGN_IN_NAME!r} (any Microsoft account; the allowlist decides who gets in)")
-    client_id = out("ad", "app", "create", "--display-name", SIGN_IN_NAME, "--sign-in-audience", "AzureADMultipleOrgs",
-                    "--web-redirect-uris", redirect_uri, "--enable-id-token-issuance", "true",
-                    "--query", "appId", "-o", "tsv", subscription=False)
-    az("ad", "app", "update", "--id", client_id, "--set", "api.requestedAccessTokenVersion=2", subscription=False)
-    az("ad", "app", "update", "--id", client_id, "--sign-in-audience", "AzureADandPersonalMicrosoftAccount",
-       subscription=False)
+    """The Entra app registration for Microsoft sign-in: work, school, and personal Microsoft accounts.
+    Its audience and redirect address are set on every run, so a half-made or older registration is fixed too."""
+    client_id = out("ad", "app", "list", "--display-name", SIGN_IN_NAME, "--query", "[0].appId", "-o", "tsv",
+                    subscription=False)
+    if not client_id:
+        step(f"app registration {SIGN_IN_NAME!r} (any Microsoft account; the allowlist decides who gets in)")
+        client_id = out("ad", "app", "create", "--display-name", SIGN_IN_NAME, "--sign-in-audience",
+                        "AzureADMultipleOrgs", "--query", "appId", "-o", "tsv", subscription=False)
+    body = {"signInAudience": "AzureADandPersonalMicrosoftAccount",
+            "api": {"requestedAccessTokenVersion": 2},  # personal accounts need v2 tokens
+            "web": {"redirectUris": [redirect_uri], "implicitGrantSettings": {"enableIdTokenIssuance": True}}}
+    az("rest", "--method", "PATCH", "--url", f"https://graph.microsoft.com/v1.0/applications(appId='{client_id}')",
+       "--body", json.dumps(body), subscription=False)
     return client_id
 
 
