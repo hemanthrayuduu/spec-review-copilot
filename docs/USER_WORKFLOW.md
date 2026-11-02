@@ -188,7 +188,7 @@ The right side has four tabs, one for each kind of label the test scorecard read
 
 **Without `GOLDEN_DIR`**, the helper writes to `data/golden/`. It refuses to change the frozen Lakeview file, saying it "is generated (it records planted traps) and frozen; change its generator instead".
 
-**Labeling the test set** (spec section 9, labeling protocol). Pick Split `test`; labels go to `data/golden/test/<package>.json`.
+**Labeling a package by hand** (spec section 9, labeling protocol). The scored test set is the synthetic Cedar Falls package, whose labels come from its generator. Use the helper for any other package you want scored by hand; labels go to `data/golden/<split>/<package>.json`.
 - **Relevant sections:** every section that covers the product lines, plus bidding instructions, bid forms, submittals, warranties and domestic content.
 - **Requirements:** only inside relevant sections, including ones reached through cross references. One record per obligation.
 - **Pages:** the PDF page number shown in the helper, not the printed page label.

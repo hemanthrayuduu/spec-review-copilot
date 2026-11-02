@@ -39,7 +39,9 @@ All sources are listed in data/sources.yaml. Raw files go in data/raw/ (gitignor
 * UFGS Division 46 guide specifications (public domain), for splitter and extractor tests
 * Lakeview synthetic package (section 4.1)
 
-### Test set (held out, labeled by hand, run once at the end)
+### Test set (held out, synthetic, run once at the end)
+
+> 2026-11-01, owner decision: hand labels for the three real packages below were not possible, so the test set is one synthetic package, **Cedar Falls**. scripts/make_cedar_falls.py writes its PDFs and golden labels from one source of truth, as Lakeview's generator does. It is written after the Phase 4 freeze (docs/FREEZE.md), never run through the pipeline before the single test run, and it combines the three challenges the real packages were chosen for. The README reports that the test set is synthetic and was written by the same builder as the dev set. Manor, Sandy and Avila Beach stay as unlabeled real-world demo packages.
 
 * City of Manor, Texas: full wastewater plant spec book. Tests finding a few relevant sections in a huge book.
 * City of Sandy, Oregon: membrane equipment RFP with five addenda. Tests the addenda merge.
@@ -220,7 +222,7 @@ Categories: performance, effluent_limit, design_basis, material, certification, 
 
 Normalization: section numbers drop spaces and periods and are uppercased (46 21 00 = 462100). Paragraph paths drop leading zeros in each numeric part and uppercase letters (2.03.B.4 = 2.3.B.4). Values compare as numbers when both parse, with thousands separators removed and spelled numbers one to twenty converted (three = 3). Units compare case-insensitively, with no conversion.
 
-**Labeling protocol** (for data/golden/test/, agreed before labeling starts):
+**Labeling protocol** (for hand-labeled packages, agreed before labeling starts; the synthetic test package's generator follows it too):
 
 * Label relevant_sections for the whole package: every section that covers the manufacturer's product lines, plus bidding instructions, bid forms, submittals, warranties, and domestic content.
 * Label requirements only inside relevant sections, including requirements reached through cross references.
@@ -249,7 +251,7 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 
 **Status definitions** (Lakeview labels and the judge use the same words): comply, the knowledge base shows the product or standard terms meet the requirement as written; comply_with_clarification, it meets it with a condition the bid must state; deviation, the knowledge base shows the product or terms do not meet it; needs_engineer, the knowledge base does not settle it; not_applicable, it puts no obligation on the manufacturer's equipment, services, or terms. Only guaranteed or typical capability rows settle a status; claims, brochure pages, and past exceptions support but never settle one. The builder writes the Lakeview expected_status labels before the first real judge run, and the owner reviews them.
 
-**Rules:** build on the dev set. The test set is labeled by hand by the project owner, never by the model. `specreview eval test` runs only in Phase 4, and results are reported as they are.
+**Rules:** build on the dev set. The test labels come only from the synthetic test package's generator, written after the freeze, never from the model (owner decision 2026-11-01). `specreview eval test` runs only in Phase 4, once, and results are reported as they are.
 
 ## 10. Phases and acceptance criteria
 
@@ -287,7 +289,7 @@ Normalization: section numbers drop spaces and periods and are uppercased (46 21
 
 **Phase 4: Test and polish (day 7)**
 
-* The test scorecard is saved and reported as is.
+* The test scorecard is saved and reported as is, and the README says the test package is synthetic.
 * Docker compose runs the API and the app locally; the demo is hosted on Azure Container Apps.
 * README is complete, with honest results and limitations.
 

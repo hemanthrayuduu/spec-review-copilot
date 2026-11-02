@@ -13,4 +13,4 @@ Then read runs/latest/scorecard.json and the previous scorecard if one exists. R
 
 Show what changed since the last run. List the five worst misses with document, page, and paragraph path, and the stage that most likely caused each one.
 
-Propose fixes, one change at a time. Never edit anything under data/golden/test/, and never run the test set unless I ask.
+Propose fixes, one change at a time. Never edit anything under data/golden/test/, never run the pipeline on the test package (Cedar Falls), and never run the test set unless I ask. Every fix must keep tests/test_freeze.py green or update docs/FREEZE.md on purpose before the test run.

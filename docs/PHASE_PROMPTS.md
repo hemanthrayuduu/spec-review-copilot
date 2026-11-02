@@ -83,6 +83,8 @@ Plan first. Demo the full flow on Lakeview, including its addendum, and tell me 
 ```
 I have hand labeled Manor, Sandy, and Avila Beach in data/golden/test/.
 
+> 2026-11-01: hand labels were not possible, so the owner chose a synthetic held-out package, Cedar Falls (spec section 3). The freeze in item 1 comes first and is recorded in docs/FREEZE.md; the test package is written after it. The text is kept as history.
+
 1. Freeze prompts, rules, and thresholds. Run specreview eval test once, with the same provider, model, and prompts as the final dev scorecard, and save the scorecard. Do not change anything based on the test results in this phase. List suggested fixes instead.
 2. Only if Azure access is available: implement the Azure providers (Document Intelligence layout model, Azure OpenAI chat and embeddings) behind the existing interfaces, switched by .env. Otherwise skip this item.
 3. Dockerfile and docker compose for the API, the app, and Ollama.

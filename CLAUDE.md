@@ -13,8 +13,8 @@ Data sources: data/sources.yaml
 2. Never commit raw bid PDFs or product brochures. data/raw/ is gitignored. The download script and data/sources.yaml are the record.
 3. Every requirement and every match result cites a document and page. No citation, no record.
 4. The tool drafts, people decide. Nothing is final without an engineer's review decision.
-5. Never tune prompts, rules, or thresholds using the test set in data/golden/test/. Build on the dev set only.
-6. Never generate or prefill golden labels for the test set. Those are labeled by hand by the project owner.
+5. Never tune prompts, rules, or thresholds using the test set in data/golden/test/. Build on the dev set only. The scored config is frozen in docs/FREEZE.md (tag phase4-freeze); tests/test_freeze.py fails if it drifts.
+6. The test set is one synthetic package, Cedar Falls, whose labels come only from its generator (scripts/make_cedar_falls.py), written after the freeze. Never run the pipeline on it before the single test run, never edit its labels after that run, and never prefill any label from model output. (Owner decision 2026-11-01: hand labels for Manor, Sandy and Avila Beach were not possible, so the test set became synthetic.)
 7. Mock mode is the default. All tests pass with no network and no API keys.
 8. Recall beats precision when filtering. If unsure whether a section is relevant, keep it and log why.
 9. Nothing is dropped silently. Every candidate sentence ends as a requirement or an explicit "not a requirement" with a reason.
@@ -34,7 +34,7 @@ uv run streamlit run app/streamlit_app.py
 
 The app talks to the API (`specreview serve`, port 8000), so start the API first.
 
-Only run `uv run specreview eval test` when the project owner asks for it in Phase 4.
+Only run `uv run specreview eval test` when the project owner asks for it in Phase 4, and only once.
 
 ## Code conventions
 
