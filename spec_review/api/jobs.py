@@ -1,5 +1,10 @@
-"""Background package jobs: one at a time, with stage-by-stage progress (spec 5, layer 2)."""
+"""Background package jobs: one at a time, with stage-by-stage progress (spec 5, layer 2).
 
+Each run folder keeps job.json, so whoever lists runs knows whether the job finished, failed, or was still
+running when the API stopped; the job itself lives only in this process's memory.
+"""
+
+import json
 import threading
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -14,6 +19,7 @@ from spec_review.pipeline import PIPELINE_STAGES
 from spec_review.runs import RunWriter, new_run_id
 
 Runner = Callable[[Path, RunWriter], object]
+JOB_FILE = "job.json"
 
 
 class Job(BaseModel):
@@ -60,12 +66,26 @@ class JobManager:
         run_id = self._jobs[job_id].run_id
         assert run_id is not None
         self._update(job_id, status="running", started=datetime.now(UTC))
+        self._record(run_id, status="running", job_id=job_id)
         try:
             self.runner(package_dir, RunWriter(run_id, root=self.runs_dir, on_write=on_write))
         except Exception as exc:  # the job reports any failure; it must never take the API down
-            self._update(job_id, status="failed", error=f"{type(exc).__name__}: {exc}", finished=datetime.now(UTC))
+            error = f"{type(exc).__name__}: {exc}"
+            self._update(job_id, status="failed", error=error, finished=datetime.now(UTC))
+            self._record(run_id, status="failed", job_id=job_id, error=error)
         else:
             self._update(job_id, status="done", finished=datetime.now(UTC))
+            self._record(run_id, status="done", job_id=job_id)
+
+    def _record(self, run_id: str, **fields: str) -> None:
+        run_dir = self.runs_dir / run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+        (run_dir / JOB_FILE).write_text(json.dumps(fields))
+
+    def running(self, run_id: str) -> bool:
+        """Whether this process has the run's job queued or running."""
+        with self._lock:
+            return any(j.run_id == run_id and j.status in ("queued", "running") for j in self._jobs.values())
 
     def get(self, job_id: str) -> Job | None:
         with self._lock:

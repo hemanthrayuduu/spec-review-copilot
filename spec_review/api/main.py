@@ -9,14 +9,14 @@ import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 import pymupdf
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
-from spec_review.api.jobs import Job, JobManager, Runner
+from spec_review.api.jobs import JOB_FILE, Job, JobManager, Runner
 from spec_review.config import Settings, get_settings
 from spec_review.ingest import find_pdf
 from spec_review.models import ReviewDecision
@@ -57,6 +57,9 @@ class SampleRequest(BaseModel):
     package: str
 
 
+RunStatus = Literal["done", "running", "failed", "interrupted", "incomplete"]
+
+
 class RunSummary(BaseModel):
     run_id: str
     package_id: str
@@ -64,6 +67,8 @@ class RunSummary(BaseModel):
     requirements: int
     matched: bool
     unreviewed: int
+    status: RunStatus = "done"
+    error: str | None = None
 
 
 class EvidenceOut(BaseModel):
@@ -145,6 +150,22 @@ def _item_out(it: Item) -> ItemOut:
                    uses_synthetic=bool(res and res.uses_synthetic), from_addendum=r.from_addendum)
 
 
+def run_status(run_dir: Path, job_running: bool) -> tuple[RunStatus, str | None]:
+    """done, running, failed, interrupted (still marked running, but no job here: the API stopped), or incomplete
+    (no job record, as for CLI runs, and no requirements.xlsx, the pipeline's last file)."""
+    job_file = run_dir / JOB_FILE
+    record = json.loads(job_file.read_text()) if job_file.is_file() else {}
+    recorded = record.get("status")
+    status: RunStatus
+    if recorded in ("done", "failed"):
+        status = recorded
+    elif recorded == "running":
+        status = "running" if job_running else "interrupted"
+    else:  # no record, or one this code did not write
+        status = "done" if (run_dir / "requirements.xlsx").is_file() else "incomplete"
+    return status, record.get("error")
+
+
 def create_app(settings: Settings | None = None, *, runner: Runner | None = None) -> FastAPI:
     """The app; `specreview serve` runs it with uvicorn's factory mode, so importing this module has no side effects."""
     settings = settings or get_settings()
@@ -217,9 +238,11 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
                 n = len(json.loads(extract.read_text())["requirements"]) if extract.is_file() else 0
                 match = path.parent / "match.json"
                 matched = match.is_file() and not json.loads(match.read_text()).get("skipped", False)
+                status, error = run_status(path.parent, jobs.running(info["run_id"]))
                 out.append(RunSummary(run_id=info["run_id"], package_id=info["package_id"], created=info["created"],
                                       requirements=n, matched=matched,
-                                      unreviewed=max(0, n - len(store.latest(info["run_id"])))))
+                                      unreviewed=max(0, n - len(store.latest(info["run_id"]))),
+                                      status=status, error=error))
             except (OSError, ValueError, KeyError, TypeError) as e:  # one broken folder never empties the list
                 log.warning("skipping run folder %s: %s: %s", path.parent.name, type(e).__name__, e)
         return sorted(out, key=lambda r: r.created, reverse=True)

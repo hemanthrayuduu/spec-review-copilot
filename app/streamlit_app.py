@@ -12,6 +12,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from access import access, page_specs  # noqa: E402
 from api_client import ApiClient, ApiError  # noqa: E402
+from views.common import md  # noqa: E402
 
 st.set_page_config(page_title="Spec Review Copilot", layout="wide")
 hosted = os.environ.get("HOSTED", "").strip().lower() in ("1", "true", "yes")
@@ -54,12 +55,21 @@ with st.sidebar:
         st.error(exc.detail)
         runs = []
     labels = {r["run_id"]: f"{r['package_id']} · {r['run_id']} · {r['requirements']} items, "
-                           f"{r['unreviewed']} to review" for r in runs}
+                           f"{r['unreviewed']} to review" + ("" if r.get("status", "done") == "done" else
+                                                              f" · {r['status']}") for r in runs}
     ids = list(labels)
     current = st.session_state.get("run_id")
     if ids:
         st.session_state["run_id"] = st.selectbox("Run", ids, index=ids.index(current) if current in ids else 0,
                                                   format_func=labels.__getitem__)
+        picked = next(r for r in runs if r["run_id"] == st.session_state["run_id"])
+        if (status := picked.get("status", "done")) == "running":
+            st.info("This run is still running; its items fill in as it goes.")
+        elif status != "done":
+            why = {"failed": f"it failed ({md(picked.get('error') or 'no reason recorded')})",
+                   "interrupted": "the API stopped while it ran",
+                   "incomplete": "its last file, requirements.xlsx, is missing"}.get(status, status)
+            st.warning(f"This run did not finish: {why}. Its items may be incomplete.")
     if hosted:  # every decision is recorded under the signed-in account
         st.session_state["reviewer"] = who
         st.caption(f"Signed in as {who}")
