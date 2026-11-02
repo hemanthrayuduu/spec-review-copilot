@@ -47,11 +47,6 @@ def test_eval_dev_without_package_says_how_to_build_it(tmp_path: Path, monkeypat
     assert result.exit_code == 1 and "uv run python scripts/make_lakeview.py" in result.output
 
 
-def test_eval_test_is_guarded() -> None:
-    result = CliRunner().invoke(app, ["eval", "test"])
-    assert result.exit_code == 1 and "Phase 4" in result.output
-
-
 def test_eval_rejects_unknown_split() -> None:
     assert CliRunner().invoke(app, ["eval", "train"]).exit_code == 2
 
@@ -109,3 +104,31 @@ def test_knowledge_search_shows_the_evidence_the_judge_would_get() -> None:
     result = CliRunner().invoke(app, ["knowledge", "search", "membrane warranty years full replacement"])
     assert result.exit_code == 0, result.output
     assert "cap:MBR-32" in result.output and "in memory" in result.output and "settles" in result.output
+
+
+def test_eval_test_refuses_outside_the_frozen_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Phase 4: the single test run uses exactly the config in docs/FREEZE.md; mock mode is not it."""
+    from spec_review import cli
+    monkeypatch.setattr(cli, "TEST_SCORECARD", tmp_path / "test.json")
+    result = CliRunner().invoke(app, ["eval", "test"])
+    assert result.exit_code == 1 and "frozen config" in result.output and "PROVIDER_LLM" in result.output
+
+
+def test_eval_test_runs_only_once(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Rule 6: one test run; a saved test scorecard means it already happened."""
+    from spec_review import cli
+    saved = tmp_path / "test.json"
+    saved.write_text("{}")
+    monkeypatch.setattr(cli, "TEST_SCORECARD", saved)
+    monkeypatch.setattr(cli, "freeze_problems", lambda settings: [])
+    result = CliRunner().invoke(app, ["eval", "test"])
+    assert result.exit_code == 1 and "already ran" in result.output
+
+
+def test_eval_test_needs_the_generated_package(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from spec_review import cli
+    monkeypatch.setattr(cli, "TEST_SCORECARD", tmp_path / "test.json")
+    monkeypatch.setattr(cli, "TEST_PACKAGE", tmp_path / "missing")
+    monkeypatch.setattr(cli, "freeze_problems", lambda settings: [])
+    result = CliRunner().invoke(app, ["eval", "test"])
+    assert result.exit_code == 1 and "make_cedar_falls.py" in result.output

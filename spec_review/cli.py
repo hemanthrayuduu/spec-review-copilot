@@ -6,7 +6,8 @@ from pathlib import Path
 
 import typer
 
-from spec_review.config import get_settings
+from spec_review.config import REPO_ROOT, get_settings
+from spec_review.eval.freeze import freeze_problems
 from spec_review.eval.golden import load_golden
 from spec_review.eval.metrics import pages_kept_ratio
 from spec_review.eval.scorecard import build_scorecard, eval_gates
@@ -38,6 +39,10 @@ app.add_typer(knowledge_app, name="knowledge")
 
 DEV_PACKAGE = Path("data/raw/dev/lakeview")
 DEV_GOLDEN = Path("data/golden/dev/lakeview.json")
+# The held-out synthetic test package (rule 6): generated after the freeze, scored once, the scorecard kept.
+TEST_PACKAGE = REPO_ROOT / "data/raw/test/cedar_falls"
+TEST_GOLDEN = REPO_ROOT / "data/golden/test/cedar_falls.json"
+TEST_SCORECARD = REPO_ROOT / "docs/scorecards/test-cedar-falls.json"
 
 
 class Split(str, Enum):
@@ -124,19 +129,28 @@ def run(package_dir: Path, run_id: str | None = None) -> None:
 
 @app.command("eval")
 def eval_cmd(split: Split) -> None:
-    """Score a fresh run against the golden labels for a split."""
-    if split is Split.test:
-        _fail("specreview eval test is not available until Phase 4 (owner request only)")
-    if not DEV_PACKAGE.is_dir():
-        _fail(f"{DEV_PACKAGE} is missing; run: uv run python scripts/make_lakeview.py")
+    """Score a fresh run against the golden labels for a split. The test split runs once, on the frozen config."""
     settings = get_settings()
+    package, golden, maker = DEV_PACKAGE, DEV_GOLDEN, "make_lakeview.py"
+    if split is Split.test:
+        if TEST_SCORECARD.exists():
+            _fail(f"the test set already ran once ({TEST_SCORECARD}); rule 6 allows a single run")
+        if problems := freeze_problems(settings):
+            _fail("eval test needs the frozen config in docs/FREEZE.md: " + "; ".join(problems))
+        package, golden, maker = TEST_PACKAGE, TEST_GOLDEN, "make_cedar_falls.py"
+    if not package.is_dir():
+        _fail(f"{package} is missing; run: uv run python scripts/{maker}")
     writer = RunWriter(new_run_id())
     try:
-        out = run_package(DEV_PACKAGE, writer, settings)
+        out = run_package(package, writer, settings)
     except (LLMConfigError, SearchError, KnowledgeError) as e:
         _fail(str(e))
-    card = build_scorecard(load_golden(DEV_GOLDEN), out, settings)
+    card = build_scorecard(load_golden(golden), out, settings, split=split.value)
     writer.write("scorecard", card)
+    if split is Split.test:  # kept as it came out, before any gate is checked
+        TEST_SCORECARD.parent.mkdir(parents=True, exist_ok=True)
+        TEST_SCORECARD.write_text(card.model_dump_json(indent=2) + "\n", encoding="utf-8")
+        typer.echo(f"Test scorecard saved to {TEST_SCORECARD} (run {writer.run_id})")
     _summary(out.read, writer, _package_lines(out))
     typer.echo(card.model_dump_json(indent=2))
     if card.status is not None:

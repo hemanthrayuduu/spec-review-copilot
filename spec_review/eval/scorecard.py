@@ -44,7 +44,7 @@ class LLMUsage(ContractModel):
 
 class Scorecard(ContractModel):
     package_id: str
-    split: Literal["dev"]
+    split: Literal["dev", "test"]
     section_recall: float
     sections_missed: list[str]
     pages_kept_ratio: float
@@ -96,7 +96,8 @@ def _usage(out: PackageOutputs, settings: Settings) -> LLMUsage:
                     latency_ms=round(sum(c.latency_ms for c in calls), 1))
 
 
-def build_scorecard(golden: GoldenPackage, out: PackageOutputs, settings: Settings) -> Scorecard:
+def build_scorecard(golden: GoldenPackage, out: PackageOutputs, settings: Settings,
+                    split: Literal["dev", "test"] = "dev") -> Scorecard:
     read, c, v = out.read, out.read.coverage, out.verify
     recall = section_recall(golden, read.segment, read.filter)
     cands = candidate_recall(golden, out.candidates)
@@ -113,7 +114,7 @@ def build_scorecard(golden: GoldenPackage, out: PackageOutputs, settings: Settin
         f"Provider {usage.provider}, deployment {usage.deployment}, model {usage.model}, reasoning effort "
         f"{usage.reasoning_effort}; prompts {', '.join(usage.prompt_versions)}."]
     return Scorecard(
-        package_id=read.ingest.package_id, split="dev", section_recall=recall.value, sections_missed=recall.missed,
+        package_id=read.ingest.package_id, split=split, section_recall=recall.value, sections_missed=recall.missed,
         pages_kept_ratio=round(pages_kept_ratio(c), 4), silent_drops=c.silent_drops,
         needs_ocr_pages=len(c.needs_ocr_pages), pages_ocr=c.pages_ocr, pages_blank=c.pages_blank,
         addenda_applied=sum(a.applied for a in read.segment.addenda), addenda_unparsed=c.unparsed_addendum_items,
