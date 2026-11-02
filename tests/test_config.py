@@ -22,8 +22,10 @@ def test_env_example_lists_every_setting() -> None:
     assert keys == {name.upper() for name in Settings.model_fields}
 
 
-def test_env_example_copied_unchanged_loads_defaults() -> None:
-    assert Settings(_env_file=REPO / ".env.example") == Settings(_env_file=None)
+def test_env_example_copied_unchanged_loads_defaults_plus_the_scored_efforts() -> None:
+    """.env.example sets nothing beyond the defaults except the frozen reasoning efforts (docs/FREEZE.md)."""
+    pinned = {"azure_openai_reasoning_effort": "minimal", "azure_openai_judge_reasoning_effort": "low"}
+    assert Settings(_env_file=REPO / ".env.example") == Settings(_env_file=None).model_copy(update=pinned)
 
 
 def test_env_var_overrides_default(monkeypatch: pytest.MonkeyPatch) -> None:
