@@ -141,6 +141,7 @@ Docker volumes. Both ports are published on this machine only (127.0.0.1), becau
 keys.
 
 [`docs/USER_WORKFLOW.md`](docs/USER_WORKFLOW.md) walks through a full review, with what to expect at each step.
+[`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md) is a 10-minute demo: what to click, what to say, and likely questions.
 
 ## Hosted demo (Azure Container Apps)
 
