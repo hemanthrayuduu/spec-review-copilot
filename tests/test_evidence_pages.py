@@ -135,3 +135,30 @@ def test_a_synthetic_row_with_a_page_to_show_is_not_called_sourceless() -> None:
     assert "fictional data sheet" in evidence_line({**row, "page_view": True})
     assert "no source" not in evidence_line({**row, "page_view": True})
     assert "fictional, no source" in evidence_line({**row, "page_view": False})
+
+
+def test_zoom_returns_a_sharper_band_around_the_cited_line(client: TestClient) -> None:
+    """Owner, 2026-11-04: the cited page was too small to read. The zoomed view is a band around the boxed line,
+    at twice the resolution, so it reads at full width."""
+    full = pymupdf.Pixmap(client.get("/runs/run1/evidence/cap:MBR-32/page.png").content)
+    r = client.get("/runs/run1/evidence/cap:MBR-32/page.png", params={"zoom": "true"})
+    zoom = pymupdf.Pixmap(r.content)
+    assert r.status_code == 200 and red_pixels(r.content) > 50
+    assert zoom.height / zoom.width < full.height / full.width / 2  # a band of a few lines, not a page
+    assert zoom.width > full.width  # sharper than the page view
+
+
+def test_the_cited_page_shows_enlarged_at_full_width_and_the_whole_page_on_request(client: TestClient) -> None:
+    at = AppTest.from_file(str(ROOT / "app/views/source.py"), default_timeout=60)
+    at.session_state["api"], at.session_state["run_id"] = ApiClient("http://testserver", http=client), "run1"
+    at.query_params["req"] = R_DEVIATION
+    at.run()
+    images = len(at.get("image"))
+    at.selectbox(key=f"src_ev_{R_DEVIATION}").set_value("cap:MBR-32").run()
+    assert len(at.get("image")) == images + 1
+    assert [h.value for h in at.subheader if h.value.startswith("Cited page")] == ["Cited page: synthetic_product_data page 5"]
+    assert at.get("image")[-1].proto.imgs[0].caption.startswith("Enlarged: the cited line")
+    whole = at.checkbox(key=f"src_ev_{R_DEVIATION}_whole")
+    assert whole.value is False
+    whole.check().run()
+    assert not at.exception and len(at.get("image")) == images + 2

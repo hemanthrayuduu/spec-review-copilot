@@ -208,6 +208,17 @@ def cited_quote(text: str) -> str:
     return quote.translate(LIGATURES)  # "inﬂuent" as stored becomes "influent", as the search reads it
 
 
+def zoom_band(page: Any, hits: list[Any], margin: float = 90.0) -> Any:
+    """The part of the page to show enlarged: the text's width, from a little above to a little below the hits."""
+    blocks = [pymupdf.Rect(b[:4]) for b in page.get_text("blocks")]
+    left = min((b.x0 for b in blocks), default=page.rect.x0) - 18
+    right = max((b.x1 for b in blocks), default=page.rect.x1) + 18
+    top = min(h.y0 for h in hits) - margin
+    bottom = max(h.y1 for h in hits) + margin
+    return pymupdf.Rect(max(left, page.rect.x0), max(top, page.rect.y0), min(right, page.rect.x1),
+                        min(bottom, page.rect.y1))
+
+
 def held_pdfs(root: Path) -> dict[str, Path]:
     """Source id to the PDF held for it under raw/knowledge/<id>/. Web pages saved as text have none."""
     held: dict[str, Path] = {}
@@ -331,7 +342,7 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
         return JSONResponse(json.loads(path.read_text()))
 
     @app.get("/runs/{run_id}/evidence/{evidence_id}/page.png")
-    def evidence_png(run_id: str, evidence_id: str) -> Response:
+    def evidence_png(run_id: str, evidence_id: str, zoom: bool = False) -> Response:
         e = view(run_id).evidence.get(evidence_id)
         pdf = knowledge_pdfs.get(e.ref) if e is not None else None
         if e is None or pdf is None or e.page is None:
@@ -345,7 +356,10 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
                                     if q and (h := pg.search_for(q, flags=SEARCH_FLAGS))), [])
             for rect in hits:
                 pg.draw_rect(rect + (-3, -3, 3, 3), color=(0.85, 0, 0), width=2)
-            png = pg.get_pixmap(dpi=PAGE_DPI).tobytes("png")
+            if zoom and hits:  # a band around the boxed line, at twice the resolution, to read at full width
+                png = pg.get_pixmap(dpi=PAGE_DPI * 2, clip=zoom_band(pg, hits)).tobytes("png")
+            else:
+                png = pg.get_pixmap(dpi=PAGE_DPI).tobytes("png")
         return Response(png, media_type="image/png")
 
     @app.get("/runs/{run_id}/answer_key")

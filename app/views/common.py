@@ -144,21 +144,30 @@ def show_answer_key(key: Mapping[str, Any]) -> None:
                f"{key['labeled']} labeled requirements; {key['missing']} were not extracted.")
 
 
-def show_cited_page(api: Any, run_id: str, item: Mapping[str, Any], key: str) -> None:
-    """A picker over the evidence whose cited page we hold; the chosen page shows with the cited line boxed."""
+def cited_page_pick(item: Mapping[str, Any], key: str) -> dict[str, Any] | None:
+    """A picker over the evidence whose cited page we hold; it sits next to the evidence list."""
     held = [e for e in real_first(item["evidence"]) if e.get("page_view")]
     if not held:
-        return
+        return None
     names = {e["evidence_id"]: f"{e['evidence_id']} · {e['ref']} p.{e['page']}"
                                + (" (fictional data sheet)" if e["origin"] == "synthetic" else "") for e in held}
     pick = st.selectbox("View a cited page", [None, *names], format_func=lambda x: "Choose evidence" if x is None
                         else names[x], key=key)
-    if pick is None:
+    return next((e for e in held if e["evidence_id"] == pick), None)
+
+
+def show_cited_page(api: Any, run_id: str, chosen: Mapping[str, Any] | None, key: str) -> None:
+    """The chosen cited page at full width: the cited line enlarged, and the whole page on request."""
+    if chosen is None:
         return
-    chosen = next(e for e in held if e["evidence_id"] == pick)
+    where = f"{chosen['ref']} page {chosen['page']}"
     note = " · FICTIONAL demo data, not from any manufacturer" if chosen["origin"] == "synthetic" else ""
+    st.subheader(f"Cited page: {where}")
     try:
-        st.image(api.evidence_png(run_id, pick), caption=f"{chosen['ref']} page {chosen['page']}{note}",
-                 use_container_width=True)
+        st.image(api.evidence_png(run_id, chosen["evidence_id"], zoom=True), use_container_width=True,
+                 caption=f"Enlarged: the cited line on {where}{note}")
+        if st.checkbox("Show the whole page", key=f"{key}_whole"):
+            st.image(api.evidence_png(run_id, chosen["evidence_id"]), caption=f"{where}{note}",
+                     use_container_width=True)
     except ApiError as exc:
         show_error(exc)
