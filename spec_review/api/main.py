@@ -84,6 +84,7 @@ class EvidenceOut(BaseModel):
     origin: str
     basis: str | None
     url: str | None = None  # the public source at the cited page; None for fictional documents
+    page_view: bool = False  # the cited page of a document we hold (public or the synthetic data sheet) can be shown
 
 
 class TextAt(BaseModel):
@@ -173,7 +174,8 @@ class GroupOut(BaseModel):
     categories: list[str]
 
 
-def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None], links: SourceLinks) -> ItemOut:
+def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None], links: SourceLinks,
+              held: set[str]) -> ItemOut:
     r, res, d = it.req, it.result, it.decision
     group = group_of(r.category)
     return ItemOut(req_id=r.req_id, doc_id=r.doc_id, page=r.page, section_number=r.section_number,
@@ -182,13 +184,38 @@ def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None], links: 
                    ai_status=res.status if res else None,
                    ai_reason=res.reason if res else None,
                    evidence=[EvidenceOut(evidence_id=e.evidence_id, ref=e.ref, page=e.page, text=e.text,
-                                         origin=e.origin, basis=e.basis, url=evidence_url(e.ref, e.page, links))
+                                         origin=e.origin, basis=e.basis, url=evidence_url(e.ref, e.page, links),
+                                         page_view=e.ref in held and e.page is not None)
                              for e in it.evidence],
                    final_status=it.final_status, status_label=status_label(it), reviewed=it.reviewed,
                    reviewer=d.reviewer if d else None, code=it.code, note=d.note if d else "",
                    uses_synthetic=bool(res and res.uses_synthetic), from_addendum=r.from_addendum,
                    group=group, area=AREA[group], product_line=lines.get((r.doc_id, r.section_number)),
                    red_flags=list(flags_in(r.source_text)))
+
+
+# Page search with ligatures expanded: a PDF may store "fi" as one glyph, so "Clarifier" would not be found.
+SEARCH_FLAGS = pymupdf.TEXT_DEHYPHENATE | pymupdf.TEXT_PRESERVE_WHITESPACE | pymupdf.TEXT_MEDIABOX_CLIP
+# Only ligatures are expanded in a quote; other symbols (m³, µm, ™) stay as the page has them.
+LIGATURES = str.maketrans({"\ufb00": "ff", "\ufb01": "fi", "\ufb02": "fl", "\ufb03": "ffi", "\ufb04": "ffl",
+                           "\ufb05": "st", "\ufb06": "st"})
+
+
+def cited_quote(text: str) -> str:
+    """The words to find on the cited page: a capability row's quoted words, or the start of a page chunk."""
+    found = re.search(r'"([^"]+)"\s*$', text)
+    quote = found.group(1).strip() if found else text[:80].strip()
+    return quote.translate(LIGATURES)  # "inﬂuent" as stored becomes "influent", as the search reads it
+
+
+def held_pdfs(root: Path) -> dict[str, Path]:
+    """Source id to the PDF held for it under raw/knowledge/<id>/. Web pages saved as text have none."""
+    held: dict[str, Path] = {}
+    for folder in sorted(root.iterdir()) if root.is_dir() else []:
+        pdf = next((f for f in sorted(folder.iterdir()) if f.suffix.lower() == ".pdf"), None) if folder.is_dir() else None
+        if pdf is not None:
+            held[folder.name] = pdf
+    return held
 
 
 def run_status(run_dir: Path, job_running: bool) -> tuple[RunStatus, str | None]:
@@ -224,6 +251,8 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
     except (OSError, ValueError) as exc:  # no source list: evidence shows without links
         log.warning("no source links: %s: %s", type(exc).__name__, exc)
         links = {}
+
+    knowledge_pdfs = held_pdfs(settings.raw_dir / "knowledge")
 
     def run_dir(run_id: str) -> Path:
         path = settings.runs_dir / run_id
@@ -301,6 +330,24 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
             raise HTTPException(404, f"no {stage} for run {run_id}")
         return JSONResponse(json.loads(path.read_text()))
 
+    @app.get("/runs/{run_id}/evidence/{evidence_id}/page.png")
+    def evidence_png(run_id: str, evidence_id: str) -> Response:
+        e = view(run_id).evidence.get(evidence_id)
+        pdf = knowledge_pdfs.get(e.ref) if e is not None else None
+        if e is None or pdf is None or e.page is None:
+            raise HTTPException(404, f"no cited page held for evidence {evidence_id}")
+        with pymupdf.open(pdf) as doc:
+            if not 1 <= e.page <= len(doc):
+                raise HTTPException(404, f"{e.ref} has {len(doc)} pages")
+            pg = doc[e.page - 1]
+            quote = cited_quote(e.text)
+            hits: list[Any] = next((h for q in (quote, quote[:60], quote[:30])
+                                    if q and (h := pg.search_for(q, flags=SEARCH_FLAGS))), [])
+            for rect in hits:
+                pg.draw_rect(rect + (-3, -3, 3, 3), color=(0.85, 0, 0), width=2)
+            png = pg.get_pixmap(dpi=PAGE_DPI).tobytes("png")
+        return Response(png, media_type="image/png")
+
     @app.get("/runs/{run_id}/answer_key")
     def answer_key(run_id: str) -> AnswerKey:
         run = view(run_id)
@@ -333,7 +380,7 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
     def items(run_id: str) -> list[ItemOut]:
         run = view(run_id)
         lines = section_product_lines(run.brief)
-        return [_item_out(i, lines, links) for i in run.items]
+        return [_item_out(i, lines, links, set(knowledge_pdfs)) for i in run.items]
 
     @app.get("/runs/{run_id}/addenda")
     def addenda(run_id: str) -> list[AddendumOut]:

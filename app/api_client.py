@@ -39,6 +39,9 @@ class ApiClient:
     def runs(self) -> list[dict[str, Any]]:
         return self._send("GET", "/runs").json()  # type: ignore[no-any-return]
 
+    def evidence_png(self, run_id: str, evidence_id: str) -> bytes:
+        return self._send("GET", f"/runs/{_q(run_id)}/evidence/{_q(evidence_id)}/page.png").content
+
     def answer_key(self, run_id: str) -> dict[str, Any]:
         return self._send("GET", f"/runs/{_q(run_id)}/answer_key").json()  # type: ignore[no-any-return]
 

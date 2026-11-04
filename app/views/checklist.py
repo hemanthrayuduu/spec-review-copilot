@@ -12,8 +12,8 @@ import streamlit as st  # noqa: E402
 from api_client import ApiError  # noqa: E402
 from views.common import (ANSWER_FILTERS, EVIDENCE_FILTERS, STATUSES, answer_line,  # noqa: E402,F401
                           answer_matches, answer_text, context, evidence_kind, evidence_line, evidence_matches,
-                          flag_text, item_label, md, real_first, show_answer_key, show_error, show_groups,
-                          source_link)
+                          flag_text, item_label, md, real_first, show_answer_key, show_cited_page, show_error,
+                          show_groups, source_link)
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
@@ -116,6 +116,7 @@ with left:
         st.markdown(line)
     for e in real_first(item["evidence"]):
         st.markdown(evidence_line(e))
+    show_cited_page(api, run_id, item, key=f"cl_ev_{item['req_id']}")
 with right:
     default = item["final_status"] or "needs_engineer"
     status = st.selectbox("Final status", STATUSES, index=STATUSES.index(default), key=f"cl_final_{req_id}")

@@ -79,7 +79,8 @@ def evidence_line(e: Mapping[str, Any]) -> str:
     where = md(f"{e['ref']} p.{e['page'] or '-'}")
     url = (e.get("url") or "").replace("(", "%28").replace(")", "%29").replace(" ", "%20")
     cite = f"[{where}]({url})" if url else where
-    tag = " · **SYNTHETIC** (fictional, no source)" if e["origin"] == "synthetic" else ""
+    tag = "" if e["origin"] != "synthetic" else (
+        " · **SYNTHETIC** (fictional data sheet)" if e.get("page_view") else " · **SYNTHETIC** (fictional, no source)")
     return f"- `{e['evidence_id']}` ({e['basis'] or '-'}, {cite}){tag}: {md(e['text'][:200])}"
 
 
@@ -141,3 +142,23 @@ def show_answer_key(key: Mapping[str, Any]) -> None:
     cols[3].metric("Precision", f"{key['precision']:.3f}")
     st.caption(f"Scored like `specreview eval dev`: each extracted requirement is paired with its labeled one. "
                f"{key['labeled']} labeled requirements; {key['missing']} were not extracted.")
+
+
+def show_cited_page(api: Any, run_id: str, item: Mapping[str, Any], key: str) -> None:
+    """A picker over the evidence whose cited page we hold; the chosen page shows with the cited line boxed."""
+    held = [e for e in real_first(item["evidence"]) if e.get("page_view")]
+    if not held:
+        return
+    names = {e["evidence_id"]: f"{e['evidence_id']} · {e['ref']} p.{e['page']}"
+                               + (" (fictional data sheet)" if e["origin"] == "synthetic" else "") for e in held}
+    pick = st.selectbox("View a cited page", [None, *names], format_func=lambda x: "Choose evidence" if x is None
+                        else names[x], key=key)
+    if pick is None:
+        return
+    chosen = next(e for e in held if e["evidence_id"] == pick)
+    note = " · FICTIONAL demo data, not from any manufacturer" if chosen["origin"] == "synthetic" else ""
+    try:
+        st.image(api.evidence_png(run_id, pick), caption=f"{chosen['ref']} page {chosen['page']}{note}",
+                 use_container_width=True)
+    except ApiError as exc:
+        show_error(exc)

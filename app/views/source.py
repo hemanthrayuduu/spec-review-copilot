@@ -8,7 +8,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import answer_line, context, evidence_line, md, real_first, show_error  # noqa: E402
+from views.common import (answer_line, context, evidence_line, md, real_first, show_cited_page,  # noqa: E402
+                          show_error)
 
 api, run_id, _ = context()
 try:
@@ -52,3 +53,4 @@ with right:
     st.markdown(f"**Reason:** {md(item['ai_reason'] or '-')}")
     for e in real_first(item["evidence"]):
         st.markdown(evidence_line(e))
+    show_cited_page(api, run_id, item, key=f"src_ev_{item['req_id']}")
