@@ -105,3 +105,39 @@ def evidence_matches(item: Mapping[str, Any], choice: str) -> bool:
 def real_first(evidence: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Public sources before synthetic rows, each in the order the AI cited them."""
     return sorted(evidence, key=lambda e: e["origin"] != "public")
+
+
+ANSWER_FILTERS = ("All", "AI agrees", "AI disagrees", "No label")
+
+
+def answer_text(key: Mapping[str, Any], req_id: str) -> str:
+    """The table cell: the labeled status with ✓ when the AI agrees, ✗ when not; "-" for an unlabeled item."""
+    found = key["items"].get(req_id)
+    return "-" if found is None else f"{found['expected']} {'✓' if found['agrees'] else '✗'}"
+
+
+def answer_matches(key: Mapping[str, Any], req_id: str, choice: str) -> bool:
+    found = key["items"].get(req_id)
+    return {"All": True, "AI agrees": bool(found and found["agrees"]), "AI disagrees": bool(found and not found["agrees"]),
+            "No label": found is None}[choice]
+
+
+def answer_line(key: Mapping[str, Any], item: Mapping[str, Any]) -> str | None:
+    """The detail line for one item, or None when the run has no answer key or the item no label."""
+    found = key["items"].get(item["req_id"]) if key.get("available") else None
+    if found is None:
+        return None
+    verdict = "the AI agrees ✓" if found["agrees"] else f"the AI disagrees ✗ (it said {md(item['ai_status'] or 'not matched')})"
+    trap = f" · planted trap {found['trap']}" if found["trap"] else ""
+    return f"**Right answer:** {md(found['expected'])} · {verdict}{trap}"
+
+
+def show_answer_key(key: Mapping[str, Any]) -> None:
+    st.subheader("Against the answer key")
+    cols = st.columns(4)
+    cols[0].metric("AI status agrees", f"{key['correct']} of {key['matched']}")
+    cols[1].metric("Status accuracy", f"{key['accuracy_matched']:.3f}" if key["accuracy_matched"] is not None else "-")
+    cols[2].metric("Requirement recall", f"{key['recall']:.3f}")
+    cols[3].metric("Precision", f"{key['precision']:.3f}")
+    st.caption(f"Scored like `specreview eval dev`: each extracted requirement is paired with its labeled one. "
+               f"{key['labeled']} labeled requirements; {key['missing']} were not extracted.")

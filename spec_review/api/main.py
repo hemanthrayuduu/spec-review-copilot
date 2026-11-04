@@ -23,6 +23,9 @@ from spec_review.models import ReviewDecision
 from spec_review.outputs.addendum_diff import after_placeholder, diff_entries
 from spec_review.outputs.bundle import OutputsResult, write_outputs
 from spec_review.pipeline import PIPELINE_STAGES, run_package
+from spec_review.eval.golden import load_golden
+from spec_review.eval.match import match_requirements
+from spec_review.eval.metrics import status_report
 from spec_review.review.citations import SourceLinks, evidence_url, source_links
 from spec_review.review.groups import AREA, GROUPS, flags_in, group_of, section_product_lines
 from spec_review.review.run_view import Item, RunView, load_run, status_label
@@ -141,6 +144,27 @@ class ItemOut(BaseModel):
     area: str
     product_line: str | None
     red_flags: list[str]
+
+
+class AnswerKeyItem(BaseModel):
+    expected: str
+    agrees: bool
+    trap: int | None
+
+
+class AnswerKey(BaseModel):
+    """How the run's AI statuses compare with the package's dev labels, paired as the scorecard pairs them."""
+    available: bool
+    package_id: str | None
+    labeled: int = 0
+    matched: int = 0
+    correct: int = 0
+    accuracy_matched: float | None = None
+    accuracy_all: float | None = None
+    recall: float | None = None
+    precision: float | None = None
+    missing: int = 0  # labeled requirements this run never extracted
+    items: dict[str, AnswerKeyItem] = {}
 
 
 class GroupOut(BaseModel):
@@ -276,6 +300,30 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
         if stage not in PIPELINE_STAGES or not path.is_file():
             raise HTTPException(404, f"no {stage} for run {run_id}")
         return JSONResponse(json.loads(path.read_text()))
+
+    @app.get("/runs/{run_id}/answer_key")
+    def answer_key(run_id: str) -> AnswerKey:
+        run = view(run_id)
+        package = run.info.package_id if run.info else run.brief.package_id
+        path = settings.golden_dir / "dev" / f"{package}.json"  # dev labels only: test labels stay with eval
+        if run.match is None or run.match.skipped or not path.is_file():
+            return AnswerKey(available=False, package_id=package)
+        golden = load_golden(path)
+        reqs = [i.req for i in run.items]
+        paired = match_requirements(golden.requirements, reqs)
+        status = status_report(golden, paired, reqs, run.match)
+        results = {r.req_id: r for r in run.match.results}
+        items: dict[str, AnswerKeyItem] = {}
+        for gi, pi, _ in paired.pairs:
+            g, req_id = golden.requirements[gi], reqs[pi].req_id
+            if g.expected_status is not None:
+                got = results.get(req_id)
+                items[req_id] = AnswerKeyItem(expected=g.expected_status, trap=g.trap,
+                                              agrees=got is not None and got.status == g.expected_status)
+        return AnswerKey(available=True, package_id=package, labeled=status.labeled, matched=status.matched,
+                         correct=status.correct, accuracy_matched=status.accuracy_matched,
+                         accuracy_all=status.accuracy_all, recall=round(paired.recall, 4),
+                         precision=round(paired.precision, 4), missing=status.labeled - len(items), items=items)
 
     @app.get("/groups")
     def groups() -> list[GroupOut]:

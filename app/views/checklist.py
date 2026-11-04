@@ -10,9 +10,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import (EVIDENCE_FILTERS, STATUSES, context, evidence_kind,  # noqa: E402,F401
-                          evidence_line, evidence_matches, flag_text, item_label, md, real_first, show_error,
-                          show_groups, source_link)
+from views.common import (ANSWER_FILTERS, EVIDENCE_FILTERS, STATUSES, answer_line,  # noqa: E402,F401
+                          answer_matches, answer_text, context, evidence_kind, evidence_line, evidence_matches,
+                          flag_text, item_label, md, real_first, show_answer_key, show_error, show_groups,
+                          source_link)
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
@@ -20,10 +21,13 @@ api, run_id, reviewer = context()
 try:
     items = api.items(run_id)
     groups = api.groups()
+    key = api.answer_key(run_id)
 except ApiError as exc:
     show_error(exc)
     st.stop()
 st.header("Checklist")
+if key["available"]:
+    show_answer_key(key)
 show_groups(items, groups)
 
 counts = Counter(i["group"] for i in items)
@@ -42,6 +46,11 @@ by_evidence = {c: sum(evidence_matches(i, c) for i in items) for c in EVIDENCE_F
 evidence = e2.radio("Evidence behind the AI's decision", EVIDENCE_FILTERS, horizontal=True, key="cl_evidence",
                     format_func=lambda c: f"{c} ({by_evidence[c]})",
                     help="Real sources are public brochures and datasheets; synthetic rows are fictional demo data.")
+answer = "All"
+if key["available"]:
+    by_answer = {c: sum(answer_matches(key, i["req_id"], c) for i in items) for c in ANSWER_FILTERS}
+    answer = st.radio("Against the answer key", ANSWER_FILTERS, horizontal=True, key="cl_answer",
+                      format_func=lambda c: f"{c} ({by_answer[c]})")
 k1, k2, k3 = st.columns(3)
 flagged = k1.checkbox("Red flags only", key="cl_flagged")
 changed = k2.checkbox("Changed by an addendum", key="cl_addendum")
@@ -55,9 +64,11 @@ shown = [i for i in items
          and (not flagged or i["red_flags"])
          and (not changed or i["from_addendum"])
          and evidence_matches(i, evidence)
+         and answer_matches(key, i["req_id"], answer)
          and (not only_open or not i["reviewed"])]
 st.caption(f"{len(shown)} of {len(items)} shown, {sum(i['reviewed'] for i in items)} reviewed")
-st.dataframe([{"Code": i["code"], "Status": i["status_label"], "Group": i["group"],
+st.dataframe([{"Code": i["code"], "Status": i["status_label"],
+               **({"Right answer": answer_text(key, i["req_id"])} if key["available"] else {}), "Group": i["group"],
                "Equipment": i["product_line"] or "General", "Section": i["section_number"] or "-",
                "Paragraph": i["paragraph_path"], "Page": source_link(run_id, i["req_id"], f"{i['doc_id']} p.{i['page']}"),
                "Requirement": i["source_text"], "Flags": flag_text(i), "Evidence": evidence_kind(i),
@@ -101,6 +112,8 @@ with left:
                + (f" · red flag: {flag_text(item)}" if item["red_flags"] else ""))
     st.markdown(md(item["source_text"]))
     st.markdown(f"**AI status:** {item['ai_status'] or 'not matched'}  \n**Reason:** {md(item['ai_reason'] or '-')}")
+    if line := answer_line(key, item):
+        st.markdown(line)
     for e in real_first(item["evidence"]):
         st.markdown(evidence_line(e))
 with right:
