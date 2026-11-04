@@ -8,12 +8,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, md, show_error  # noqa: E402,F401
+from views.common import STATUSES, context, md, show_error, show_groups  # noqa: E402,F401
 
 api, run_id, _ = context()
 try:
     brief = api.stage(run_id, "brief")
     items = api.items(run_id)
+    groups = api.groups()
 except ApiError as exc:
     show_error(exc)
     st.stop()
@@ -24,6 +25,8 @@ cols[0].metric("Requirements", len(items))
 cols[1].metric("Reviewed", reviewed)
 cols[2].metric("Deviations", sum(i["final_status"] == "deviation" for i in items))
 cols[3].metric("Need an engineer", sum(i["final_status"] == "needs_engineer" for i in items))
+st.subheader("Requirements by group")
+show_groups(items, groups)
 
 
 def cited(rows: list[dict], title: str) -> None:

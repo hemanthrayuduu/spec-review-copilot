@@ -1,75 +1,56 @@
-from spec_review.extract.candidates import section_candidates
-from spec_review.extract.groups import Group, article_of, build_groups, render_candidates, render_text
-from spec_review.models import Block, Section
+"""Requirement groups for review (2026-11-03): the 12 extraction categories gathered into six groups a product
+manager triages by, plus the cross-cutting facts the checklist filters on."""
+
+from typing import get_args
+
+from fastapi.testclient import TestClient
+
+from api_fixtures import api_settings, fake_runner
+from run_fixtures import make_package, make_run
+from spec_review.api.main import create_app
+from spec_review.models import Brief, BriefSection, Category
+from spec_review.review.groups import AREA, GROUPS, flags_in, group_of, section_product_lines
+
+SIX = ["Performance & process", "Design & materials", "Testing & certification", "Commercial & contract",
+       "Bidder qualification", "Submittals & schedule"]
 
 
-def blk(text: str, page: int = 134, kind: str = "list_item", path: str | None = None) -> Block:
-    return Block(doc_id="specs", page=page, bbox=(72, 100, 540, 112), text=text, kind=kind,  # type: ignore[arg-type]
-                 paragraph_path=path)
+def test_every_category_belongs_to_exactly_one_of_six_groups_in_review_order() -> None:
+    members = [c for cats in GROUPS.values() for c in cats]
+    assert list(GROUPS) == SIX
+    assert sorted(members) == sorted(get_args(Category)) and len(members) == len(set(members))
 
 
-def section_of(blocks: list[Block], style: str = "csi") -> Section:
-    return Section(section_id="specs#8", number="46 61 00", title="MEMBRANE FILTRATION EQUIPMENT",
-                   numbering_style=style, doc_id="specs", page_start=134, page_end=136,  # type: ignore[arg-type]
-                   blocks=blocks)
+def test_warranty_and_buy_america_count_as_commercial_and_qualification_stands_alone() -> None:
+    assert group_of("warranty") == group_of("domestic_content") == group_of("commercial") == "Commercial & contract"
+    assert group_of("qualification") == "Bidder qualification"
+    assert group_of("design_basis") == group_of("material") == "Design & materials"
 
 
-def groups_of(blocks: list[Block], max_chars: int = 6000, style: str = "csi") -> list[Group]:
-    s = section_of(blocks, style)
-    return build_groups(s, section_candidates(s), max_chars=max_chars)
+def test_each_group_sits_in_one_of_three_areas() -> None:
+    assert [AREA[g] for g in SIX] == ["Technical", "Technical", "Technical", "Commercial", "Commercial",
+                                      "Documents & time"]
 
 
-def test_article_of() -> None:
-    assert article_of("2.03.B.4", "csi") == "2.03" and article_of("2.03", "csi") == "2.03"
-    assert article_of("3.2", "front_end") == "3" and article_of(None, "csi") is None
+def test_red_flags_follow_the_briefs_own_rules() -> None:
+    assert flags_in("Liquidated damages of $1,500 per day will be assessed.") == ["liquidated_damages"]
+    assert flags_in("Brightwater Systems Model BS-300, or approved equal.") == ["named_manufacturer"]
+    assert flags_in("Screen openings shall not exceed 6 mm.") == []
 
 
-def test_groups_follow_articles_and_skip_candidate_free_ones() -> None:
-    gs = groups_of([blk("1.01 SUMMARY", kind="heading", path="1.01"),
-                    blk("A. Section includes membranes.", path="1.01.A"),
-                    blk("2.01 MANUFACTURERS", kind="heading", path="2.01"),
-                    blk("A. Membranes shall be PVDF.", path="2.01.A"),
-                    blk("B. Modules shall be removable.", path="2.01.B"),
-                    blk("2.02 DESIGN", kind="heading", path="2.02"),
-                    blk("A. Flux shall not exceed 15 gfd.", path="2.02.A")])
-    assert [g.group_id for g in gs] == ["specs#8:g1", "specs#8:g2", "specs#8:g3"]
-    assert [len(g.candidates) for g in gs] == [1, 2, 1]
-    assert gs[1].blocks[0].text == "2.01 MANUFACTURERS"
+def test_product_line_comes_from_the_briefs_relevant_section() -> None:
+    brief = Brief(package_id="pkg", relevant_sections=[
+        BriefSection(number="46 61 00", title="MEMBRANES", doc_id="specs", page_start=1, page_end=2,
+                     product_line="membranes"),
+        BriefSection(number="01 33 00", title="SUBMITTALS", doc_id="specs", page_start=3, page_end=3)])
+    assert section_product_lines(brief) == {("specs", "46 61 00"): "membranes", ("specs", "01 33 00"): None}
 
 
-def test_group_without_candidates_is_dropped() -> None:
-    gs = groups_of([blk("1.01 SUMMARY", kind="heading", path="1.01"), blk("2.03 MATERIALS", kind="heading", path="2.03"),
-                    blk("A. Gaskets shall be EPDM.", path="2.03.A")])
-    assert [g.group_id for g in gs] == ["specs#8:g1"] and gs[0].blocks[0].text == "2.03 MATERIALS"
-
-
-def test_long_article_splits_at_block_boundaries() -> None:
-    items = [blk(f"{chr(65 + i)}. Item {i} shall be stainless steel type 316 throughout.", path=f"2.03.{chr(65 + i)}")
-             for i in range(10)]
-    gs = groups_of(items, max_chars=200)
-    assert len(gs) > 1 and all(sum(len(b.text) for b in g.blocks) <= 200 for g in gs)
-    assert sum(len(g.candidates) for g in gs) == 10
-
-
-def test_table_run_stays_with_its_lead_in() -> None:
-    rows = [blk(f"Parameter: P{i}; Value: {i}.0 MGD", kind="table_row", path="2.02.B") for i in range(39)]
-    gs = groups_of([blk("A. Supply the system.", path="2.02.A"), blk("B. Design criteria:", path="2.02.B"), *rows],
-                   max_chars=1200)
-    table_group = next(g for g in gs if any(b.kind == "table_row" for b in g.blocks))
-    assert sum(b.kind == "table_row" for b in table_group.blocks) == 39
-    assert table_group.blocks[0].text == "B. Design criteria:"
-
-
-def test_render_lines() -> None:
-    (g,) = groups_of([blk("B. Membrane modules shall be PVDF.", path="2.03.B")])
-    assert render_text(g).splitlines()[0] == "[p134] 2.03.B B. Membrane modules shall be PVDF."
-    assert render_candidates(g) == "specs#8:c1: Membrane modules shall be PVDF."
-
-
-def test_superseded_blocks_are_not_shown_to_the_model() -> None:  # final review I3
-    old = Block(doc_id="specs", page=130, bbox=(72, 100, 540, 112), text="C. Screen panels shall have 3 mm holes.",
-                kind="list_item", paragraph_path="2.01.C", superseded_by="Addendum 1")
-    gs = groups_of([blk("B. Screens shall be stainless steel.", path="2.01.B"), old,
-                    blk("D. Frames shall be welded.", path="2.01.D")])
-    assert all(b.superseded_by is None for g in gs for b in g.blocks)
-    assert all("3 mm" not in render_text(g) for g in gs)
+def test_the_api_serves_the_groups_and_each_item_carries_its_group_and_facts(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    settings = api_settings(tmp_path)
+    make_run(settings.runs_dir, make_package(tmp_path))
+    c = TestClient(create_app(settings, runner=fake_runner))
+    assert c.get("/groups").json() == [{"group": g, "area": AREA[g], "categories": list(GROUPS[g])} for g in SIX]
+    item = c.get("/runs/run1/items").json()[0]
+    assert (item["group"], item["area"], item["product_line"], item["red_flags"]) == (
+        "Performance & process", "Technical", None, [])

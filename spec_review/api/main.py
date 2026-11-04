@@ -23,6 +23,7 @@ from spec_review.models import ReviewDecision
 from spec_review.outputs.addendum_diff import after_placeholder, diff_entries
 from spec_review.outputs.bundle import OutputsResult, write_outputs
 from spec_review.pipeline import PIPELINE_STAGES, run_package
+from spec_review.review.groups import AREA, GROUPS, flags_in, group_of, section_product_lines
 from spec_review.review.run_view import Item, RunView, load_run, status_label
 from spec_review.review.store import ExceptionContext, ReviewStore
 from spec_review.runs import RunWriter, new_run_id
@@ -134,10 +135,21 @@ class ItemOut(BaseModel):
     note: str
     uses_synthetic: bool
     from_addendum: str | None
+    group: str
+    area: str
+    product_line: str | None
+    red_flags: list[str]
 
 
-def _item_out(it: Item) -> ItemOut:
+class GroupOut(BaseModel):
+    group: str
+    area: str
+    categories: list[str]
+
+
+def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None]) -> ItemOut:
     r, res, d = it.req, it.result, it.decision
+    group = group_of(r.category)
     return ItemOut(req_id=r.req_id, doc_id=r.doc_id, page=r.page, section_number=r.section_number,
                    paragraph_path=r.paragraph_path, category=r.category, mandatory=r.mandatory,
                    source_text=r.source_text, parameter=r.parameter, operator=r.operator, value=r.value, unit=r.unit,
@@ -147,7 +159,9 @@ def _item_out(it: Item) -> ItemOut:
                                          origin=e.origin, basis=e.basis) for e in it.evidence],
                    final_status=it.final_status, status_label=status_label(it), reviewed=it.reviewed,
                    reviewer=d.reviewer if d else None, code=it.code, note=d.note if d else "",
-                   uses_synthetic=bool(res and res.uses_synthetic), from_addendum=r.from_addendum)
+                   uses_synthetic=bool(res and res.uses_synthetic), from_addendum=r.from_addendum,
+                   group=group, area=AREA[group], product_line=lines.get((r.doc_id, r.section_number)),
+                   red_flags=list(flags_in(r.source_text)))
 
 
 def run_status(run_dir: Path, job_running: bool) -> tuple[RunStatus, str | None]:
@@ -254,9 +268,15 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
             raise HTTPException(404, f"no {stage} for run {run_id}")
         return JSONResponse(json.loads(path.read_text()))
 
+    @app.get("/groups")
+    def groups() -> list[GroupOut]:
+        return [GroupOut(group=g, area=AREA[g], categories=list(cats)) for g, cats in GROUPS.items()]
+
     @app.get("/runs/{run_id}/items")
     def items(run_id: str) -> list[ItemOut]:
-        return [_item_out(i) for i in view(run_id).items]
+        run = view(run_id)
+        lines = section_product_lines(run.brief)
+        return [_item_out(i, lines) for i in run.items]
 
     @app.get("/runs/{run_id}/addenda")
     def addenda(run_id: str) -> list[AddendumOut]:

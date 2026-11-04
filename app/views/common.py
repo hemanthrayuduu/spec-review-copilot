@@ -43,3 +43,26 @@ def item_label(item: Mapping[str, Any]) -> str:
     what = " ".join(str(x) for x in (item.get("parameter"), item.get("value"), item.get("unit")) if x)
     where = f"[{item['code'] or '-'}] {item['section_number'] or '-'} {item['paragraph_path']}: "
     return where + (f"{what} · " if what else "") + item["source_text"][:90]
+
+
+def group_rows(items: list[dict[str, Any]], groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """One row per review group, in review order, empty groups included, so the table keeps its shape."""
+    rows = []
+    for g in groups:
+        mine = [i for i in items if i["group"] == g["group"]]
+        reviewed = sum(i["reviewed"] for i in mine)
+        rows.append({"Area": g["area"], "Group": g["group"], "Items": len(mine),
+                     "Deviations": sum(i["final_status"] == "deviation" for i in mine),
+                     "Need an engineer": sum(i["final_status"] == "needs_engineer" for i in mine),
+                     "Not reviewed": len(mine) - reviewed,
+                     "Reviewed": reviewed / len(mine) if mine else 0.0})
+    return rows
+
+
+def show_groups(items: list[dict[str, Any]], groups: list[dict[str, Any]]) -> None:
+    st.dataframe(group_rows(items, groups), hide_index=True, use_container_width=True, column_config={
+        "Reviewed": st.column_config.ProgressColumn("Reviewed", min_value=0.0, max_value=1.0, format="percent")})
+
+
+def flag_text(item: Mapping[str, Any]) -> str:
+    return ", ".join(f.replace("_", " ") for f in item["red_flags"])

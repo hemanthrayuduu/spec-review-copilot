@@ -2,6 +2,7 @@
 
 import hashlib
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path, whether run alone or by the shell
@@ -9,31 +10,50 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, item_label, md, show_error  # noqa: E402,F401
+from views.common import STATUSES, context, flag_text, item_label, md, show_error, show_groups  # noqa: E402,F401
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
 api, run_id, reviewer = context()
 try:
     items = api.items(run_id)
+    groups = api.groups()
 except ApiError as exc:
     show_error(exc)
     st.stop()
 st.header("Checklist")
+show_groups(items, groups)
+
+counts = Counter(i["group"] for i in items)
+lines = {i["product_line"] or "General" for i in items}
 f1, f2, f3, f4 = st.columns(4)
-statuses = f1.multiselect("Status", sorted({i["final_status"] or "not matched" for i in items}), key="cl_status")
-categories = f2.multiselect("Category", sorted({i["category"] for i in items}), key="cl_category")
-sections = f3.multiselect("Section", sorted({i["section_number"] or "-" for i in items}), key="cl_section")
-only_open = f4.checkbox("Only unreviewed", key="cl_open")
+chosen = f1.multiselect("Group", [g["group"] for g in groups], format_func=lambda g: f"{g} ({counts[g]})",
+                        key="cl_group")
+statuses = f2.multiselect("Status", sorted({i["final_status"] or "not matched" for i in items}), key="cl_status")
+equipment = f3.multiselect("Equipment", sorted(lines - {"General"}) + (["General"] if "General" in lines else []),
+                           key="cl_equipment")
+sections = f4.multiselect("Section", sorted({i["section_number"] or "-" for i in items}), key="cl_section")
+k1, k2, k3, k4 = st.columns([2, 1, 1, 1])
+kind = k1.radio("Requirement", ["All", "Mandatory (shall)", "Preferred (should)"], horizontal=True,
+                key="cl_mandatory")
+flagged = k2.checkbox("Red flags only", key="cl_flagged")
+changed = k3.checkbox("Changed by an addendum", key="cl_addendum")
+only_open = k4.checkbox("Only unreviewed", key="cl_open")
 shown = [i for i in items
-         if (not statuses or (i["final_status"] or "not matched") in statuses)
-         and (not categories or i["category"] in categories)
+         if (not chosen or i["group"] in chosen)
+         and (not statuses or (i["final_status"] or "not matched") in statuses)
+         and (not equipment or (i["product_line"] or "General") in equipment)
          and (not sections or (i["section_number"] or "-") in sections)
+         and (kind == "All" or i["mandatory"] == (kind == "Mandatory (shall)"))
+         and (not flagged or i["red_flags"])
+         and (not changed or i["from_addendum"])
          and (not only_open or not i["reviewed"])]
 st.caption(f"{len(shown)} of {len(items)} shown, {sum(i['reviewed'] for i in items)} reviewed")
-st.dataframe([{"Code": i["code"], "Status": i["status_label"], "Section": i["section_number"] or "-",
+st.dataframe([{"Code": i["code"], "Status": i["status_label"], "Group": i["group"],
+               "Equipment": i["product_line"] or "General", "Section": i["section_number"] or "-",
                "Paragraph": i["paragraph_path"], "Page": f"{i['doc_id']} p.{i['page']}",
-               "Requirement": i["source_text"], "Synthetic": "SYNTHETIC" if i["uses_synthetic"] else ""}
+               "Requirement": i["source_text"], "Flags": flag_text(i),
+               "Synthetic": "SYNTHETIC" if i["uses_synthetic"] else ""}
               for i in shown], hide_index=True, use_container_width=True)
 
 if not reviewer:
@@ -64,6 +84,10 @@ left, right = st.columns([3, 2])
 with left:
     st.markdown(f"**{md(item['section_number'] or '-')} {md(item['paragraph_path'])}** "
                 f"({md(item['doc_id'])} p.{item['page']})")
+    st.caption(f"{item['group']} · {item['category'].replace('_', ' ')} · "
+               f"{'mandatory' if item['mandatory'] else 'preferred'}"
+               + (f" · from {item['from_addendum']}" if item["from_addendum"] else "")
+               + (f" · red flag: {flag_text(item)}" if item["red_flags"] else ""))
     st.markdown(md(item["source_text"]))
     st.markdown(f"**AI status:** {item['ai_status'] or 'not matched'}  \n**Reason:** {md(item['ai_reason'] or '-')}")
     for e in item["evidence"]:
