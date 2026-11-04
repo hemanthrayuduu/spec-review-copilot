@@ -59,9 +59,13 @@ with st.sidebar:
                                                               f" · {r['status']}") for r in runs}
     ids = list(labels)
     current = st.session_state.get("run_id")
+    wanted = st.query_params.get("run")  # a citation link opens its run; the address then follows the picker
+    if wanted in ids and st.session_state.get("url_run") != wanted:
+        current = wanted
     if ids:
         st.session_state["run_id"] = st.selectbox("Run", ids, index=ids.index(current) if current in ids else 0,
                                                   format_func=labels.__getitem__)
+        st.query_params["run"] = st.session_state["url_run"] = st.session_state["run_id"]
         picked = next(r for r in runs if r["run_id"] == st.session_state["run_id"])
         if (status := picked.get("status", "done")) == "running":
             st.info("This run is still running; its items fill in as it goes.")

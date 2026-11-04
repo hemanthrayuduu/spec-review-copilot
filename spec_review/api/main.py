@@ -17,12 +17,13 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 from spec_review.api.jobs import JOB_FILE, Job, JobManager, Runner
-from spec_review.config import Settings, get_settings
+from spec_review.config import SOURCES_FILE, Settings, get_settings
 from spec_review.ingest import find_pdf
 from spec_review.models import ReviewDecision
 from spec_review.outputs.addendum_diff import after_placeholder, diff_entries
 from spec_review.outputs.bundle import OutputsResult, write_outputs
 from spec_review.pipeline import PIPELINE_STAGES, run_package
+from spec_review.review.citations import SourceLinks, evidence_url, source_links
 from spec_review.review.groups import AREA, GROUPS, flags_in, group_of, section_product_lines
 from spec_review.review.run_view import Item, RunView, load_run, status_label
 from spec_review.review.store import ExceptionContext, ReviewStore
@@ -79,6 +80,7 @@ class EvidenceOut(BaseModel):
     text: str
     origin: str
     basis: str | None
+    url: str | None = None  # the public source at the cited page; None for fictional documents
 
 
 class TextAt(BaseModel):
@@ -147,7 +149,7 @@ class GroupOut(BaseModel):
     categories: list[str]
 
 
-def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None]) -> ItemOut:
+def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None], links: SourceLinks) -> ItemOut:
     r, res, d = it.req, it.result, it.decision
     group = group_of(r.category)
     return ItemOut(req_id=r.req_id, doc_id=r.doc_id, page=r.page, section_number=r.section_number,
@@ -156,7 +158,8 @@ def _item_out(it: Item, lines: dict[tuple[str, str | None], str | None]) -> Item
                    ai_status=res.status if res else None,
                    ai_reason=res.reason if res else None,
                    evidence=[EvidenceOut(evidence_id=e.evidence_id, ref=e.ref, page=e.page, text=e.text,
-                                         origin=e.origin, basis=e.basis) for e in it.evidence],
+                                         origin=e.origin, basis=e.basis, url=evidence_url(e.ref, e.page, links))
+                             for e in it.evidence],
                    final_status=it.final_status, status_label=status_label(it), reviewed=it.reviewed,
                    reviewer=d.reviewer if d else None, code=it.code, note=d.note if d else "",
                    uses_synthetic=bool(res and res.uses_synthetic), from_addendum=r.from_addendum,
@@ -191,6 +194,12 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
     jobs = JobManager(settings.runs_dir, runner or default_runner)
     store = ReviewStore(settings.review_db, settings.knowledge_dir / "review_exceptions.csv")
     app = FastAPI(title="Spec Review Copilot API", version="0.3")
+
+    try:
+        links = source_links(SOURCES_FILE)
+    except (OSError, ValueError) as exc:  # no source list: evidence shows without links
+        log.warning("no source links: %s: %s", type(exc).__name__, exc)
+        links = {}
 
     def run_dir(run_id: str) -> Path:
         path = settings.runs_dir / run_id
@@ -276,7 +285,7 @@ def create_app(settings: Settings | None = None, *, runner: Runner | None = None
     def items(run_id: str) -> list[ItemOut]:
         run = view(run_id)
         lines = section_product_lines(run.brief)
-        return [_item_out(i, lines) for i in run.items]
+        return [_item_out(i, lines, links) for i in run.items]
 
     @app.get("/runs/{run_id}/addenda")
     def addenda(run_id: str) -> list[AddendumOut]:

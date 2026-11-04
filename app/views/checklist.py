@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import STATUSES, context, flag_text, item_label, md, show_error, show_groups  # noqa: E402,F401
+from views.common import (STATUSES, context, evidence_line, flag_text, item_label, md, show_error,  # noqa: E402,F401
+                          show_groups, source_link)
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
 
@@ -51,10 +52,12 @@ shown = [i for i in items
 st.caption(f"{len(shown)} of {len(items)} shown, {sum(i['reviewed'] for i in items)} reviewed")
 st.dataframe([{"Code": i["code"], "Status": i["status_label"], "Group": i["group"],
                "Equipment": i["product_line"] or "General", "Section": i["section_number"] or "-",
-               "Paragraph": i["paragraph_path"], "Page": f"{i['doc_id']} p.{i['page']}",
+               "Paragraph": i["paragraph_path"], "Page": source_link(run_id, i["req_id"], f"{i['doc_id']} p.{i['page']}"),
                "Requirement": i["source_text"], "Flags": flag_text(i),
                "Synthetic": "SYNTHETIC" if i["uses_synthetic"] else ""}
-              for i in shown], hide_index=True, use_container_width=True)
+              for i in shown], hide_index=True, use_container_width=True,
+             column_config={"Page": st.column_config.LinkColumn("Page", display_text=r"cite=(.*)$",
+                                                                  help="Open the page in the Source viewer")})
 
 if not reviewer:
     st.warning("Enter your name as Reviewer in the sidebar to save decisions.")
@@ -82,8 +85,9 @@ req_id = st.selectbox("Requirement", list(labels), format_func=labels.__getitem_
 item = next(i for i in shown if i["req_id"] == req_id)
 left, right = st.columns([3, 2])
 with left:
+    cite = f"{item['doc_id']} p.{item['page']}"
     st.markdown(f"**{md(item['section_number'] or '-')} {md(item['paragraph_path'])}** "
-                f"({md(item['doc_id'])} p.{item['page']})")
+                f"([{md(cite)}]({source_link(run_id, item['req_id'], cite)}))")
     st.caption(f"{item['group']} · {item['category'].replace('_', ' ')} · "
                f"{'mandatory' if item['mandatory'] else 'preferred'}"
                + (f" · from {item['from_addendum']}" if item["from_addendum"] else "")
@@ -91,9 +95,7 @@ with left:
     st.markdown(md(item["source_text"]))
     st.markdown(f"**AI status:** {item['ai_status'] or 'not matched'}  \n**Reason:** {md(item['ai_reason'] or '-')}")
     for e in item["evidence"]:
-        tag = " · **SYNTHETIC**" if e["origin"] == "synthetic" else ""
-        st.markdown(f"- `{e['evidence_id']}` ({e['basis'] or '-'}, {md(e['ref'])} p.{e['page'] or '-'}){tag}: "
-                    f"{md(e['text'][:200])}")
+        st.markdown(evidence_line(e))
 with right:
     default = item["final_status"] or "needs_engineer"
     status = st.selectbox("Final status", STATUSES, index=STATUSES.index(default), key=f"cl_final_{req_id}")

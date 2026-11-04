@@ -3,6 +3,7 @@
 import re
 from collections.abc import Mapping
 from typing import Any
+from urllib.parse import quote, urlencode
 
 import streamlit as st
 
@@ -66,3 +67,17 @@ def show_groups(items: list[dict[str, Any]], groups: list[dict[str, Any]]) -> No
 
 def flag_text(item: Mapping[str, Any]) -> str:
     return ", ".join(f.replace("_", " ") for f in item["red_flags"])
+
+
+def source_link(run_id: str, req_id: str, cite: str) -> str:
+    """The Source viewer at this item, in a new tab: the run and the item travel in the address."""
+    return "/source?" + urlencode({"run": run_id, "req": req_id, "cite": cite}, quote_via=quote)
+
+
+def evidence_line(e: Mapping[str, Any]) -> str:
+    """One evidence bullet. A public source links to its page; a fictional one says so and has no link."""
+    where = md(f"{e['ref']} p.{e['page'] or '-'}")
+    url = (e.get("url") or "").replace("(", "%28").replace(")", "%29").replace(" ", "%20")
+    cite = f"[{where}]({url})" if url else where
+    tag = " · **SYNTHETIC** (fictional, no source)" if e["origin"] == "synthetic" else ""
+    return f"- `{e['evidence_id']}` ({e['basis'] or '-'}, {cite}){tag}: {md(e['text'][:200])}"
