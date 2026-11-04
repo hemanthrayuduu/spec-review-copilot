@@ -86,7 +86,7 @@ def test_red_flag_addendum_and_mandatory_filters(api: ApiClient) -> None:
     at.checkbox(key="cl_addendum").check().run()
     assert shown(at).startswith("1 of 3 shown")
     at.checkbox(key="cl_addendum").uncheck().run()
-    at.radio(key="cl_mandatory").set_value("Preferred (should)").run()
+    at.radio(key="cl_mandatory").set_value("Preferred").run()
     assert not at.exception and shown(at).startswith("1 of 3 shown")
 
 
@@ -102,3 +102,8 @@ def test_brief_shows_requirements_by_group(api: ApiClient) -> None:
     at = page("brief", api)
     assert not at.exception and "Requirements by group" in [s.value for s in at.subheader]
     assert any(list(d.value.get("Group", [])) == SIX for d in at.dataframe)
+
+
+def test_requirement_filter_says_mandatory_and_preferred_without_shall_or_should(api: ApiClient) -> None:
+    """Owner, 2026-11-04: the buttons read Mandatory and Preferred."""
+    assert page("checklist", api).radio(key="cl_mandatory").options == ["All", "Mandatory", "Preferred"]

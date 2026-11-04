@@ -40,7 +40,7 @@ equipment = f3.multiselect("Equipment", sorted(lines - {"General"}) + (["General
                            key="cl_equipment")
 sections = f4.multiselect("Section", sorted({i["section_number"] or "-" for i in items}), key="cl_section")
 e1, e2 = st.columns(2)
-kind = e1.radio("Requirement", ["All", "Mandatory (shall)", "Preferred (should)"], horizontal=True,
+kind = e1.radio("Requirement", ["All", "Mandatory", "Preferred"], horizontal=True,
                 key="cl_mandatory")
 by_evidence = {c: sum(evidence_matches(i, c) for i in items) for c in EVIDENCE_FILTERS}
 evidence = e2.radio("Evidence behind the AI's decision", EVIDENCE_FILTERS, horizontal=True, key="cl_evidence",
@@ -60,7 +60,7 @@ shown = [i for i in items
          and (not statuses or (i["final_status"] or "not matched") in statuses)
          and (not equipment or (i["product_line"] or "General") in equipment)
          and (not sections or (i["section_number"] or "-") in sections)
-         and (kind == "All" or i["mandatory"] == (kind == "Mandatory (shall)"))
+         and (kind == "All" or i["mandatory"] == (kind == "Mandatory"))
          and (not flagged or i["red_flags"])
          and (not changed or i["from_addendum"])
          and evidence_matches(i, evidence)
