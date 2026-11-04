@@ -10,7 +10,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import (STATUSES, context, evidence_line, flag_text, item_label, md, show_error,  # noqa: E402,F401
+from views.common import (EVIDENCE_FILTERS, STATUSES, context, evidence_kind,  # noqa: E402,F401
+                          evidence_line, evidence_matches, flag_text, item_label, md, real_first, show_error,
                           show_groups, source_link)
 
 BULK_STATUSES = ("comply", "comply_with_clarification", "not_applicable")
@@ -34,12 +35,17 @@ statuses = f2.multiselect("Status", sorted({i["final_status"] or "not matched" f
 equipment = f3.multiselect("Equipment", sorted(lines - {"General"}) + (["General"] if "General" in lines else []),
                            key="cl_equipment")
 sections = f4.multiselect("Section", sorted({i["section_number"] or "-" for i in items}), key="cl_section")
-k1, k2, k3, k4 = st.columns([2, 1, 1, 1])
-kind = k1.radio("Requirement", ["All", "Mandatory (shall)", "Preferred (should)"], horizontal=True,
+e1, e2 = st.columns(2)
+kind = e1.radio("Requirement", ["All", "Mandatory (shall)", "Preferred (should)"], horizontal=True,
                 key="cl_mandatory")
-flagged = k2.checkbox("Red flags only", key="cl_flagged")
-changed = k3.checkbox("Changed by an addendum", key="cl_addendum")
-only_open = k4.checkbox("Only unreviewed", key="cl_open")
+by_evidence = {c: sum(evidence_matches(i, c) for i in items) for c in EVIDENCE_FILTERS}
+evidence = e2.radio("Evidence behind the AI's decision", EVIDENCE_FILTERS, horizontal=True, key="cl_evidence",
+                    format_func=lambda c: f"{c} ({by_evidence[c]})",
+                    help="Real sources are public brochures and datasheets; synthetic rows are fictional demo data.")
+k1, k2, k3 = st.columns(3)
+flagged = k1.checkbox("Red flags only", key="cl_flagged")
+changed = k2.checkbox("Changed by an addendum", key="cl_addendum")
+only_open = k3.checkbox("Only unreviewed", key="cl_open")
 shown = [i for i in items
          if (not chosen or i["group"] in chosen)
          and (not statuses or (i["final_status"] or "not matched") in statuses)
@@ -48,12 +54,13 @@ shown = [i for i in items
          and (kind == "All" or i["mandatory"] == (kind == "Mandatory (shall)"))
          and (not flagged or i["red_flags"])
          and (not changed or i["from_addendum"])
+         and evidence_matches(i, evidence)
          and (not only_open or not i["reviewed"])]
 st.caption(f"{len(shown)} of {len(items)} shown, {sum(i['reviewed'] for i in items)} reviewed")
 st.dataframe([{"Code": i["code"], "Status": i["status_label"], "Group": i["group"],
                "Equipment": i["product_line"] or "General", "Section": i["section_number"] or "-",
                "Paragraph": i["paragraph_path"], "Page": source_link(run_id, i["req_id"], f"{i['doc_id']} p.{i['page']}"),
-               "Requirement": i["source_text"], "Flags": flag_text(i),
+               "Requirement": i["source_text"], "Flags": flag_text(i), "Evidence": evidence_kind(i),
                "Synthetic": "SYNTHETIC" if i["uses_synthetic"] else ""}
               for i in shown], hide_index=True, use_container_width=True,
              column_config={"Page": st.column_config.LinkColumn("Page", display_text=r"cite=(.*)$",
@@ -94,7 +101,7 @@ with left:
                + (f" · red flag: {flag_text(item)}" if item["red_flags"] else ""))
     st.markdown(md(item["source_text"]))
     st.markdown(f"**AI status:** {item['ai_status'] or 'not matched'}  \n**Reason:** {md(item['ai_reason'] or '-')}")
-    for e in item["evidence"]:
+    for e in real_first(item["evidence"]):
         st.markdown(evidence_line(e))
 with right:
     default = item["final_status"] or "needs_engineer"

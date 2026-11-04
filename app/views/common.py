@@ -81,3 +81,27 @@ def evidence_line(e: Mapping[str, Any]) -> str:
     cite = f"[{where}]({url})" if url else where
     tag = " · **SYNTHETIC** (fictional, no source)" if e["origin"] == "synthetic" else ""
     return f"- `{e['evidence_id']}` ({e['basis'] or '-'}, {cite}){tag}: {md(e['text'][:200])}"
+
+
+EVIDENCE_FILTERS = ("All", "Real sources only", "Any real source", "Uses synthetic data")
+
+
+def evidence_kind(item: Mapping[str, Any]) -> str:
+    """What the AI's decision rests on: real (public sources only), real + synthetic, synthetic, or none cited."""
+    public = any(e["origin"] == "public" for e in item["evidence"])
+    synthetic = bool(item["uses_synthetic"]) or any(e["origin"] == "synthetic" for e in item["evidence"])
+    if public:
+        return "real + synthetic" if synthetic else "real"
+    return "synthetic" if synthetic else "none"
+
+
+def evidence_matches(item: Mapping[str, Any], choice: str) -> bool:
+    kind = evidence_kind(item)
+    return {"All": True, "Real sources only": kind == "real",
+            "Any real source": kind in ("real", "real + synthetic"),
+            "Uses synthetic data": kind in ("synthetic", "real + synthetic")}[choice]
+
+
+def real_first(evidence: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Public sources before synthetic rows, each in the order the AI cited them."""
+    return sorted(evidence, key=lambda e: e["origin"] != "public")

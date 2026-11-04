@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # app/ on the path
 import streamlit as st  # noqa: E402
 
 from api_client import ApiError  # noqa: E402
-from views.common import context, evidence_line, md, show_error  # noqa: E402
+from views.common import context, evidence_line, md, real_first, show_error  # noqa: E402
 
 api, run_id, _ = context()
 try:
@@ -47,5 +47,5 @@ with right:
     st.markdown(f"**{md(item['status_label'])}**")
     st.markdown(md(item["source_text"]))
     st.markdown(f"**Reason:** {md(item['ai_reason'] or '-')}")
-    for e in item["evidence"]:
+    for e in real_first(item["evidence"]):
         st.markdown(evidence_line(e))
